@@ -1,0 +1,1 @@
+{"name":"Local: d","url":"e:\\Code\\CP\\Tasks\\CPP\\d.cpp","tests":[{"id":1760005980107,"input":"6\naaaaba\nhello\npalindrome\nabba\nx\nbababac\n","output":"1\n2\n5\n0\n0\n1\n"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"e:\\Code\\CP\\Tasks\\CPP\\d.cpp","group":"local","local":true}

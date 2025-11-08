@@ -1,0 +1,1 @@
+{"name":"Local: f","url":"e:\\Code\\CP\\Tasks\\CPP\\f.cpp","tests":[{"id":1760062902663,"input":"7\nCatA 10\nCatB 2\nCatA 4\nCatC 5\nCatB 2\nCatB 1\nCatA 3","output":"CatA 3\nCatA 4\nCatA 10\nCatB 1\nCatB 2\nCatB 2\nCatC 5"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"e:\\Code\\CP\\Tasks\\CPP\\f.cpp","group":"local","local":true}
