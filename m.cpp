@@ -1,5 +1,5 @@
 /// @author Huy
-/// @since  19:52:26 07/11/2025
+/// @since  04:44:22 09/11/2025
 #include "huy/init/lib.hpp"
 
 signed main() {
@@ -7,19 +7,30 @@ signed main() {
     //! std::cin.tie(nullptr);
     //! std::cout.tie(nullptr);
 
-    long long d, s, e;
-    std::cin >> d >> s >> e;
+    auto 🌻🌻🌻 = [&]([[maybeunuse]] int tc) -> void {
+        int n;
+        std::cin >> n;
 
-    long long u = d - s - e;
+        std::string s;
+        std::cin >> s;
 
-    long double ans;
-    if (s <= u) {
-        ans = 1.0l * s * (d - s) / (d * u);
-    } else {
-        ans = 1.0l * (s + e) / d;
+        int cnt = std::count(s.begin(), s.end(), '1');
+        int max = 0, c = 0;
+        for (int i = 0; i < n; ++i) {
+            if (s[i] == '1') ++c;
+            else c = 0;
+            max = std::max(max, std::min(3, c));
+        }
+        std::cout << cnt - (max != 0 ? max - 1 : 0) << '\n';
+        
+    };
+
+    int 🌸;
+    std::cin >> 🌸;
+
+    for (int 🍀 = 1; 🍀 <= 🌸; ++🍀) {
+        🌻🌻🌻(🍀);
     }
-
-    std::cout << std::fixed << std::setprecision(15) << ans << '\n';
 
     return 0;
 }

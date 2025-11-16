@@ -30,7 +30,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "echo ${file} | E:\\Code\\CP\\Tasks\\CPP\\huy\\_make_file.exe"
+                "echo ${file} | huy\\init\\make_file.exe"
             ],
             "problemMatcher": [],
             "presentation": {

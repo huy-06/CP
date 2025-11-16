@@ -113,7 +113,7 @@
         "java": "cd $dir && javac -encoding UTF-8 $fileName && java $fileNameWithoutExt",
         "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
         // "cpp": "cd $dir && g++ -std=c++23 -O2 $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
-        "cpp": "echo $fileName | E:\\Code\\CP\\Tasks\\CPP\\huy\\_make_file.exe && cd $dir && g++ -std=c++23 -O2 $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+        "cpp": "echo $fileName | huy\\init\\make_file.exe && cd $dir && g++ -std=c++23 -O2 $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
 
         "cs": "cd $dir && dotnet run"
     },
