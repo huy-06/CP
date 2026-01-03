@@ -6,6 +6,8 @@
 namespace cp {
 namespace ds {
 
+/// @brief Tính tổng các phần tử trong mảng trong đoạn [l, r) và cập nhật giá trị tại vị trí p
+/// @tparam Tp 
 template <typename Tp>
 class fenwick_tree {
 public:
@@ -17,7 +19,8 @@ public:
         init(n, val);
     }
 
-    fenwick_tree(const std::vector<value_type>& data) {
+    template <typename T>
+    fenwick_tree(const std::vector<T>& data) {
         init(data);
     }
 
@@ -26,9 +29,15 @@ public:
         init(data);
     }
 
-    void init(const std::vector<value_type>& data) {
+    template <typename T>
+    void init(const std::vector<T>& data) {
         n = static_cast<int>(data.size());
-        tree = data;
+        tree.assign(n, value_type());
+        
+        for (int i = 0; i < n; ++i) {
+            tree[i] = value_type(data[i]);
+        }
+
         for (int i = 1; i <= n; ++i) {
             int j = i + (i & -i);
             if (j <= n) {
@@ -65,7 +74,7 @@ public:
         return prefix_sum(r) - prefix_sum(l);
     }
 
-    // Tìm vị trí p nhỏ nhất sao cho prefix_sum(p) >= k
+    /// @brief Tìm vị trí p nhỏ nhất sao cho prefix_sum(p) >= k
     int min_left(value_type k) const {
         if (k <= 0) return 0;
 
@@ -84,7 +93,7 @@ public:
         return x;
     }
 
-    // Tìm vị trí p lớn nhất sao cho prefix_sum(p) <= k
+    /// @brief  Tìm vị trí p lớn nhất sao cho prefix_sum(p) <= k
     int max_right(value_type k) const {
         int p = 1;
         while ((p << 1) <= n) p <<= 1;

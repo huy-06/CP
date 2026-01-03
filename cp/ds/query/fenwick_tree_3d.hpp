@@ -17,7 +17,8 @@ public:
         init(n, m, p, val);
     }
 
-    fenwick_tree_3d(const std::vector<std::vector<std::vector<value_type>>>& data) {
+    template <typename T>
+    fenwick_tree_3d(const std::vector<std::vector<std::vector<T>>>& data) {
         init(data);
     }
 
@@ -26,7 +27,8 @@ public:
         init(data);
     }
 
-    void init(const std::vector<std::vector<std::vector<value_type>>>& data) {
+    template <typename T>
+    void init(const std::vector<std::vector<std::vector<T>>>& data) {
         n = static_cast<int>(data.size());
         if (n == 0) {
             m = 0;
@@ -46,8 +48,8 @@ public:
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < m; ++j) {
                 for (int k = 0; k < p; ++k) {
-                    if (data[i][j][k] != value_type()) {
-                        add(i, j, k, data[i][j][k]);
+                    if (value_type(data[i][j][k]) != value_type()) {
+                        add(i, j, k, value_type(data[i][j][k]));
                     }
                 }
             }

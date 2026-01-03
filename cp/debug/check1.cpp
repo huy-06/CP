@@ -12,28 +12,23 @@
 #include "rand.h"
 using namespace ran;
 
-const std::string SOLUTION_SOURCE = R"(E:\Code\CP\Tasks\CPP\k.cpp)";
+const std::string SOLUTION_SOURCE = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
 
 void generate_test() {
-    int n = write(num(1, int(2e5)));
-    std::vector<int> a(n);
-    std::iota(a.begin(), a.end(), 0);
-    std::random_shuffle(a.begin(), a.end());
-    std::vector<int> b(n);
-    for (int i = 0; i < n; ++i) {
-        b[a[i]] = i;
-        // std::cout << a[i] << " \n"[i + 1 == n];
-    }
-    std::vector<int> c(n);
-    for (int i = 0; i < n;  ++i) {
-        c[b[i]] = i;
-    }
-    for (int i = 0; i < n; ++i) {
-        fout << a[i] + 1 << " \n"[i + 1 == n];
-    }
-    for (int i = 0; i < n; ++i) {
-        fout << c[i] + 1 << " \n"[i + 1 == n];
-    }
+    // auto [n, q] = write(num(1, int(1e5)), num(1, int(1e5)));
+    // auto a = write(vec(n, 1, int(1e8)));
+    // while (q--) {
+    //     if (choice({1, 2}) == 1) {
+    //         int val = num(0, int(1e8));
+    //         int i = num(1, n);
+    //         fout << "1 " << i << ' ' << val << '\n';
+    //     } else {
+    //         std::string op = choice({"XOR", "OR", "AND"});
+    //         int l = num(1, n - 1);
+    //         int r = num(l, n);
+    //         fout << "2 " << op << l << ' ' << r << '\n';
+    //     }
+    // }
 }
 
 

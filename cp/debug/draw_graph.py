@@ -3,7 +3,7 @@ matplotlib.use('TkAgg')
 import networkx as nx
 import matplotlib.pyplot as plt
 
-with open('debug/test_input.txt') as f:
+with open('cp/debug/test_input.txt') as f:
     n, m = map(int, f.readline().split())
     lines = [line.strip().split() for line in f if line.strip()]
 

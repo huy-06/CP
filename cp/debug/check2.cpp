@@ -14,78 +14,16 @@ using namespace ran;
 
 
 const std::string SOLUTION1_SOURCE = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
-const std::string SOLUTION2_SOURCE = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
+const std::string SOLUTION2_SOURCE = R"(E:\Code\CP\Tasks\CPP\c.cpp)";
 
 void generate_test() {
-    int t = ran::choice({1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
-    int max_n = 200000;
-    int max_val = 1000000000;
-    if (t == 1) {
-        int n = max_n;
-        int x = int(1e9);
-        std::vector<int> a(n, max_val);
-        a[0] = 1;
-        a[n - 1] = x - 1;
-        fout << n << ' ' << x << '\n';
-        for (int i = 0; i < n; ++i) {
-            fout << a[i] << ' ';
-        }
-        fout << '\n';
-    } else if (t == 2) {
-        int n = max_n;
-        int x = int(1e9);
-        std::vector<int> a(n, max_val);
-        fout << n << ' ' << x << '\n';
-        for (int i = 0; i < n; ++i) {
-            fout << a[i] << ' ';
-        }
-        fout << '\n';
-    } else if (t == 3) {
-        int n = max_n;
-        int x = int(1e9);
-        std::vector<int> a(n, max_val);
-        a[n / 2] = x / 2;
-        a[1] = 123456789;
-        int comp = x - a[1];
-        if (comp <= 0 || comp > max_val) comp = 400000001;
-        a[n - 2] = comp;
-        fout << n << ' ' << x << '\n';
-        for (int i = 0; i < n; ++i) {
-            fout << a[i] << ' ';
-        }
-        fout << '\n';
-    } else if (t == 4) {
-        int n = ran::num(int(1e3), max_n);
-        int x = ran::num(2, max_val);
-        int v1 = ran::num(2, max_val);
-        int v2 = x - v1;
-        if (v2 <= 0) v2 = 1, v1 = x - v2;
-        std::vector<int> a;
-        a.reserve(n);
-        a.push_back(v1);
-        a.push_back(v2);
-        for (int i = 2; i < n; ++i) {
-            a.push_back(ran::num(1, max_val));
-        }
-        for (int v = 0; v < 500; ++v) {
-            int i = ran::num(0, n - 1) % n;
-            int j = ran::num(0, n - 1) % n;
-            std::swap(a[i], a[j]);
-        }
-        fout << n << ' ' << x << '\n';
-        for (int i = 0; i < n; ++i) {
-            fout << a[i] << ' ';
-        }
-        fout << '\n';
-    } else {
-        int n = ran::num(int(1e4), int(1e6));
-        int x = ran::num(1, max_val);
-        fout << n << ' ' << x << '\n';
-        for (int i = 0; i < n; ++i) {
-            fout << ran::num(1, max_val) << ' ';
-        }
-        fout << '\n';
+    int n = 2e5;
+    fout << n << '\n';
+
+    for (int i = 0; i < n; ++i) {
+        fout << num<int>(1, 26) << ' ';
     }
+    fout << '\n';
 }
 
 
@@ -134,7 +72,7 @@ bool compileProgramIfNeeded(const std::string &source, const std::string &ext, s
     if (ext == "cpp") {
         std::string exeName = source.substr(0, source.find_last_of('.')) + ".exe";
         executable = exeName;
-        std::string command = "g++ -std=c++23 -O2 " + source + " -o " + executable;
+        std::string command = "g++ -std=c++17 -O2 " + source + " -o " + executable;
         int ret = system(command.c_str());
         if (ret != 0) {
             std::cerr << "\x1b[31mError:\x1b[0m Failed to compile " << source << std::endl;

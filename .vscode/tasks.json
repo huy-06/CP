@@ -30,7 +30,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "echo ${file} | huy\\init\\make_file.exe"
+                "echo ${file} | cp\\init\\make_file.exe"
             ],
             "problemMatcher": [],
             "presentation": {

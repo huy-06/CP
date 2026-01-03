@@ -6,6 +6,19 @@
 namespace cp {
 namespace ds {
 
+/**
+ * @param Tp cách dùng Tp.
+ * 
+ * sturct info {
+ *      int s = 0; // phải gán cho một giá trị nào đó!
+ * };
+ * 
+ * info operator+(const info& a, const info& b) {
+ *      info res;
+ *      res.s = a.s + b.s;
+ *      return res;
+ * }
+ */
 template <typename Tp>
 class segment_tree {
 public:
@@ -29,7 +42,7 @@ public:
     void init(const std::vector<value_type>& data) {
         n = static_cast<int>(data.size());
         for (size = 1; size < n; size <<= 1);
-        tree.assign(size * 2, value_type());
+        tree.assign(2 * size, value_type());
         for (int i = 0; i < n; ++i) tree[size + i] = data[i];
         for (int i = size - 1; i > 0; --i) pull(i);
     }
@@ -46,6 +59,7 @@ public:
         return tree[p + size];
     }
 
+    /// @note range [l, r)
     value_type range_query(int l, int r) const {
         assert(0 <= l && l <= r && r <= n);
         value_type sml = value_type();

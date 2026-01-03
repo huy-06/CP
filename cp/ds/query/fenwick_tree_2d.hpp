@@ -17,7 +17,8 @@ public:
         init(n, m, val);
     }
 
-    fenwick_tree_2d(const std::vector<std::vector<value_type>>& data) {
+    template <typename T>
+    fenwick_tree_2d(const std::vector<std::vector<T>>& data) {
         init(data);
     }
 
@@ -26,7 +27,8 @@ public:
         init(data);
     }
 
-    void init(const std::vector<std::vector<value_type>>& data) {
+    template <typename T>
+    void init(const std::vector<std::vector<T>>& data) {
         n = static_cast<int>(data.size());
         if (n == 0) {
             m = 0;
@@ -38,8 +40,8 @@ public:
         tree.assign(n * m, value_type());
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < m; ++j) {
-                if (data[i][j] != value_type()) {
-                    add(i, j, data[i][j]);
+                if (value_type(data[i][j]) != value_type()) {
+                    add(i, j, value_type(data[i][j]));
                 }
             }
         }

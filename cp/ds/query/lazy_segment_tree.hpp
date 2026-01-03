@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <cassert>
 
@@ -7,11 +6,46 @@
 namespace cp {
 namespace ds {
 
-template <typename Tp, typename Tg>
+/**
+ * @param Tg (Tag/Lazy)
+ * 
+ * struct tag {
+ *      long long add = 0;
+ *      
+ *      // Hàm apply của Tag bây giờ nhận thêm l và r.
+ *      // l, r là phạm vi mà node hiện tại đang quản lý [l, r).
+ *      void apply(const tag& t, int l, int r) {
+ *          if (t.add != 0) {
+ *               add += t.add;
+ *          }
+ *      }
+ * };
+ * 
+ * @param Tp (Info/Node Value)
+ * 
+ * struct info {
+ *      long long s = 0;
+ * 
+ *      // Hàm apply của Info cũng nhận thêm l và r.
+ *      // Giúp tính toán giá trị mới chính xác (vd: s += add * (r - l)).
+ *      void apply(const tag& t, int l, int r) {
+ *          if (t.add != 0) {
+ *              s += t.add * (r - l);
+ *          }
+ *      }
+ * };
+ * 
+ * info operator+(const info& a, const info& b) {
+ *      info res;
+ *      res.s = a.s + b.s;
+ *      return res;
+ * }
+ */
+template <typename Tg, typename Tp>
 class lazy_segment_tree {
 public:
-    using value_type = Tp;
     using value_tag  = Tg;
+    using value_type = Tp;
 
     lazy_segment_tree() : n(0), size(0), height(0) {}
 
@@ -31,8 +65,8 @@ public:
     void init(const std::vector<value_type>& data) {
         n = static_cast<int>(data.size());
         for (size = 1, height = 0; size < n; size <<= 1, ++height);
-        tree.assign(size << 1, value_type());
-        lazy.assign(size << 1, value_tag());
+        lazy.assign(2 * size, value_tag());
+        tree.assign(2 * size, value_type());
         for (int i = 0; i < this->n; ++i) tree[size + i] = data[i];
         for (int i = size - 1; i > 0; --i) pull(i);
     }
@@ -72,7 +106,7 @@ public:
 
     value_type range_query(int l, int r) {
         assert(0 <= l && l <= r && r <= n);
-        value_type sml = value_type()
+        value_type sml = value_type();
         value_type smr = value_type();
         l += size;
         r += size;
@@ -139,16 +173,20 @@ public:
 
 private:
     int n, size, height;
-    std::vector<value_type> tree;
     std::vector<value_tag>  lazy;
+    std::vector<value_type> tree;
 
     void pull(int i) {
         tree[i] = tree[i << 1] + tree[(i << 1) | 1];
     }
 
     void apply(int i, const value_tag& t) {
-        tree[i].apply(t);
-        lazy[i].apply(t);
+        int h = height - (31 - __builtin_clz(i)); 
+        int l = (i << h) - size;
+        int r = l + (1 << h);
+        
+        lazy[i].apply(t, l, r);
+        tree[i].apply(t, l, r);
     }
 
     void push(int i) {

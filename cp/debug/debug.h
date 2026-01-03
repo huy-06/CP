@@ -40,40 +40,7 @@ using namespace std;
 
 // Data structures leet code
 
-struct ListNode {
-    int val;
-    ListNode *next;
-    ListNode() : val(0), next(nullptr) {}
-    ListNode(int x) : val(x), next(nullptr) {}
-    ListNode(int x, ListNode *next) : val(x), next(next) {}
-};
 
-struct TreeNode {
-    int val;
-    TreeNode *left;
-    TreeNode *right;
-    TreeNode() : val(0), left(nullptr), right(nullptr) {}
-    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
-    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
-};
-
-class Node {
-public:
-    int val;
-    vector<Node*> neighbors;
-    Node() {
-        val = 0;
-        neighbors = vector<Node*>();
-    }
-    Node(int _val) {
-        val = _val;
-        neighbors = vector<Node*>();
-    }
-    Node(int _val, vector<Node*> _neighbors) {
-        val = _val;
-        neighbors = _neighbors;
-    }
-};
 #endif
 
 #ifdef _WIN32
@@ -84,7 +51,7 @@ public:
 #define is_terminal(stream) isatty(fileno(stream))
 #endif
 
-static bool huy_is_terminal_output = is_terminal(stdout) || is_terminal(stderr);
+static bool is_terminal_output = is_terminal(stdout) || is_terminal(stderr);
 
 
 std::ofstream file_output("E:/Code/Tasks/debug.txt");
@@ -107,7 +74,7 @@ class multiset;
 }
 }
 
-class HuyDebug {
+class huy_debug {
 private:
     template<typename T>
     std::string to_string_debug(const T& var) {
@@ -496,7 +463,7 @@ public:
         (values.emplace_back(to_string_debug(args)), ...);
 
         for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-            if (huy_is_terminal_output)
+            if (is_terminal_output)
                 __output__ << "\033[33m" << normalize_nested_brackets(names[i], values[i]) << "\033[0m\n";
             else
                 __output__ << normalize_nested_brackets(names[i], values[i]) << "\n";
@@ -509,7 +476,7 @@ public:
     if constexpr (sizeof(#__VA_ARGS__) == 1) { \
         /* __VA_ARGS__ empty */ \
     } else { \
-       if (huy_is_terminal_output) \
+       if (is_terminal_output) \
             __output__ << "\x1b[32mDebug at line \033[35m" << __LINE__ << "\x1b[0m:\n"; \
         else \
             __output__ << "Debug at line " << __LINE__ << ":\n"; \
@@ -524,125 +491,6 @@ public:
 
 #pragma once
 
-#ifdef COUT_CYAN
-
-#include <iostream>
-#include <streambuf>
-#include <cstring>
-
-#ifdef _WIN32
-  #include <io.h>
-  #include <windows.h>
-  #define isatty _isatty
-  #define fileno  _fileno
-#else
-  #include <unistd.h>
-#endif
-
-namespace cout_cyan {
-
-static constexpr const char* kPrefix = "\x1b[36m";
-static constexpr const char* kSuffix = "\x1b[0m";
-
-inline bool is_stdout_terminal() {
-#ifdef _WIN32
-    return isatty(fileno(stdout)) != 0;
-#else
-    return isatty(fileno(stdout)) != 0;
-#endif
-}
-
-class colorbuf : public std::streambuf {
-public:
-    explicit colorbuf(std::streambuf* dest) : dest_(dest) {}
-
-protected:
-    virtual int_type overflow(int_type ch) {
-        if (traits_type::eq_int_type(ch, traits_type::eof())) return traits_type::not_eof(ch);
-        if (!write_prefix())                return traits_type::eof();
-        if (dest_->sputc(traits_type::to_char_type(ch)) == traits_type::eof()) return traits_type::eof();
-        if (!write_suffix())                return traits_type::eof();
-        return ch;
-    }
-
-    virtual std::streamsize xsputn(const char* s, std::streamsize n) {
-        if (n <= 0) return 0;
-        if (!write_prefix()) return 0;
-        std::streamsize wrote = dest_->sputn(s, n);
-        if (!write_suffix()) return wrote;
-        return wrote;
-    }
-
-    virtual int sync() {
-        return dest_->pubsync();
-    }
-
-private:
-    std::streambuf* dest_;
-
-    bool write_prefix() {
-        const std::size_t L = std::strlen(kPrefix);
-        std::streamsize r = dest_->sputn(kPrefix, static_cast<std::streamsize>(L));
-        return r == static_cast<std::streamsize>(L);
-    }
-    bool write_suffix() {
-        const std::size_t L = std::strlen(kSuffix);
-        std::streamsize r = dest_->sputn(kSuffix, static_cast<std::streamsize>(L));
-        return r == static_cast<std::streamsize>(L);
-    }
-};
-
-class installer {
-public:
-    installer() : old_(nullptr), colored_(nullptr), installed_(false) {
-#ifdef _WIN32
-        enable_vt_on_windows();
-#endif
-        if (is_stdout_terminal()) {
-            old_ = std::cout.rdbuf();
-            colored_ = new colorbuf(old_);
-            std::cout.rdbuf(colored_);
-            installed_ = true;
-        }
-    }
-
-    ~installer() {
-        if (installed_) {
-            std::cout.rdbuf(old_);
-            std::cout << kSuffix;
-            delete colored_;
-            colored_ = nullptr;
-            old_ = nullptr;
-            installed_ = false;
-        }
-    }
-
-    installer(const installer&) = delete;
-    installer& operator=(const installer&) = delete;
-
-private:
-#ifdef _WIN32
-    static void enable_vt_on_windows() {
-        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (hOut == INVALID_HANDLE_VALUE) return;
-        DWORD dwMode = 0;
-        if (!GetConsoleMode(hOut, &dwMode)) return;
-        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        (void)SetConsoleMode(hOut, dwMode);
-    }
-#endif
-
-    std::streambuf* old_;
-    colorbuf* colored_;
-    bool installed_;
-};
-
-static installer auto_install;
-
-} // namespace cout_cyan
-
-#endif
-
 
 #ifdef LEETCODE
 // Read data leet coode
@@ -650,6 +498,7 @@ static installer auto_install;
 namespace leetcode {
     inline void __read__(int& n) {
         std::cin >> n;
+        std::cin.ignore();
     }
 
     inline void __read__(std::string& s) {

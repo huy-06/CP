@@ -70,15 +70,19 @@ public:
         init(n, m);
     }
 
+    graph(const std::vector<edge_type>& edges) {
+        init(edges);
+    }
+
     void init(int n = 0, int m = 0) {
         this->n = n;
         built = false;
         edge_list.clear();
         edge_list.reserve(m);
-        head.assign(n + 1, 0);
-        edge_idxs.clear();
-        edge_idxs.reserve(m);
-        indeg_cnt.assign(n, 0);
+        // head.assign(n + 1, 0);
+        // edge_idxs.clear();
+        // edge_idxs.reserve(m);
+        // indeg_cnt.assign(n, 0);
     }
 
     void init(const std::vector<edge_type>& edges) {
@@ -86,10 +90,13 @@ public:
         for (auto &e : edges) {
             max_v = std::max({max_v, e.from, e.to});
         }
+
         init(max_v + 1, static_cast<int>(edges.size()));
+
         for (auto &e : edges) {
             add_edge(e);
         }
+
         build();
     }
 
@@ -98,7 +105,9 @@ public:
         for (const auto& nbrs : adj) {
             m += static_cast<int>(nbrs.size());
         }
+
         init(static_cast<int>(adj.size()), m);
+
         for (int u = 0; u < static_cast<int>(adj.size()); ++u) {
             for (const auto& e : adj[u]) {
                 edge_type new_e = e;
@@ -106,38 +115,47 @@ public:
                 add_edge(std::move(new_e));
             }
         }
+
         build();
     }
 
 
     void build() {
         if (built) return;
+
+        head.assign(n + 1, 0);
+        indeg_cnt.assign(n, 0);
+
+        for (const auto& e : edge_list) {
+            ++head[e.from + 1];
+            ++indeg_cnt[e.to];
+        }
+
         for (int i = 1; i <= n; ++i) {
             head[i] += head[i - 1];
         }
-        edge_idxs.resize(edge_list.size());
+
+        edge_idxs.assign(edge_list.size(), 0);
         std::vector<int> cur(head.begin(), head.begin() + n);
+
         for (int i = 0; i < static_cast<int>(edge_list.size()); ++i) {
             edge_idxs[cur[edge_list[i].from]++] = i;
         }
+
         built = true;
     }
 
     void add_edge(const edge_type& e) {
-        assert(0 <= e.from && e.from < V());
-        assert(0 <= e.to && e.to < V());
+        assert(0 <= e.from && e.from < num_vertices());
+        assert(0 <= e.to && e.to < num_vertices());
         edge_list.push_back(e);
-        ++head[e.from + 1];
-        ++indeg_cnt[e.to];
         built = false;
     }
 
     void add_edge(edge_type&& e) {
-        assert(0 <= e.from && e.from < V());
-        assert(0 <= e.to && e.to < V());
+        assert(0 <= e.from && e.from < num_vertices());
+        assert(0 <= e.to && e.to < num_vertices());
         edge_list.emplace_back(std::move(e));
-        ++head[e.from + 1];
-        ++indeg_cnt[e.to];
         built = false;
     }
 
@@ -147,10 +165,10 @@ public:
         add_edge(std::move(e));
     }
 
-    void read_edge(int m, int off = 1) {
+    void read_edge(int m, int off = 1, std::istream& is = std::cin) {
         for (int i = 0; i < m; ++i) {
             edge_type e;
-            std::cin >> e;
+            is >> e;
             e.from -= off;
             e.to   -= off;
             add_edge(std::move(e));
@@ -158,10 +176,10 @@ public:
         build();
     }
 
-    void read_unedge(int m, int off = 1) {
+    void read_unedge(int m, int off = 1, std::istream& is = std::cin) {
         for (int i = 0; i < m; ++i) {
             edge_type e;
-            std::cin >> e;
+            is >> e;
             e.from -= off;
             e.to   -= off;
             add_unedge(std::move(e));
@@ -169,27 +187,31 @@ public:
         build();
     }
 
-    int V() const {
+    int size() const {
         return n;
     }
 
-    int E() const {
+    int num_vertices() const {
+        return n;
+    }
+
+    int num_edges() const {
         return static_cast<int>(edge_list.size());
     }
 
     int indeg(int u) const {
-        assert(0 <= u && u < V());
+        assert(0 <= u && u < num_vertices());
         return indeg_cnt[u];
     }
 
     int outdeg(int u) const {
-        assert(0 <= u && u < V());
+        assert(0 <= u && u < num_vertices());
         if (!built) const_cast<graph*>(this)->build();
         return head[u + 1] - head[u];
     }
 
     neighbors operator[](int u) {
-        assert(0 <= u && u < V());
+        assert(0 <= u && u < num_vertices());
         if (!built) build();
         return neighbors {
             edge_idxs.begin() + head[u],
@@ -199,7 +221,7 @@ public:
     }
     
     neighbors operator[](int u) const {
-        assert(0 <= u && u < V());
+        assert(0 <= u && u < num_vertices());
         if (!built) const_cast<graph*>(this)->build();
         return neighbors {
             const_cast<std::vector<int>&>(edge_idxs).begin() + head[u],
@@ -209,13 +231,14 @@ public:
     }
 
     void print() {
+        
 //<
 #ifdef CP_DEBUG
         std::stringstream ss;
         for (auto e : edge_list) {
             ss << e << '\n';
         }
-        std::ofstream out("../../debug/test_input.txt");
+        std::ofstream out("cp/debug/test_input.txt");
         out << n << ' ' << edge_idxs.size() << '\n';
         std::string s;
         while (std::getline(ss, s)) {
@@ -229,7 +252,7 @@ public:
             out << '\n';
         }
         out.close();
-        int ret = system("python ../../debug/draw_graph.py");
+        int ret = system("python cp/debug/draw_graph.py");
         if (ret != 0) {
             std::cerr << "Failed to run draw_graph.py (return code " << ret << ")\n";
             return;
@@ -238,12 +261,12 @@ public:
 //>
     }
 
-    std::vector<edge_type>& get_edges() const {
+    std::vector<edge_type> get_edges() const {
         return edge_list;
     }
 
     void sort(int u) {
-        assert(0 <= u && u < V());
+        assert(0 <= u && u < num_vertices());
         if (!built) build();
         std::sort(edge_idxs.begin() + head[u], edge_idxs.begin() + head[u + 1],
             [&](int i, int j) {
@@ -265,12 +288,12 @@ public:
     }
 
     edge_type* edge_at(int i) {
-        assert(0 <= i && i < E());
+        assert(0 <= i && i < num_edges());
         return &edge_list[i];
     }
 
     const edge_type* edge_at(int i) const {
-        assert(0 <= i && i < E());
+        assert(0 <= i && i < num_edges());
         return &edge_list[i];
     }
 

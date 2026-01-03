@@ -48,7 +48,7 @@ public:
     graph<edge_type> compress() {
         if (!ok2) work2();
         graph<edge_type> g(cnt);
-        for (int i = 0; i < E(); i += 2) {
+        for (int i = 0; i < num_edges(); i += 2) {
             if (mrk[i >> 1]) {
                 int u = cid[edge_list[i].from];
                 int v = cid[edge_list[i].to];
@@ -73,9 +73,9 @@ private:
     bool ok2 = false;
  
     void work1() {
-        mrk.assign(E() >> 1, false);
+        mrk.assign(num_edges() >> 1, false);
         brs.clear();
-        brs.reserve(E() >> 1);
+        brs.reserve(num_edges() >> 1);
 
         std::vector<int> in(n, -1), low(n, -1);
         int timer = 0; cnt = 0;
@@ -109,8 +109,8 @@ private:
             return static_cast<long long>(u) * n + v;
         };
         std::unordered_set<long long> seen;
-        seen.reserve(E() >> 1);
-        for (int i = 0; i < E(); i += 2) {
+        seen.reserve(num_edges() >> 1);
+        for (int i = 0; i < num_edges(); i += 2) {
             if (mrk[i >> 1]) {
                 int u = edge_list[i].from;
                 int v = edge_list[i].to;
