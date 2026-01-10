@@ -1,5 +1,5 @@
 #include "convolution.hpp"
-#include "../../../ds/numeric/modular/combination.hpp"
+#include "../../../ds/numeric/modular/combinatorics.hpp"
 #include "../number_theory/pow.hpp"
 #include "../number_theory/sqrt.hpp"
 

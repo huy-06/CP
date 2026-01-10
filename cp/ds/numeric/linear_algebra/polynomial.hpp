@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../alg/math/polynomial/algebra.hpp"
+#include "../../../alg/math/polynomial/algebra.hpp"
 
 #ifndef CP_DS_POLYNOMIAL
 #define CP_DS_POLYNOMIAL

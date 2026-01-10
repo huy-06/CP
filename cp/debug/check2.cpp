@@ -2,30 +2,44 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <set>
 #include <iomanip>
-#include <random>
-#include <algorithm>
-#include <future>
-#include <thread> 
+#include <thread>
+#include <chrono>
 #include <windows.h>
-#include "rand.h"
-using namespace ran;
+#include "../cst/style.hpp"
+#include "cp/ds/misc/random.hpp"
 
+std::ofstream fout;
+auto random = cp::ds::random;
 
-const std::string SOLUTION1_SOURCE = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
-const std::string SOLUTION2_SOURCE = R"(E:\Code\CP\Tasks\CPP\c.cpp)";
-
-void generate_test() {
-    int n = 2e5;
-    fout << n << '\n';
-
-    for (int i = 0; i < n; ++i) {
-        fout << num<int>(1, 26) << ' ';
-    }
-    fout << '\n';
+void generate_test_case() {
+    
 }
 
+const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
+const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
+const std::string input_file = "test_input.txt";
+const std::string debug_file = "debug.txt";
+const int total_tests = 100;
+const double time_limit = 3.0;
+
+namespace style = cp::cst::style;
+
+struct program_info {
+    std::string source_path;
+    std::string exec_path;
+    std::string extension;
+    bool is_python;
+};
+
+
+std::string get_extension(const std::string &filename) {
+    size_t pos = filename.find_last_of('.');
+    if (pos != std::string::npos && pos + 1 < filename.length()) {
+        return filename.substr(pos + 1);
+    }
+    return "";
+}
 
 std::vector<std::string> tokenize(const std::string &s) {
     std::vector<std::string> tokens;
@@ -37,232 +51,191 @@ std::vector<std::string> tokenize(const std::string &s) {
     return tokens;
 }
 
-void printDebug(const std::string &input_file, const std::string &solution1_output, const std::string &solution2_output) {
-    std::ofstream debug("debug.txt");
+std::string read_file_content(const std::string &path) {
+    std::ifstream fin(path);
+    if (!fin) return "";
+    std::string content, line;
+    while (getline(fin, line)) {
+        content += line + "\n";
+    }
+    return content;
+}
+
+void log_debug_file(const std::string &inp_file, const std::string &out1, const std::string &out2) {
+    std::ofstream debug(debug_file);
     if (debug) {
-        debug << "Input:\n";
-        std::ifstream fin(input_file);
-        std::string line;
-        while (getline(fin, line)) {
-            debug << line << "\n";
-        }
-        debug << "\n" << SOLUTION1_SOURCE << " Output:\n" << solution1_output;
-        debug << "\n" << SOLUTION2_SOURCE << " Output:\n" << solution2_output;
+        debug << "Input:\n" << read_file_content(inp_file) << "\n";
+        debug << "Output 1 (" << path_source_1 << "):\n" << out1 << "\n";
+        debug << "Output 2 (" << path_source_2 << "):\n" << out2 << "\n";
     }
 }
 
-std::string getFileExtension(const std::string &filename) {
-    size_t pos = filename.find_last_of('.');
-    if (pos != std::string::npos && pos + 1 < filename.length()) {
-        return filename.substr(pos + 1);
-    }
-    return "";
-}
-
-std::string getExecutable(const std::string &name, const std::string &ext) {
-    if (ext == "cpp") {
-        return name + ".exe";
-    } else if (ext == "py") {
-        return name + ".py";
-    }
-    return "";
-}
-
-bool compileProgramIfNeeded(const std::string &source, const std::string &ext, std::string &executable) {
-    if (ext == "cpp") {
-        std::string exeName = source.substr(0, source.find_last_of('.')) + ".exe";
-        executable = exeName;
-        std::string command = "g++ -std=c++17 -O2 " + source + " -o " + executable;
-        int ret = system(command.c_str());
-        if (ret != 0) {
-            std::cerr << "\x1b[31mError:\x1b[0m Failed to compile " << source << std::endl;
+bool setup_program(const std::string &source, program_info &info) {
+    info.source_path = source;
+    info.extension = get_extension(source);
+    
+    if (info.extension == "cpp") {
+        info.is_python = false;
+        info.exec_path = source.substr(0, source.find_last_of('.')) + ".exe";
+        
+        std::string cmd = "g++ -std=c++23 -O2 " + source + " -o " + info.exec_path;
+        std::cout << "compiling: " << source << " ..." << std::endl;
+        
+        if (system(cmd.c_str()) != 0) {
+            std::cerr << style::color_red << "error: failed to compile " << source << style::reset << std::endl;
             return false;
         }
-        std::cout << "Compiled " << source << " -> " << executable << std::endl;
         return true;
-    } else if (ext == "py") {
-        executable = source;
-        std::cout << "Skipping compilation, using script " << executable << std::endl;
+    } else if (info.extension == "py") {
+        info.is_python = true;
+        info.exec_path = source;
+        std::cout << "python script detected: " << source << std::endl;
         return true;
-    } else {
-        std::cerr << "\x1b[31mError:\x1b[0m Unsupported file extension: " << ext << std::endl;
-        return false;
     }
+    
+    std::cerr << style::color_red << "error: unsupported extension " << info.extension << style::reset << std::endl;
+    return false;
 }
-bool runProgramWithTimeout(const std::string &program, const std::string &input_file, double timeout, std::string &output, double &elapsed_time, bool is_python) {
-    std::string commandLine;
-    if (is_python) {
-        commandLine = "python " + program;
-    } else {
-        commandLine = program;
-    }
 
-    HANDLE hReadPipe, hWritePipe;
+bool execute_process(const program_info &prog, const std::string &input_path, double timeout_sec, std::string &output_str, double &elapsed_time) {
+    std::string cmd_line = prog.is_python ? ("python " + prog.exec_path) : prog.exec_path;
+
+    HANDLE h_read, h_write;
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.bInheritHandle = TRUE;
     sa.lpSecurityDescriptor = NULL;
-    if (!CreatePipe(&hReadPipe, &hWritePipe, &sa, 0)) {
-        std::cerr << "CreatePipe failed." << std::endl;
-        return false;
-    }
-    SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
 
-    HANDLE hInput = CreateFileA(input_file.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hInput == INVALID_HANDLE_VALUE) {
-        std::cerr << "Failed to open input file." << std::endl;
-        CloseHandle(hReadPipe);
-        CloseHandle(hWritePipe);
+    if (!CreatePipe(&h_read, &h_write, &sa, 0)) return false;
+    SetHandleInformation(h_read, HANDLE_FLAG_INHERIT, 0);
+
+    HANDLE h_input_file = CreateFileA(input_path.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h_input_file == INVALID_HANDLE_VALUE) {
+        CloseHandle(h_read);
+        CloseHandle(h_write);
         return false;
     }
 
-    STARTUPINFOA si;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    si.hStdOutput = hWritePipe;
-    si.hStdError = hWritePipe;
-    si.hStdInput = hInput;
-    si.dwFlags |= STARTF_USESTDHANDLES;
+    STARTUPINFOA startup_info;
+    ZeroMemory(&startup_info, sizeof(startup_info));
+    startup_info.cb = sizeof(startup_info);
+    startup_info.hStdOutput = h_write;
+    startup_info.hStdError = h_write;
+    startup_info.hStdInput = h_input_file;
+    startup_info.dwFlags |= STARTF_USESTDHANDLES;
 
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&pi, sizeof(pi));
+    PROCESS_INFORMATION proc_info;
+    ZeroMemory(&proc_info, sizeof(proc_info));
 
-    BOOL success = CreateProcessA(
-        NULL,
-        const_cast<LPSTR>(commandLine.c_str()),
-        NULL,
-        NULL,
-        TRUE,
-        0,
-        NULL,
-        NULL,
-        &si,
-        &pi
-    );
+    BOOL success = CreateProcessA(NULL, const_cast<LPSTR>(cmd_line.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &startup_info, &proc_info);
 
     if (!success) {
-        std::cerr << "Failed to create process for " << commandLine << std::endl;
-        CloseHandle(hInput);
-        CloseHandle(hReadPipe);
-        CloseHandle(hWritePipe);
+        CloseHandle(h_input_file);
+        CloseHandle(h_read);
+        CloseHandle(h_write);
         return false;
     }
 
-    CloseHandle(hWritePipe);
-    CloseHandle(hInput);
+    CloseHandle(h_write);
+    CloseHandle(h_input_file);
 
     std::thread reader([&]() {
-        const int bufferSize = 4096;
-        char buffer[bufferSize];
-        DWORD bytesRead;
-        while (ReadFile(hReadPipe, buffer, bufferSize, &bytesRead, NULL) && bytesRead != 0) {
-            output.append(buffer, bytesRead);
+        const int buf_size = 4096;
+        char buffer[buf_size];
+        DWORD bytes_read;
+        while (ReadFile(h_read, buffer, buf_size, &bytes_read, NULL) && bytes_read != 0) {
+            output_str.append(buffer, bytes_read);
         }
     });
 
-    auto start_time = std::chrono::steady_clock::now();
-    DWORD waitResult = WaitForSingleObject(pi.hProcess, static_cast<DWORD>(timeout * 1000));
-    if (waitResult == WAIT_TIMEOUT) {
-        TerminateProcess(pi.hProcess, 1);
-        std::cerr << "\x1b[31mError:\x1b[0m Program \x1b[33m" << program << "\x1b[0m timed out!" << std::endl;
+    auto start = std::chrono::steady_clock::now();
+    DWORD wait_result = WaitForSingleObject(proc_info.hProcess, static_cast<DWORD>(timeout_sec * 1000));
+    
+    if (wait_result == WAIT_TIMEOUT) {
+        TerminateProcess(proc_info.hProcess, 1);
         reader.join();
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        CloseHandle(hReadPipe);
-        printDebug(input_file, "", "");
-        exit(1);
+        CloseHandle(proc_info.hProcess);
+        CloseHandle(proc_info.hThread);
+        CloseHandle(h_read);
+        elapsed_time = timeout_sec; 
+        return false; 
     }
-    auto end_time = std::chrono::steady_clock::now();
-    elapsed_time = std::chrono::duration<double>(end_time - start_time).count();
+
+    auto end = std::chrono::steady_clock::now();
+    elapsed_time = std::chrono::duration<double>(end - start).count();
 
     reader.join();
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    CloseHandle(hReadPipe);
+    CloseHandle(proc_info.hProcess);
+    CloseHandle(proc_info.hThread);
+    CloseHandle(h_read);
     return true;
 }
 
-
 int main() {
-
-    const std::string SOLUTION1_EXT = getFileExtension(SOLUTION1_SOURCE);
-    const std::string SOLUTION2_EXT = getFileExtension(SOLUTION2_SOURCE);
-
-    std::string solution1_executable, solution2_executable;
-    if (!compileProgramIfNeeded(SOLUTION1_SOURCE, SOLUTION1_EXT, solution1_executable))
+    program_info prog1, prog2;
+    if (!setup_program(path_source_1, prog1) || !setup_program(path_source_2, prog2)) {
         return 1;
-    if (!compileProgramIfNeeded(SOLUTION2_SOURCE, SOLUTION2_EXT, solution2_executable))
-        return 1;
+    }
 
-    bool solution1IsPython = (SOLUTION1_EXT == "py");
-    bool solution2IsPython = (SOLUTION2_EXT == "py");
-
-    const std::string INPUT_FILE = "test_input.txt";
-    int test_cases = 100;
-    double timeout = 3.0;
-
-    double total_time1 = 0.0;
-    double total_time2 = 0.0;
-    double max_time1 = 0.0;
-    double max_time2 = 0.0;
+    double sum_time_1 = 0, sum_time_2 = 0;
+    double max_time_1 = 0, max_time_2 = 0;
 
     std::cout << std::fixed << std::setprecision(3) << std::endl;
 
-    for (int test = 1; test <= test_cases; test++) {
-        std::cout << "Running test case " << test << "..." << std::endl;
+    for (int t = 1; t <= total_tests; ++t) {
+        std::cout << "running test case " << t << "..." << std::endl;
 
-        fout.open(INPUT_FILE, std::ios::out);
-        auto future = std::async(std::launch::async, generate_test);
-
-        if (future.wait_for(std::chrono::seconds(1 + (int) timeout)) == std::future_status::timeout) {
-            std::cerr << "\x1b[31mError:\x1b[0m Test generation timed out. Please optimize again!" << std::endl;
-            exit(1);
-        }
+        fout.open(input_file, std::ios::out);
+        generate_test_case();
         fout.close();
 
-        std::string solution1_output, solution2_output;
-        double solution1_time = 0, solution2_time = 0;
+        std::string out_1, out_2;
+        double time_1, time_2;
+        bool ok_1 = execute_process(prog1, input_file, time_limit, out_1, time_1);
+        bool ok_2 = execute_process(prog2, input_file, time_limit, out_2, time_2);
 
-        if (!runProgramWithTimeout(solution1_executable, INPUT_FILE, timeout, solution1_output, solution1_time, solution1IsPython)) {
-            std::cout << "Test case " << test << ": " << "\x1b[33m" << SOLUTION1_SOURCE << "\x1b[0m" << " program \x1b[31mTLE!\x1b[0m" << std::endl;
-            printDebug(INPUT_FILE, solution1_output, "");
+        if (!ok_1) {
+            std::cout << "test " << t << ": " << style::color_yellow << prog1.source_path << style::reset << style::color_red << " TLE!" << style::reset << std::endl;
+            log_debug_file(input_file, out_1, "");
             return 1;
         }
-        if (!runProgramWithTimeout(solution2_executable, INPUT_FILE, timeout, solution2_output, solution2_time, solution2IsPython)) {
-            std::cout << "Test case " << test << ": " << "\x1b[33m" << SOLUTION2_SOURCE << "\x1b[0m" << " program \x1b[31mTLE!\x1b[0m" << std::endl;
-            printDebug(INPUT_FILE, solution1_output, solution2_output);
-            return 1;
-        }
-
-        std::vector<std::string> solution1_tokens = tokenize(solution1_output);
-        std::vector<std::string> solution2_tokens = tokenize(solution2_output);
-
-        if (solution1_tokens != solution2_tokens) {
-            size_t index = 0;
-            while (index < solution1_tokens.size() && index < solution2_tokens.size() && solution1_tokens[index] == solution2_tokens[index])
-                index++;
-            std::cout << "Test case " << test << ": \x1b[31mFAILED!\x1b[0m" << std::endl;
-            std::cout << "\x1b[33m" << SOLUTION1_SOURCE << "\x1b[0m" << " output: " << (index < solution1_tokens.size() ? solution1_tokens[index] : "N/A") << std::endl;
-            std::cout << "\x1b[33m" << SOLUTION2_SOURCE << "\x1b[0m" << " output: " << (index < solution2_tokens.size() ? solution2_tokens[index] : "N/A") << std::endl;
-            printDebug(INPUT_FILE, solution1_output, solution2_output);
+        if (!ok_2) {
+            std::cout << "test " << t << ": " << style::color_yellow << prog2.source_path << style::reset << style::color_red << " TLE!" << style::reset << std::endl;
+            log_debug_file(input_file, out_1, out_2);
             return 1;
         }
 
-        total_time1 += solution1_time;
-        total_time2 += solution2_time;
-        max_time1 = std::max(max_time1, solution1_time);
-        max_time2 = std::max(max_time2, solution2_time);
+        auto tokens_1 = tokenize(out_1);
+        auto tokens_2 = tokenize(out_2);
 
+        if (tokens_1 != tokens_2) {
+            std::cout << "test " << t << ": " << style::color_red << "FAILED!" << style::reset << std::endl;
+            
+            size_t idx = 0;
+            while (idx < tokens_1.size() && idx < tokens_2.size() && tokens_1[idx] == tokens_2[idx]) idx++;
+            
+            std::cout << style::color_yellow << "source 1 got: " << style::reset << (idx < tokens_1.size() ? tokens_1[idx] : "end") << std::endl;
+            std::cout << style::color_yellow << "source 2 got: " << style::reset << (idx < tokens_2.size() ? tokens_2[idx] : "end") << std::endl;
+            
+            log_debug_file(input_file, out_1, out_2);
+            return 1;
+        }
 
-        std::cout << "Test case " << test << ": \x1b[32mPASSED!\x1b[0m" << std::endl;
-        std::cout << "\x1b[33m" << SOLUTION1_SOURCE << "\x1b[0m" << " Time: " << solution1_time << "s, " << "\x1b[33m" << SOLUTION2_SOURCE << "\x1b[0m" << " Time: " << solution2_time << "s." << std::endl << std::endl;
+        sum_time_1 += time_1; max_time_1 = std::max(max_time_1, time_1);
+        sum_time_2 += time_2; max_time_2 = std::max(max_time_2, time_2);
+
+        std::cout << "test " << t << ": " << style::color_green << "PASSED!" << style::reset << std::endl;
+        std::cout << "time: " << time_1 << "s vs " << time_2 << "s" << std::endl << std::endl;
     }
 
-    std::cout << "All test cases \x1b[32mPASSED!\x1b[0m" << std::endl;
-    std::cout << "\x1b[35m\x1b[1m" << "Congratulations!" << "\x1b[0m" << std::endl;
-    std::cout << "\x1b[33m" << SOLUTION1_SOURCE << ": " << "\x1b[0m" << "\x1b[36m" << "average " << "\x1b[0m" << (total_time1 / test_cases) << "s, " << "\x1b[36m" << "worst " << "\x1b[0m" << max_time1 << "s." << std::endl;
-    std::cout << "\x1b[33m" << SOLUTION2_SOURCE << ": " << "\x1b[0m" << "\x1b[36m" << "average " << "\x1b[0m" << (total_time2 / test_cases) << "s, " << "\x1b[36m" << "worst " << "\x1b[0m" << max_time2 << "s." << std::endl;
+    std::cout << "all test cases " << style::color_green << "PASSED!" << style::reset << std::endl;
+    std::cout << style::bold << "congratulations!" << style::reset << std::endl;
     
+    std::cout << style::color_yellow << "summary " << prog1.source_path << ":" << style::reset 
+         << " avg " << (sum_time_1 / total_tests) << "s, max " << max_time_1 << "s" << std::endl;
+         
+    std::cout << style::color_yellow << "summary " << prog2.source_path << ":" << style::reset 
+         << " avg " << (sum_time_2 / total_tests) << "s, max " << max_time_2 << "s" << std::endl;
 
     return 0;
 }

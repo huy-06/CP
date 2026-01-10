@@ -1,4 +1,5 @@
-#include "point.hpp"
+#include "vector.hpp"
+#include "segment.hpp"
 
 #ifndef CP_DS_GEO_LINE
 #define CP_DS_GEO_LINE
@@ -6,18 +7,22 @@ namespace cp {
 namespace ds {
 
 template<class Tp>
-struct line {
-    point<Tp> a;
-    point<Tp> b;
+class line {
+public:
+    using value_type = Tp;
 
-    line(const point<Tp>& a = point<Tp>(), const point<Tp>& b = point<Tp>()) : a(a), b(b) {}
+    point<value_type> p;
+    vector<value_type> v;
 
-    friend std::istream& operator>>(std::istream& is, line& l) {
-        return is >> l.a >> l.b;
-    }
+    line(const point<value_type>& p = point<value_type>(), const vector<value_type>& v = vector<value_type>())
+        : p(p), v(v) {}
 
-    friend std::ostream& operator<<(std::ostream& os, const line& l) {
-        return os << "[" << l.a << ", " << l.b << "]";
+    line(const point<value_type>& a, const point<value_type>& b)
+        : p(a), v(b - a) {}
+
+    line(const segment<value_type>& s) {
+        p = s.a;
+        v = s.b - s.a;
     }
 };
 

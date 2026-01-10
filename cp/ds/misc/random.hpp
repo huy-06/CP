@@ -229,11 +229,13 @@ public:
 } // namespace internal
 
 namespace ds {
+
 #if __cplusplus >= 201703L
-    inline internal::randomizer ran;
+    inline internal::randomizer random;
 #else
-    static internal::randomizer ran;
+    static internal::randomizer random;
 #endif
+
 } // namespace ds
 
 } // namespace cp

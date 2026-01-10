@@ -5,14 +5,18 @@
 namespace cp {
 namespace ds {
 
-template<class Tp>
-struct point {
-    Tp x;
-    Tp y;
+template <class Tp>
+class point {
+public:
+    using value_type = Tp;
 
-    point(const Tp& x = 0, const Tp& y = 0) : x(x), y(y) {}
+    value_type x;
+    value_type y;
 
-    template<class U>
+    point(const value_type& x = value_type(), const value_type& y = value_type()) 
+        : x(x), y(y) {}
+
+    template <class U>
     operator point<U>() {
         return point<U>(U(x), U(y));
     }
@@ -25,11 +29,11 @@ struct point {
         x -= p.x; y -= p.y; return *this;
     }
 
-    point& operator*=(const Tp& v) & {
+    point& operator*=(const value_type& v) & {
         x *= v; y *= v; return *this;
     }
 
-    point& operator/=(const Tp& v) & {
+    point& operator/=(const value_type& v) & {
         x /= v; y /= v; return *this;
     }
 
@@ -45,15 +49,15 @@ struct point {
         return a -= b;
     }
 
-    friend point operator*(point a, const Tp& b) {
+    friend point operator*(point a, const value_type& b) {
         return a *= b;
     }
 
-    friend point operator/(point a, const Tp& b) {
+    friend point operator/(point a, const value_type& b) {
         return a /= b;
     }
 
-    friend point operator*(const Tp& a, point b) {
+    friend point operator*(const value_type& a, point b) {
         return b *= a;
     }
 

@@ -1,6 +1,6 @@
 
 #include <iostream> 
-#include "../../alg/math/matrix/matrix.hpp"
+#include "../../../alg/math/matrix/matrix.hpp"
 
 #ifndef CP_DS_MATRIX
 #define CP_DS_MATRIX
