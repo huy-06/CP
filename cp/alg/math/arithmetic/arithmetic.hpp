@@ -17,6 +17,11 @@ constexpr auto abs(const Tp& x) -> decltype(x.eps(), Tp()) {
     return (x < Tp(0)) ? -x : x;
 }
 
+template <typename Tp>
+constexpr auto abs(const Tp& x) -> decltype(x.mod(), Tp()) {
+    return x;
+}
+
 template <typename T1, typename T2>
 constexpr auto pow(const T1& base, const T2& exp) -> decltype(base.pow(exp), T1()) {
     return base.pow(exp);

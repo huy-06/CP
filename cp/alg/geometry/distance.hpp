@@ -1,5 +1,4 @@
 #include "intersect.hpp"
-#include "../../ds/geometry/ray.hpp"
 
 #ifndef CP_ALG_GEOMETRY_DISTANCE
 #define CP_ALG_GEOMETRY_DISTANCE

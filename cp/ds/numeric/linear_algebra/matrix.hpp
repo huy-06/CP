@@ -93,10 +93,7 @@ public:
         return matrix(alg::inverse(data()));
     }
 
-    std::pair<
-        std::vector<value_type>, 
-        std::vector<std::vector<value_type>>
-    > solve_linear_system(const std::vector<value_type>& b) const  {
+    auto solve_linear_system(const std::vector<value_type>& b) const -> std::pair<std::vector<Tp>, std::vector<std::vector<Tp>>>  {
         return alg::solve_linear_system(data(), b);
     }
 
@@ -188,5 +185,4 @@ private:
 
 } // namespace ds
 } // namespace cp
-
 #endif

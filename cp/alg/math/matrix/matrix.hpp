@@ -1,7 +1,6 @@
 #include <vector>
 #include <cassert>
-#include "../../../cst/real.hpp"
-#include "../../../init/constexpr.hpp"
+#include "../arithmetic/arithmetic.hpp"
 
 #ifndef CP_ALG_MATH_MATRIX
 #define CP_ALG_MATH_MATRIX
@@ -9,14 +8,11 @@ namespace cp {
 
 namespace internal {
 
-template <typename Tp>
-bool is_zero(const Tp& x) {
-    if constexpr (std::is_floating_point<Tp>::value) {
-        return std::abs(x) < cst::eps;
-    } else {
-        return x == Tp(0);
-    }
-}
+template <typename T, typename = void>
+struct needs_pivoting : std::is_floating_point<T> {};
+
+template <typename T>
+struct needs_pivoting<T, std::void_t<decltype(T::eps())>> : std::true_type {};
 
 } // namespace internal
 
@@ -47,7 +43,7 @@ std::vector<std::vector<Tp>> multiply(const std::vector<std::vector<Tp>>& A,
     std::vector<std::vector<Tp>> C(na, std::vector<Tp>(mb, Tp(0)));
     for (int i = 0; i < na; ++i) {
         for (int k = 0; k < ma; ++k) {
-            if (A[i][k] == 0) {
+            if (A[i][k] == Tp(0)) {
                 continue;
             }
             for (int j = 0; j < mb; ++j) {
@@ -109,9 +105,9 @@ Tp determinant(std::vector<std::vector<Tp>> A) {
     for (int i = 0; i < n; ++i) {
         int pivot = i;
 
-        if constexpr (std::is_floating_point<Tp>::value) {
+        if constexpr (internal::needs_pivoting<Tp>::value) {
             for (int j = i + 1; j < n; ++j) {
-                if (std::abs(A[j][i]) > std::abs(A[pivot][i])) {
+                if (abs(A[j][i]) > abs(A[pivot][i])) {
                     pivot = j;
                 }
             }
@@ -121,7 +117,7 @@ Tp determinant(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || A[pivot][i] == 0) {
+        if (pivot == n || A[pivot][i] == Tp(0)) {
             return Tp(0);
         }
 
@@ -134,7 +130,7 @@ Tp determinant(std::vector<std::vector<Tp>> A) {
         Tp inv = Tp(1) / A[i][i];
 
         for (int j = i + 1; j < n; ++j) {
-            if (A[j][i] == 0) {
+            if (A[j][i] == Tp(0)) {
                 continue;
             }
 
@@ -161,9 +157,9 @@ int rank(std::vector<std::vector<Tp>> A) {
     for (int j = 0; j < m && r < n; ++j) {
         int pivot = r;
 
-        if constexpr (std::is_floating_point<Tp>::value) {
+        if constexpr (internal::needs_pivoting<Tp>::value) {
             for (int i = r + 1; i < n; ++i) {
-                if (std::abs(A[i][j]) > std::abs(A[pivot][j])) {
+                if (abs(A[i][j]) > abs(A[pivot][j])) {
                     pivot = i;
                 }
             }
@@ -173,7 +169,7 @@ int rank(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || A[pivot][j] == 0) {
+        if (pivot == n || A[pivot][j] == Tp(0)) {
             continue;
         }
 
@@ -185,7 +181,7 @@ int rank(std::vector<std::vector<Tp>> A) {
         }
 
         for (int i = 0; i < n; ++i) {
-            if (i != r && A[i][j] != 0) {
+            if (i != r && A[i][j] != Tp(0)) {
                 Tp factor = A[i][j];
                 for (int k = j; k < m; ++k) {
                     A[i][k] -= factor * A[r][k];
@@ -199,7 +195,6 @@ int rank(std::vector<std::vector<Tp>> A) {
     return r;
 }
 
-// Trả về {} nếu không có nghịch đảo
 template <typename Tp>
 std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
     assert(!A.empty() && A.size() == A[0].size());
@@ -210,10 +205,10 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
     for (int i = 0; i < n; ++i) {
         int pivot = i;
 
-        if constexpr (std::is_floating_point<Tp>::value) {
+        if constexpr (internal::needs_pivoting<Tp>::value) {
             for (int j = i + 1; j < n; ++j) {
-                if constexpr (std::abs(A[j][i]) > std::abs(A[pivot][i]))  {
-                    pivot = i;
+                if (abs(A[j][i]) > abs(A[pivot][i])) {
+                    pivot = j;
                 }
             }
         } else {
@@ -222,7 +217,7 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || A[pivot][i] == 0) {
+        if (pivot == n || A[pivot][i] == Tp(0)) {
             return {};
         }
 
@@ -238,7 +233,7 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
         }
 
         for (int row = 0; row < n; ++row) {
-            if (row != i && A[row][i] != 0) {
+            if (row != i && A[row][i] != Tp(0)) {
                 Tp factor = A[row][i];
                 for (int k = i; k < n; ++k) {
                     A[row][k] -= factor * A[i][k];
@@ -253,14 +248,8 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
     return B;
 }
 
-// Giải hệ phương trình tuyến tính Ax = b 
-// Trả về {vector nghiệm riêng, vector các nghiệm cơ sở của Kernel}
-// Nếu vô nghiệm, trả về pair rỗng.
 template <typename Tp>
-auto solve_linear_system(
-    std::vector<std::vector<Tp>> A,
-    const std::vector<Tp>& b
-) -> std::pair<std::vector<Tp>, std::vector<std::vector<Tp>>> {
+auto solve_linear_system(std::vector<std::vector<Tp>> A, const std::vector<Tp>& b) -> std::pair<std::vector<Tp>, std::vector<std::vector<Tp>>> {
     assert(A.size() == b.size());
 
     int n = int(A.size());
@@ -276,9 +265,9 @@ auto solve_linear_system(
     for (int j = 0; j < m && rank < n; ++j) {
         int pivot = rank;
 
-        if constexpr (std::is_floating_point<Tp>::value) {
+        if constexpr (internal::needs_pivoting<Tp>::value) {
             for (int i = rank + 1; i < n; ++i) {
-                if (std::abs(A[i][j]) > std::abs(A[pivot][j])) {
+                if (abs(A[i][j]) > abs(A[pivot][j])) {
                     pivot = i;
                 }
             }
@@ -288,7 +277,7 @@ auto solve_linear_system(
             }
         }
 
-        if (pivot == n || A[pivot][j] == 0) {
+        if (pivot == n || A[pivot][j] == Tp(0)) {
             continue;
         }
 
@@ -301,7 +290,7 @@ auto solve_linear_system(
         }
 
         for (int i = 0; i < n; ++i) {
-            if (i != rank && A[i][j] != 0) {
+            if (i != rank && A[i][j] != Tp(0)) {
                 Tp factor = A[i][j];
                 for (int k = j; k <= m; ++k) {
                     A[i][k] -= factor * A[rank][k];
@@ -313,7 +302,7 @@ auto solve_linear_system(
     }
 
     for (int i = rank; i < n; ++i) {
-        if (A[i][m] != 0) {
+        if (A[i][m] != Tp(0)) {
             return {};
         }
     }
@@ -321,14 +310,11 @@ auto solve_linear_system(
     std::vector<Tp> x(m, Tp(0));
     for (int j = 0; j < m; ++j) {
         if (col_pivot[j] != -1) {
-            if (col_pivot[j] != -1) {
-                x[j] = A[col_pivot[j]][m];
-            }
+            x[j] = A[col_pivot[j]][m];
         }
     }
 
     std::vector<std::vector<Tp>> kernel;
-    kernel.reserve(m);
     for (int j = 0; j < m; ++j) {
         if (col_pivot[j] == -1) {
             std::vector<Tp> v(m, Tp(0));
