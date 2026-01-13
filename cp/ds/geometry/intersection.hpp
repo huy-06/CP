@@ -1,5 +1,6 @@
 #include <cassert>
 #include "line.hpp"
+#include "ray.hpp"
 
 #ifndef CP_DS_GEO_INTERSECTION
 #define CP_DS_GEO_INTERSECTION
@@ -30,15 +31,21 @@ public:
         return type == 2;
     }
 
-    bool is_line() const {
+    bool is_ray() const {
         return type == 3;
+    }
+
+    bool is_line() const {
+        return type == 4;
     }
 
     std::string get_type() const {
         if (type == 0) return "none";
         if (type == 1) return "point";
         if (type == 2) return "segment";
-        return "line";
+        if (type == 3) return "ray";
+        if (type == 4) return "line";
+        return "";
     }
 
     point<value_type> get_point() const {
@@ -49,6 +56,11 @@ public:
     segment<value_type> get_segment() const {
         assert(is_segment());
         return segment<value_type>(a, b);
+    }
+
+    ray<value_type> get_ray() const {
+        assert(is_ray());
+        return ray<value_type>(a, b);
     }
 
     line<value_type> get_line() const {

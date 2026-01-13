@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
-#include "../../../alg/math/number_theory/is_prime.hpp"
 #include "../../../alg/math/modular/inverse.hpp"
+#include "../../../alg/math/number_theory/is_prime.hpp"
 
 #ifndef CP_DS_MODULAR_STATIC_MOD_INT
 #define CP_DS_MODULAR_STATIC_MOD_INT

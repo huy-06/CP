@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
-#include "prime.hpp"
+#include "is_prime.hpp"
 
 #ifndef CP_ALG_MATH_NUM_PRIME
 #define CP_ALG_MATH_NUM_PRIME

@@ -1,7 +1,6 @@
 #include "convolution.hpp"
 #include "../../../ds/numeric/modular/combinatorics.hpp"
-#include "../number_theory/pow.hpp"
-#include "../number_theory/sqrt.hpp"
+#include "../arithmetic/arithmetic.hpp"
 
 #ifndef CP_ALG_MATH_POLYNOMIAL_ALGEBRA
 #define CP_ALG_MATH_POLYNOMIAL_ALGEBRA

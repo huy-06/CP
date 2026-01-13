@@ -1,8 +1,8 @@
 #include "intersect.hpp"
 #include "../../ds/geometry/polygon.hpp"
 
-#ifndef CP_ALG_GEOMETRY_POLYGON
-#define CP_ALG_GEOMETRY_POLYGON
+#ifndef CP_ALG_GEOMETRY_POLYGONS
+#define CP_ALG_GEOMETRY_POLYGONS
 namespace cp {
 namespace alg {
 
@@ -12,9 +12,9 @@ Tp area(const ds::polygon<Tp>& poly) {
     int n = int(poly.size());
     if (n < 3) return res;
     for (int i = 0; i < n; ++i) {
-        res += cross(poly[i], poly[(i + 1) % n]);
+        res += cross(ds::vector<Tp>(poly[i]), ds::vector<Tp>(poly[(i + 1) % n]));
     }
-    return res / Tp(2);
+    return abs(res / Tp(2));
 }
 
 /// @return 0: nằm ngoài, 1: nằm trên cạnh, 2: nằm trong

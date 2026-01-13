@@ -47,7 +47,7 @@ std::vector<std::vector<Tp>> multiply(const std::vector<std::vector<Tp>>& A,
     std::vector<std::vector<Tp>> C(na, std::vector<Tp>(mb, Tp(0)));
     for (int i = 0; i < na; ++i) {
         for (int k = 0; k < ma; ++k) {
-            if (internal::is_zero(A[i][k])) {
+            if (A[i][k] == 0) {
                 continue;
             }
             for (int j = 0; j < mb; ++j) {
@@ -121,7 +121,7 @@ Tp determinant(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || internal::is_zero(A[pivot][i])) {
+        if (pivot == n || A[pivot][i] == 0) {
             return Tp(0);
         }
 
@@ -134,7 +134,7 @@ Tp determinant(std::vector<std::vector<Tp>> A) {
         Tp inv = Tp(1) / A[i][i];
 
         for (int j = i + 1; j < n; ++j) {
-            if (internal::is_zero(A[j][i])) {
+            if (A[j][i] == 0) {
                 continue;
             }
 
@@ -173,7 +173,7 @@ int rank(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || internal::is_zero(A[pivot][j])) {
+        if (pivot == n || A[pivot][j] == 0) {
             continue;
         }
 
@@ -185,7 +185,7 @@ int rank(std::vector<std::vector<Tp>> A) {
         }
 
         for (int i = 0; i < n; ++i) {
-            if (i != r && !internal::is_zero(A[i][j])) {
+            if (i != r && A[i][j] != 0) {
                 Tp factor = A[i][j];
                 for (int k = j; k < m; ++k) {
                     A[i][k] -= factor * A[r][k];
@@ -222,7 +222,7 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
             }
         }
 
-        if (pivot == n || internal::is_zero(A[pivot][i])) {
+        if (pivot == n || A[pivot][i] == 0) {
             return {};
         }
 
@@ -238,7 +238,7 @@ std::vector<std::vector<Tp>> inverse(std::vector<std::vector<Tp>> A) {
         }
 
         for (int row = 0; row < n; ++row) {
-            if (row != i && !internal::is_zero(A[row][i])) {
+            if (row != i && A[row][i] != 0) {
                 Tp factor = A[row][i];
                 for (int k = i; k < n; ++k) {
                     A[row][k] -= factor * A[i][k];
@@ -288,7 +288,7 @@ auto solve_linear_system(
             }
         }
 
-        if (pivot == n || internal::is_zero(A[pivot][j])) {
+        if (pivot == n || A[pivot][j] == 0) {
             continue;
         }
 
@@ -301,7 +301,7 @@ auto solve_linear_system(
         }
 
         for (int i = 0; i < n; ++i) {
-            if (i != rank && !internal::is_zero(A[i][j])) {
+            if (i != rank && A[i][j] != 0) {
                 Tp factor = A[i][j];
                 for (int k = j; k <= m; ++k) {
                     A[i][k] -= factor * A[rank][k];
@@ -313,7 +313,7 @@ auto solve_linear_system(
     }
 
     for (int i = rank; i < n; ++i) {
-        if (!internal::is_zero(A[i][m])) {
+        if (A[i][m] != 0) {
             return {};
         }
     }
