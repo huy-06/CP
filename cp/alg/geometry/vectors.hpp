@@ -20,18 +20,18 @@ Tp cross(const ds::vector<Tp>& a, const ds::vector<Tp>& b) {
 }
 
 template <class Tp>
-Tp square(const ds::vector<Tp>& p) {
-    return dot(p, p);
+Tp square(const ds::vector<Tp>& v) {
+    return dot(v, v);
 }
 
 template <class Tp>
-Tp length(const ds::vector<Tp>& p) {
-    return sqrt(square(p));
+Tp length(const ds::vector<Tp>& v) {
+    return sqrt(square(v));
 }
 
 template <class Tp>
-ds::vector<Tp> normalize(const ds::vector<Tp>& p) {
-    return p / length(p);
+ds::vector<Tp> normalize(const ds::vector<Tp>& v) {
+    return v / length(v);
 }
 
 template <class Tp>
@@ -52,6 +52,11 @@ Tp angle(const ds::vector<Tp>& a, const ds::vector<Tp>& b) {
 template <class Tp>
 Tp to_degree(Tp radian) {
     return radian * Tp(180) / Tp(cst::pi);
+}
+
+template <class Tp>
+Tp slope(const ds::vector<Tp>& v) {
+    return v.y / v.x;
 }
 
 } // namespace alg
