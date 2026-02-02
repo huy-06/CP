@@ -204,7 +204,6 @@ public:
         size_type i = find_index(key);
         
         if (!table[i].occupied) return false;
-
         
         table[i].occupied = false;
         --num_elements;
