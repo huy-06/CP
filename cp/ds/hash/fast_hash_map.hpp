@@ -200,6 +200,37 @@ public:
         return table[find_index(key)].occupied;
     }
 
+    bool erase(const Key& key) {
+        size_type i = find_index(key);
+        
+        if (!table[i].occupied) return false;
+
+        
+        table[i].occupied = false;
+        --num_elements;
+
+        size_type j = i;
+        while (true) {
+            j = (j + 1) & mask;
+
+            if (!table[j].occupied) break;
+
+            size_type k = hasher(table[j].first) & mask;
+            
+            bool k_is_in_cyclic_interval = (i < j) ? (i < k && k <= j) : (i < k || k <= j);
+
+            if (!k_is_in_cyclic_interval) {
+                table[i].first = std::move(table[j].first);
+                table[i].second = std::move(table[j].second);
+                table[i].occupied = true;
+
+                table[j].occupied = false;
+                i = j;
+            }
+        }
+        return true;
+    }
+
 private:
     size_type num_elements;
     size_type table_size;

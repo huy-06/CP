@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cmath>
+#include <iomanip>
 #include "../../../init/constexpr.hpp"
 #include "../../../alg/math/arithmetic/arithmetic.hpp"
 
@@ -36,6 +36,21 @@ public:
 
     explicit constexpr operator value_type() const noexcept {
         return value;
+    }
+
+    static constexpr int precision() noexcept {
+        value_type e = eps();
+        if (e >= static_cast<value_type>(1.0)) {
+            return 0;
+        }
+
+        int p = 0;
+        while (e < static_cast<value_type>(0.99)) {
+            e *= 10;
+            ++p;
+        }
+
+        return p;
     }
 
     constexpr real inv() const {
@@ -121,7 +136,7 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os, const real& r) {
-        return os << r.value;
+        return os << std::fixed << std::setprecision(precision()) << r.value;
     }
 
     friend std::istream& operator>>(std::istream& is, real& r) {
