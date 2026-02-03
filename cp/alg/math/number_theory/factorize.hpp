@@ -25,13 +25,13 @@ Tp pollard_brent(Tp n) {
     while (g == 1) {
         x = y;
         for (int i = 0; i < r; ++i)
-            y = (mod::mul(y, y, n) + c) % n;
+            y = (alg::mod::safe_mul(y, y, n) + c) % n;
         Tp k = 0;
         while (k < r && g == 1) {
             ys = y;
             for (int i = 0; i < std::min(m, r - k); ++i) {
-                y = (mod::mul(y, y, n) + c) % n;
-                q = mod::mul(q, (x > y) ? (x - y) : (y - x), n);
+                y = (alg::mod::safe_mul(y, y, n) + c) % n;
+                q = alg::mod::safe_mul(q, (x > y) ? (x - y) : (y - x), n);
             }
             g = std::gcd(q, n);
             k += m;
@@ -40,7 +40,7 @@ Tp pollard_brent(Tp n) {
     }
     if (g == n) {
         do {
-            ys = (mod::mul(ys, ys, n) + c) % n;
+            ys = (alg::mod::safe_mul(ys, ys, n) + c) % n;
             g = std::gcd((x > ys) ? (x - ys) : (ys - x), n);
         } while (g == 1);
     }
