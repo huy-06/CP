@@ -12,7 +12,7 @@ template <typename Edge>
 class tecc : public graph<Edge> {
 public:
     using edge_type = Edge;
-    using graph<edge_type>::E;
+    using graph<edge_type>::num_edges;
     using graph<edge_type>::index;
     
 

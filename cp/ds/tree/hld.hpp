@@ -9,7 +9,7 @@ template <typename Edge>
 class hld : public tree<Edge> {
 public:
     using edge_type = Edge;
-    using tree<edge_type>::V;
+    using tree<edge_type>::num_vertices;
 
     hld(int n = 0) {
         init(n);

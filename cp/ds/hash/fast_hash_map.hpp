@@ -24,6 +24,10 @@ public:
         const Key& first;
         Val& second;
 
+        operator std::pair<Key, Val>() const {
+            return std::make_pair(first, second);
+        }
+
         operator std::tuple<const Key&, Val&>() const {
             return std::forward_as_tuple(first, second);
         }
@@ -36,6 +40,10 @@ public:
     struct const_entry {
         const Key& first;
         const Val& second;
+
+        operator std::pair<Key, Val>() const {
+            return std::make_pair(first, second);
+        }
 
         operator std::tuple<const Key&, const Val&>() const {
             return std::forward_as_tuple(first, second);

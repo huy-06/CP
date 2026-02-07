@@ -32,7 +32,7 @@ std::vector<ds::static_mod_int<mod>> integral(const std::vector<ds::static_mod_i
     if (p.empty()) {
         return std::vector<mint>();
     }
-    static ds::combination<mint> comb;
+    static ds::combinatorics<mint> comb;
     std::vector<mint> res(p.size() + 1);
     for (int i = 0; i < int(p.size()); ++i) {
         res[i + 1] = p[i] * comb.inv(i + 1);
@@ -247,7 +247,7 @@ std::vector<Tp> taylor_shift(const std::vector<Tp>& p, Tp c) {
     if (n == 0) return {};
     if (c == Tp(0)) return p;
 
-    static ds::combination<Tp> comb(n);
+    static ds::combinatorics<Tp> comb(n);
     
     std::vector<Tp> f(n), g(n);
     Tp cur_c = 1;

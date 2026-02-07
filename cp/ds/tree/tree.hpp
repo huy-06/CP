@@ -10,7 +10,7 @@ template <typename Edge>
 class tree : public graph<Edge> {
 public:
     using edge_type = Edge;
-    using graph<edge_type>::V;
+    using graph<edge_type>::num_vertices;
 
     tree(int n = 0) {
         init(n);
