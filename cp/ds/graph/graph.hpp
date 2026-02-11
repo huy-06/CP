@@ -9,62 +9,34 @@ namespace ds {
 template <typename Edge>
 class graph {
 public:
-    using edge_type = Edge;
+    template <typename Tp>
+    struct neighbors_base {
+        Tp *b, *e;
 
-    struct neighbors {
-        struct iterator {
-            using iterator_category = std::forward_iterator_tag;
-            using value_type        = edge_type;
-            using difference_type   = std::ptrdiff_t;
-            using pointer           = edge_type*;
-            using reference         = edge_type&;
-
-            typename std::vector<int>::const_iterator it;
-            std::vector<edge_type>* edges_ptr;
-
-            edge_type& operator*() const {
-                return (*edges_ptr)[*it];
-            }
-
-            iterator& operator++() {
-                ++it;
-                return *this;
-            }
-
-            bool operator!=(const iterator& other) const {
-                return it != other.it;
-            }
-        };
-
-        typename std::vector<int>::const_iterator b, e;
-        std::vector<edge_type>* edges_ptr;
-
-        iterator begin() const {
-            return iterator{ b, edges_ptr };
+        Tp* begin() const {
+            return b;
         }
 
-        iterator end() const {
-            return iterator{ e, edges_ptr };
-        }
-
-        edge_type& operator[](int i) {
-            assert(0 <= i && i < size());
-            return (*edges_ptr)[b[i]];
-        }
-
-        const edge_type& operator[](int i) const {
-            assert(0 <= i && i < size());
-            return (*edges_ptr)[b[i]];
+        Tp* end() const {
+            return e;
         }
 
         int size() const {
-            return static_cast<int>(std::distance(b, e));
+            return static_cast<int>(e - b);
         }
 
-        int distance(const iterator& other) const {
-            return std::distance(b, other.it);
+        bool empty() const {
+            return b == e;
+        }
+
+        Tp& operator[](int i) const {
+            return b[i];
         }
     };
+
+    using edge_type = Edge;
+    using neighbors = neighbors_base<edge_type>;
+    using const_neighbors = neighbors_base<const edge_type>;
 
     graph(int n = 0, int m = 0) {
         init(n, m);
@@ -77,12 +49,10 @@ public:
     void init(int n = 0, int m = 0) {
         this->n = n;
         built = false;
+        head.assign(n + 1, 0);
+        indeg_cnt.assign(n, 0);
         edge_list.clear();
         edge_list.reserve(m);
-        // head.assign(n + 1, 0);
-        // edge_idxs.clear();
-        // edge_idxs.reserve(m);
-        // indeg_cnt.assign(n, 0);
     }
 
     void init(const std::vector<edge_type>& edges) {
@@ -135,13 +105,14 @@ public:
             head[i] += head[i - 1];
         }
 
-        edge_idxs.assign(edge_list.size(), 0);
-        std::vector<int> cur(head.begin(), head.begin() + n);
+        std::vector<edge_type> sorted_edges(edge_list.size());
+        std::vector<int> cur = head;
 
-        for (int i = 0; i < static_cast<int>(edge_list.size()); ++i) {
-            edge_idxs[cur[edge_list[i].from]++] = i;
+        for (const auto& e : edge_list) {
+            sorted_edges[cur[e.from]++] = e;
         }
 
+        edge_list = std::move(sorted_edges);
         built = true;
     }
 
@@ -201,6 +172,7 @@ public:
 
     int indeg(int u) const {
         assert(0 <= u && u < num_vertices());
+        if (!built) const_cast<graph*>(this)->build();
         return indeg_cnt[u];
     }
 
@@ -210,28 +182,33 @@ public:
         return head[u + 1] - head[u];
     }
 
-    neighbors operator[](int u) {
+    neighbors adj(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
         return neighbors {
-            edge_idxs.begin() + head[u],
-            edge_idxs.begin() + head[u + 1],
-            &edge_list
-        };
-    }
-    
-    neighbors operator[](int u) const {
-        assert(0 <= u && u < num_vertices());
-        if (!built) const_cast<graph*>(this)->build();
-        return neighbors {
-            const_cast<std::vector<int>&>(edge_idxs).begin() + head[u],
-            const_cast<std::vector<int>&>(edge_idxs).begin() + head[u + 1],
-            const_cast<std::vector<edge_type>*>(&edge_list)
+            edge_list.data() + head[u],
+            edge_list.data() + head[u + 1]
         };
     }
 
-    void print() {
-        
+    const_neighbors adj(int u) const {
+        assert(0 <= u && u < num_vertices());
+        if (!built) const_cast<graph*>(this)->build();
+        return const_neighbors {
+            edge_list.data() + head[u],
+            edge_list.data() + head[u + 1]
+        };
+    }
+
+    neighbors operator[](int u) {
+        return adj(u);
+    }
+
+    const_neighbors operator[](int u) const {
+        return adj(u);
+    }
+
+    void print() { 
 //<
 #ifdef CP_DEBUG
         std::stringstream ss;
@@ -239,7 +216,7 @@ public:
             ss << e << '\n';
         }
         std::ofstream out("cp/debug/test_input.txt");
-        out << n << ' ' << edge_idxs.size() << '\n';
+        out << n << ' ' << edge_list.size() << '\n';
         std::string s;
         while (std::getline(ss, s)) {
             for (char c : s) {
@@ -268,9 +245,9 @@ public:
     void sort(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
-        std::sort(edge_idxs.begin() + head[u], edge_idxs.begin() + head[u + 1],
-            [&](int i, int j) {
-                return edge_list[i].to < edge_list[j].to;
+        std::sort(edge_list.begin() + head[u], edge_list.begin() + head[u + 1],
+            [&](const edge_type& a, const edge_type& b) {
+                return a.to < b.to;
             }
         );
     }
@@ -284,7 +261,7 @@ public:
 
     int index(const edge_type& e) const {
         assert(!edge_list.empty());
-        return static_cast<int>(&e - &edge_list[0]);
+        return static_cast<int>(&e - edge_list.data());
     }
 
     edge_type* edge_at(int i) {
@@ -301,7 +278,6 @@ protected:
     int n;
     bool built;
     std::vector<int> head;
-    std::vector<int> edge_idxs;
     std::vector<int> indeg_cnt;
     std::vector<edge_type> edge_list;
 };

@@ -22,9 +22,9 @@ struct string_hash {
     }
 };
 
-class bundler {
+class cpp_bundler {
 public:
-    bundler(const std::string& output_path) : fout(output_path, std::ios::trunc) {
+    cpp_bundler(const std::string& output_path) : fout(output_path, std::ios::trunc) {
         if (!fout) {
             std::cerr << "Can not open output file: " << output_path << '\n';
             valid = false;
@@ -294,9 +294,9 @@ int main() {
 
     std::string submit_path = "E:\\Code\\CP\\Tasks\\CPP\\submit\\submit.cpp";
     
-    bundler app(submit_path);
-    if (app.is_valid()) {
-        app.process(root_path_str);
+    cpp_bundler bundler(submit_path);
+    if (bundler.is_valid()) {
+        bundler.process(root_path_str);
         // std::cerr << "Saved!\n";
     }
 

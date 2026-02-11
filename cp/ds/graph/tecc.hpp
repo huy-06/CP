@@ -108,6 +108,7 @@ private:
         auto key = [&](int u, int v) {
             return static_cast<long long>(u) * n + v;
         };
+        
         std::unordered_set<long long> seen;
         seen.reserve(num_edges() >> 1);
         for (int i = 0; i < num_edges(); i += 2) {

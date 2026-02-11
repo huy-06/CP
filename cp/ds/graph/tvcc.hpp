@@ -41,8 +41,10 @@ private:
         mrk.assign(n, false);
         cts.clear();
         cts.reserve(n);
+
         std::vector<int> in(n, -1), low(n, -1);
         int timer = 0;
+
         std::function<void(int, int)> dfs = [&](int u, int p) -> void {
             in[u] = low[u] = timer++;
             int c = 0;
@@ -64,11 +66,13 @@ private:
                 mrk[u] = true;
             }
         };
+
         for (int u = 0; u < n; ++u) {
             if (in[u] == -1) {
                 dfs(u, -1);
             }
         }
+        
         for (int u = 0; u < n; ++u) {
             if (mrk[u]) {
                 cts.push_back(u);

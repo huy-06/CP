@@ -4,7 +4,7 @@
 #include <queue>
 #include <limits>
 #include "../../cst/direction.hpp"
-#include "../../utils/trace_path.hpp"
+#include "../utils/trace_path.hpp"
 
 #ifndef CP_ALG_SP_GRID_BFS
 #define CP_ALG_SP_GRID_BFS
@@ -50,7 +50,7 @@ auto bfs(
             int nx = x + dx;
             int ny = y + dy;
 
-            if (nx < 0 || nx >= n || ny < 0 || ny >= m || !passable(nx, ny)) {
+            if (nx < 0 || nx >= n || ny < 0 || ny >= m || dis[nx][ny] != -1 || !passable(nx, ny)) {
                 continue;
             }
 
