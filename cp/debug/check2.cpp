@@ -7,21 +7,33 @@
 #include <chrono>
 #include <windows.h>
 #include "../cst/style.hpp"
-#include "cp/ds/misc/random.hpp"
+#include "../ds/misc/random.hpp"
 
 std::ofstream fout;
 auto random = cp::ds::random;
 
 void generate_test_case() {
-    
+    int t = random.next_int<int>(1, 1e2);
+    fout << t << '\n';
+    for (int tc = 0; tc < t; ++tc) {
+        int n = random.next_int<int>(1, 1e3);
+        fout << n << '\n';
+        for (int i = 1; i <= n; ++i) {
+            fout << random.next_int<long long>() << '\n';
+            fout << random.next_int<long long>() << '\n';
+            fout << random.next_int<long long>() << '\n';
+            fout << random.next_int<long long>() << '\n';
+        }
+    }
 }
 
-const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
-const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
+const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
+const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\c.cpp)";
+// const std::string path_source_2 = R"(E:\Code\CP\Tasks\Python\a.py)";
 const std::string input_file = "test_input.txt";
 const std::string debug_file = "debug.txt";
 const int total_tests = 100;
-const double time_limit = 3.0;
+const double time_limit = 5.0;
 
 namespace style = cp::cst::style;
 

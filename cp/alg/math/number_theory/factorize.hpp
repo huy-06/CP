@@ -10,22 +10,26 @@ namespace cp {
 
 namespace internal {
 
-template<typename Tp>
+template <typename Tp>
 Tp pollard_brent(Tp n) {
     if (n % 2 == 0) return 2;
     if (n % 3 == 0) return 3;
     if (n % 5 == 0) return 5;
+
     static std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
     std::uniform_int_distribution<Tp> dist(1, n - 1);
+
     Tp y = dist(rng);
     Tp c = dist(rng);
     Tp m = dist(rng);
     Tp g = 1, r = 1, q = 1;
     Tp x, ys;
+
     while (g == 1) {
         x = y;
         for (int i = 0; i < r; ++i)
             y = (alg::mod::safe_mul(y, y, n) + c) % n;
+
         Tp k = 0;
         while (k < r && g == 1) {
             ys = y;
@@ -33,17 +37,20 @@ Tp pollard_brent(Tp n) {
                 y = (alg::mod::safe_mul(y, y, n) + c) % n;
                 q = alg::mod::safe_mul(q, (x > y) ? (x - y) : (y - x), n);
             }
+
             g = std::gcd(q, n);
             k += m;
         }
         r *= 2;
     }
+
     if (g == n) {
         do {
             ys = (alg::mod::safe_mul(ys, ys, n) + c) % n;
             g = std::gcd((x > ys) ? (x - ys) : (ys - x), n);
         } while (g == 1);
     }
+    
     return g;
 }
 
@@ -52,7 +59,7 @@ Tp pollard_brent(Tp n) {
 
 namespace alg {
 
-template<typename Tp>
+template <typename Tp>
 constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
     std::vector<Tp> factors;
     if (n < 2) return {};

@@ -1,5 +1,8 @@
 //! #include <bits/stdc++.h>
 //<
+#ifndef CP_LIBRARY
+#define CP_LIBRARY
+
 #define CP_DEBUG
 // #define COUT_CYAN
 
@@ -28,4 +31,6 @@
 #include "color.hpp"
 #include "../debug/debug.h"
 // #include "constexpr.hpp"
+
+#endif
 //>
