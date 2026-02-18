@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include "../edge/edge.hpp"
 
 #ifndef CP_DS_GRAPH
 #define CP_DS_GRAPH

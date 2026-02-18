@@ -13,18 +13,18 @@ class dynamic_mod_int {
 public:
     using value_type = std::make_unsigned_t<Tp>;
 
-    constexpr dynamic_mod_int() noexcept : value(0) {}
+    dynamic_mod_int() noexcept : value(0) {}
 
 #if __cplusplus >= 201402L
     template<std::unsigned_integral U>
-    constexpr dynamic_mod_int(const U& x) : value(x % mod()) {}
+    dynamic_mod_int(const U& x) : value(x % mod()) {}
 
     template<std::signed_integral S>
-    constexpr dynamic_mod_int(S x) {
+    dynamic_mod_int(S x) {
         value = alg::mod::safe_mod(x, mod());
     }
 #else
-    constexpr dynamic_mod_int(long long x) {
+    dynamic_mod_int(long long x) {
         value = alg::mod::safe_mod(x, mod());
     }
 #endif 
@@ -39,87 +39,87 @@ public:
         return modular;
     }
 
-    constexpr value_type val() const noexcept {
+    value_type val() const noexcept {
         return value;
     }
 
-    explicit constexpr operator value_type() const noexcept {
+    explicit operator value_type() const noexcept {
         return value;
     }
 
     template<typename Int>
-    constexpr dynamic_mod_int pow(Int k) const noexcept {
+    dynamic_mod_int pow(Int k) const noexcept {
         return alg::mod::pow_mod(value, k, mod());
     }
 
-    constexpr dynamic_mod_int inv() const noexcept {
+    dynamic_mod_int inv() const noexcept {
         value_type g, inv;
         std::tie(g, inv) = alg::mod::inverse(value, mod());
         assert(g == 1);
         return dynamic_mod_int(inv);
     }
 
-    constexpr dynamic_mod_int operator+() const noexcept {
+    dynamic_mod_int operator+() const noexcept {
         return *this;
     }
 
-    constexpr dynamic_mod_int operator-() const noexcept {
+    dynamic_mod_int operator-() const noexcept {
         return dynamic_mod_int(value ? mod() - value : 0);
     }
 
-    constexpr dynamic_mod_int& operator+=(const dynamic_mod_int& rhs) noexcept {
+    dynamic_mod_int& operator+=(const dynamic_mod_int& rhs) noexcept {
         value += rhs.val();
         if (value >= mod()) value -= mod();
         return *this;
     }
 
-    constexpr dynamic_mod_int& operator-=(const dynamic_mod_int& rhs) noexcept {
+    dynamic_mod_int& operator-=(const dynamic_mod_int& rhs) noexcept {
         value = value >= rhs.val() ? value - rhs.val() : value + mod() - rhs.val();
         return *this;
     }
 
-    constexpr dynamic_mod_int& operator*=(const dynamic_mod_int& rhs) noexcept {
+    dynamic_mod_int& operator*=(const dynamic_mod_int& rhs) noexcept {
         value = alg::mod::safe_mul(value, rhs.val(), mod());
         return *this;
     }
 
-    constexpr dynamic_mod_int& operator/=(const dynamic_mod_int& rhs) noexcept {
+    dynamic_mod_int& operator/=(const dynamic_mod_int& rhs) noexcept {
         return *this *= rhs.inv();
     }
 
-    constexpr dynamic_mod_int& operator++() noexcept {
+    dynamic_mod_int& operator++() noexcept {
         return *this += 1;
     }
 
-    constexpr dynamic_mod_int& operator--() noexcept {
+    dynamic_mod_int& operator--() noexcept {
         return *this -= 1;
     }
 
-    constexpr dynamic_mod_int operator++(int) noexcept {
+    dynamic_mod_int operator++(int) noexcept {
         dynamic_mod_int res = *this;
         ++*this;
         return res;
     }
 
-    constexpr dynamic_mod_int operator--(int) noexcept {
+    dynamic_mod_int operator--(int) noexcept {
         dynamic_mod_int res = *this;
         --*this;
         return res;
     }
 
-    friend constexpr dynamic_mod_int operator+(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
+    friend dynamic_mod_int operator+(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs += rhs;
     }
 
-    friend constexpr dynamic_mod_int operator-(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
+    friend dynamic_mod_int operator-(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs -= rhs;
     }
 
-    friend constexpr dynamic_mod_int operator*(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
+    friend dynamic_mod_int operator*(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs *= rhs;
     }
 
-    friend constexpr dynamic_mod_int operator/(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
+    friend dynamic_mod_int operator/(dynamic_mod_int lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs /= rhs;
     }
 
@@ -134,17 +134,17 @@ public:
         return is;
     }
 
-    friend constexpr bool operator==(const dynamic_mod_int& lhs, const dynamic_mod_int& rhs) noexcept {
+    friend bool operator==(const dynamic_mod_int& lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs.val() == rhs.val();
     }
 
-    friend constexpr bool operator!=(const dynamic_mod_int& lhs, const dynamic_mod_int& rhs) noexcept {
+    friend bool operator!=(const dynamic_mod_int& lhs, const dynamic_mod_int& rhs) noexcept {
         return lhs.val() != rhs.val();
     }
 
 private:
     value_type value;
-    static value_type modular;
+    static inline value_type modular;
 };
 
 } // namespace ds

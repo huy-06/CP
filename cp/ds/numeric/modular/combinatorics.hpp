@@ -1,5 +1,5 @@
 #include <vector>
-// #include "static.hpp"
+#include "static.hpp"
 
 #ifndef CP_DS_MODULAR_COMBINATORICS
 #define CP_DS_MODULAR_COMBINATORICS

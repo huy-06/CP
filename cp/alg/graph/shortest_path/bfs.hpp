@@ -24,7 +24,7 @@ std::pair<std::vector<int>,
         int u = q.front();
         q.pop();
 
-        for (const auto& e : g[u]) {
+        for (const auto& e : g.adj(u)) {
             int v = e.to;
             if (dis[v] == -1) {
                 dis[v] = dis[u] + 1;
