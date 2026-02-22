@@ -2,6 +2,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
+#include "../../init/constexpr.hpp"
 
 #ifndef CP_DS_BIT_SUBARRAY_XOR
 #define CP_DS_BIT_SUBARRAY_XOR
@@ -11,7 +12,7 @@ namespace ds {
 template <typename Tp>
 class subarray_xor {
 public:
-    static constexpr int bits = sizeof(Tp) * 8;
+    static cp_constexpr int bits = sizeof(Tp) * 8;
     using value_type = Tp;
 
     subarray_xor() { 

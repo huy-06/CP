@@ -15,19 +15,10 @@ public:
 
     dynamic_mod_int() noexcept : value(0) {}
 
-#if __cplusplus >= 201402L
-    template<std::unsigned_integral U>
-    dynamic_mod_int(const U& x) : value(x % mod()) {}
-
-    template<std::signed_integral S>
-    dynamic_mod_int(S x) {
+    template <typename U>
+    dynamic_mod_int(U x) {
         value = alg::mod::safe_mod(x, mod());
     }
-#else
-    dynamic_mod_int(long long x) {
-        value = alg::mod::safe_mod(x, mod());
-    }
-#endif 
 
     template <typename U>
     static void set_mod(const U& m) { 

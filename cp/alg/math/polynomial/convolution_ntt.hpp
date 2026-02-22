@@ -1,8 +1,8 @@
-#if __cplusplus >= 202002L && !defined(USE_FFT)
+// #if __cplusplus >= 202002L && !defined(USE_FFT)
 
-#include <bit>
 #include <vector>
 #include <algorithm>
+#include "../../bit/bit_ceil.hpp"
 #include "../modular/primitive_root.hpp"
 #include "../../../ds/numeric/modular/static.hpp"
 
@@ -12,19 +12,19 @@ namespace cp {
 
 namespace internal {
 
-template <ds::modular mint, int g = alg::mod::primitive_root(mint::mod())>
+template <typename mint, int g = alg::mod::primitive_root(mint::mod())>
 class fft_info {
 public:
-    static constexpr int rank2 = std::countr_zero(mint::mod() - 1);
+    static constexpr int rank2 = __builtin_ctz(mint::mod() - 1);
     std::array<mint, rank2 + 1> root;   // root[i]^(2^i) == 1
     std::array<mint, rank2 + 1> iroot;  // root[i] * iroot[i] == 1
 
-    std::array<mint, std::max(0, rank2 - 2 + 1)> rate2;
-    std::array<mint, std::max(0, rank2 - 2 + 1)> irate2;
+    std::array<mint, (rank2 - 2 + 1 > 0 ? rank2 - 2 + 1 : 0)> rate2;
+    std::array<mint, (rank2 - 2 + 1 > 0 ? rank2 - 2 + 1 : 0)> irate2;
 
-    std::array<mint, std::max(0, rank2 - 3 + 1)> rate3;
-    std::array<mint, std::max(0, rank2 - 3 + 1)> irate3;
-
+    std::array<mint, (rank2 - 3 + 1 > 0 ? rank2 - 3 + 1 : 0)> rate3;
+    std::array<mint, (rank2 - 3 + 1 > 0 ? rank2 - 3 + 1 : 0)> irate3;
+    
     fft_info() {
         root[rank2] = mint(g).pow((mint::mod() - 1) >> rank2);
         iroot[rank2] = root[rank2].inv();
@@ -54,10 +54,10 @@ public:
     }
 };
 
-template <ds::modular mint>
+template <typename mint>
 void butterfly(std::vector<mint>& a) {
     int n = static_cast<int>(a.size());
-    int h = std::countr_zero(static_cast<unsigned int>(n));
+    int h = __builtin_ctz(static_cast<unsigned int>(n));
 
     static const fft_info<mint> info;
 
@@ -75,7 +75,7 @@ void butterfly(std::vector<mint>& a) {
                     a[i + offset + p] = l - r;
                 }
                 if (s + 1 != (1 << len))
-                    rot *= info.rate2[std::countr_zero(~static_cast<unsigned int>(s))];
+                    rot *= info.rate2[__builtin_ctz(~static_cast<unsigned int>(s))];
             }
             len++;
         } else {
@@ -101,17 +101,17 @@ void butterfly(std::vector<mint>& a) {
                     a[i + offset + 3 * p] = a0 + na2 + (mod2 - a1na3imag);
                 }
                 if (s + 1 != (1 << len))
-                    rot *= info.rate3[std::countr_zero(~static_cast<unsigned int>(s))];
+                    rot *= info.rate3[__builtin_ctz(~static_cast<unsigned int>(s))];
             }
             len += 2;
         }
     }
 }
 
-template <ds::modular mint>
+template <typename mint>
 void butterfly_inv(std::vector<mint>& a) {
     int n = static_cast<int>(a.size());
-    int h = std::countr_zero(static_cast<unsigned int>(n));
+    int h = __builtin_ctz(static_cast<unsigned int>(n));
 
     static const fft_info<mint> info;
 
@@ -132,7 +132,7 @@ void butterfly_inv(std::vector<mint>& a) {
                     ;
                 }
                 if (s + 1 != (1 << (len - 1)))
-                    irot *= info.irate2[std::countr_zero(~static_cast<unsigned int>(s))];
+                    irot *= info.irate2[__builtin_ctz(~static_cast<unsigned int>(s))];
             }
             len--;
         } else {
@@ -164,14 +164,14 @@ void butterfly_inv(std::vector<mint>& a) {
                         irot3.val();
                 }
                 if (s + 1 != (1 << (len - 2)))
-                    irot *= info.irate3[std::countr_zero(~static_cast<unsigned int>(s))];
+                    irot *= info.irate3[__builtin_ctz(~static_cast<unsigned int>(s))];
             }
             len -= 2;
         }
     }
 }
 
-template <ds::modular mint>
+template <typename mint>
 std::vector<mint> convolution_naive(const std::vector<mint>& a, 
                                     const std::vector<mint>& b) {
     int n = static_cast<int>(a.size());
@@ -193,12 +193,12 @@ std::vector<mint> convolution_naive(const std::vector<mint>& a,
     return ans;
 }
 
-template <ds::modular mint>
+template <typename mint>
 std::vector<mint> convolution_fft(std::vector<mint> a, 
                                   std::vector<mint> b) {
     int n = static_cast<int>(a.size());
     int m = static_cast<int>(b.size());
-    int z = static_cast<int>(std::bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(alg::bit_ceil(static_cast<unsigned int>(n + m - 1)));
     a.resize(z);
     butterfly(a);
     b.resize(z);
@@ -213,18 +213,22 @@ std::vector<mint> convolution_fft(std::vector<mint> a,
     return a;
 }
 
+constexpr bool is_ntt_friendly(unsigned long long mod) {
+    return (mod - 1) % (1ULL << 20) == 0;
+}
+
 } // namespace internal
 
 namespace alg {
 
-template <ds::modular mint>
+template <typename mint, typename std::enable_if<!std::is_integral<mint>::value && internal::is_ntt_friendly(mint::mod()), int>::type = 0>
 std::vector<mint> convolution(std::vector<mint>&& a, 
                               std::vector<mint>&& b) {
     int n = static_cast<int>(a.size());
     int m = static_cast<int>(b.size());
     if (!n || !m) return {};
 
-    int z = static_cast<int>(std::bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(bit_ceil(static_cast<unsigned int>(n + m - 1)));
     assert((mint::mod() - 1) % z == 0);
 
     if (std::min(n, m) <= 60) {
@@ -234,14 +238,14 @@ std::vector<mint> convolution(std::vector<mint>&& a,
 }
 
 // cho mod int
-template <ds::modular mint>
+template <typename mint, typename std::enable_if<!std::is_integral<mint>::value && internal::is_ntt_friendly(mint::mod()), int>::type = 0>
 std::vector<mint> convolution(const std::vector<mint>& a, 
                               const std::vector<mint>& b) {
     int n = static_cast<int>(a.size());
     int m = static_cast<int>(b.size());
     if (!n || !m) return {};
 
-    int z = static_cast<int>(std::bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(bit_ceil(static_cast<unsigned int>(n + m - 1)));
     assert((mint::mod() - 1) % z == 0);
 
     if (std::min(n, m) <= 60) {
@@ -251,7 +255,7 @@ std::vector<mint> convolution(const std::vector<mint>& a,
 }
 
 // cho mod int
-template <unsigned int mod = 998244353, std::integral Tp>
+template <unsigned int mod = 998244353, typename Tp, typename std::enable_if<std::is_integral<Tp>::value, int>::type = 0>
 std::vector<Tp> convolution(const std::vector<Tp>& a, 
                             const std::vector<Tp>& b) {
     int n = static_cast<int>(a.size());
@@ -260,7 +264,7 @@ std::vector<Tp> convolution(const std::vector<Tp>& a,
 
     using mint = ds::static_mod_int<mod>;
 
-    int z = static_cast<int>(std::bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(bit_ceil(static_cast<unsigned int>(n + m - 1)));
     assert((mint::mod() - 1) % z == 0);
 
     std::vector<mint> a2(n), b2(m);
@@ -276,6 +280,57 @@ std::vector<Tp> convolution(const std::vector<Tp>& a,
         c[i] = c2[i].val();
     }
     return c;
+}
+
+template <typename mint, typename std::enable_if<!std::is_integral<mint>::value && !internal::is_ntt_friendly(mint::mod()), int>::type = 0>
+std::vector<mint> convolution(const std::vector<mint>& a,
+                              const std::vector<mint>& b) {
+    int n = static_cast<int>(a.size());
+    int m = static_cast<int>(b.size());
+    if (!n || !m) return {};
+
+    std::vector<long long> a_ll(n), b_ll(m);
+    for (int i = 0; i < n; ++i) a_ll[i] = a[i].val();
+    for (int i = 0; i < m; ++i) b_ll[i] = b[i].val();
+
+    static constexpr unsigned long long MOD1 = 754974721;
+    static constexpr unsigned long long MOD2 = 167772161;
+    static constexpr unsigned long long MOD3 = 469762049;
+
+    auto c1 = convolution<MOD1>(a_ll, b_ll);
+    auto c2 = convolution<MOD2>(a_ll, b_ll);
+    auto c3 = convolution<MOD3>(a_ll, b_ll);
+
+    static constexpr unsigned long long inv1_2 =
+        mod::inverse(MOD1, MOD2).second;
+    static constexpr unsigned long long inv12_3 =
+        mod::inverse(MOD1 * MOD2, MOD3).second;
+
+    int siz = n + m - 1;
+    std::vector<mint> res(siz);
+
+    long long current_mod = mint::mod();
+    long long m1 = MOD1 % current_mod;
+    long long m12 = (m1 * (MOD2 % current_mod)) % current_mod;
+
+    for (int i = 0; i < siz; ++i) {
+        long long x1 = c1[i];
+
+        long long x2 =  (static_cast<long long>(c2[i]) - x1) % static_cast<long long>(MOD2);
+        if (x2 < 0) x2 += MOD2;
+        x2 = (x2 * inv1_2) % MOD2;
+
+        long long x3 = (static_cast<long long>(c3[i]) - (x1 + x2 * MOD1) % MOD3) % static_cast<long long>(MOD3);
+        if (x3 < 0) x3 += MOD3;
+        x3 = (x3 * inv12_3) % MOD3;
+
+        mint val = x1;
+        val += mint(x2) * m1;
+        val += mint(x3) * m12;
+        res[i] = val;
+    }
+
+    return res;
 }
 
 // cho long long
@@ -355,59 +410,9 @@ std::vector<int> convolution(const std::vector<int>& a,
     return std::vector<int>(ans.begin(), ans.end());
 }
 
-std::vector<ds::mint1000000007> convolution(const std::vector<ds::mint1000000007>& a,
-                                            const std::vector<ds::mint1000000007>& b) {
-    int n = static_cast<int>(a.size());
-    int m = static_cast<int>(b.size());
-    if (!n || !m) return {};
-
-    std::vector<long long> a_ll(n), b_ll(m);
-    for (int i = 0; i < n; ++i) a_ll[i] = a[i].val();
-    for (int i = 0; i < m; ++i) b_ll[i] = b[i].val();
-
-    static constexpr unsigned long long MOD1 = 754974721;
-    static constexpr unsigned long long MOD2 = 167772161;
-    static constexpr unsigned long long MOD3 = 469762049;
-
-    auto c1 = convolution<MOD1>(a_ll, b_ll);
-    auto c2 = convolution<MOD2>(a_ll, b_ll);
-    auto c3 = convolution<MOD3>(a_ll, b_ll);
-
-    static constexpr unsigned long long inv1_2 = 
-        mod::inverse(MOD1, MOD2).second;
-    static constexpr unsigned long long inv12_3 = 
-        mod::inverse(MOD1 * MOD2, MOD3).second;
-
-    int siz = n + m - 1;
-    std::vector<ds::mint1000000007> res(siz);
-
-    long long mod = ds::mint1000000007::mod();
-    long long m1 = MOD1 % mod;
-    long long m12 = (m1 * (MOD2 % mod)) % mod;
-
-    for (int i = 0; i < siz; ++i) {
-        long long x1 = c1[i];
-
-        long long x2 =  (static_cast<long long>(c2[i]) - x1) % static_cast<long long>(MOD2);
-        if (x2 < 0) x2 += MOD2;
-        x2 = (x2 * inv1_2) % MOD2;
-
-        long long x3 = (static_cast<long long>(c3[i]) - (x1 + x2 * MOD1) % MOD3) % static_cast<long long>(MOD3);
-        if (x3 < 0) x3 += MOD3;
-        x3 = (x3 * inv12_3) % MOD3;
-
-        ds::mint1000000007 val = x1;
-        val += ds::mint1000000007(x2) * m1;
-        val += ds::mint1000000007(x3) * m12;
-        res[i] = val;
-    }
-
-    return res;
-}
-
 } // namespace alg
 
 } // namespace cp
 #endif
 
-#endif
+// #endif

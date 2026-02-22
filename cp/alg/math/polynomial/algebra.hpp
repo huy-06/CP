@@ -1,4 +1,4 @@
-#include "convolution.hpp"
+#include "convolution_ntt.hpp"
 #include "../../../ds/numeric/modular/combinatorics.hpp"
 #include "../arithmetic/arithmetic.hpp"
 
@@ -21,19 +21,13 @@ std::vector<Tp> derivative(const std::vector<Tp>& p) {
 }
 
 // Nguyên hàm: P(x) -> ∫P(x)dx (Hằng số C = 0)
-#if __cplusplus >= 202002L
-template <ds::modular mint>
-std::vector<mint> integral(const std::vector<mint>& p) {
-#else
-template <unsigned long long mod>
-std::vector<ds::static_mod_int<mod>> integral(const std::vector<ds::static_mod_int<mod>>& p) {
-    using mint = ds::static_mod_int<mod>;
-#endif
+template <typename Tp>
+auto integral(const std::vector<Tp>& p) -> std::vector<decltype(Tp::mod(), Tp())> {
     if (p.empty()) {
-        return std::vector<mint>();
+        return std::vector<Tp>();
     }
-    static ds::combinatorics<mint> comb;
-    std::vector<mint> res(p.size() + 1);
+    static ds::combinatorics<Tp> comb;
+    std::vector<Tp> res(p.size() + 1);
     for (int i = 0; i < int(p.size()); ++i) {
         res[i + 1] = p[i] * comb.inv(i + 1);
     }
@@ -42,7 +36,7 @@ std::vector<ds::static_mod_int<mod>> integral(const std::vector<ds::static_mod_i
 
 // Nguyên hàm: P(x) -> ∫P(x)dx (Hằng số C = 0)
 template <typename Tp>
-std::vector<Tp> integral(const std::vector<Tp>& p) {
+auto integral(const std::vector<Tp>& p) -> std::vector<typename std::enable_if<std::is_arithmetic<Tp>::value, Tp>::type> {
     if (p.empty()) {
         return std::vector<Tp>();
     }

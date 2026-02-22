@@ -1,28 +1,20 @@
-#if __cplusplus >= 202002L
-#include <bit>
-#endif
-
 #ifndef CP_ALG_BIT_CEIL
 #define CP_ALG_BIT_CEIL
 namespace cp {
-namespace alg {
 
-#if __cplusplus >= 202002L
+namespace internal {
 
-using std::bit_ceil;
-
-#else
-
-// @return same with std::bit::bit_ceil
-unsigned int bit_ceil(unsigned int n) {
-    unsigned int x = 1;
-    while (x < n) {
-        x <<= 1;
-    }
-    return x;
+constexpr unsigned int bit_ceil(unsigned int n, int shift) {
+    return shift == 32 ? n + 1 : bit_ceil(n | (n >> shift), shift << 1);
 }
 
-#endif
+} // namespace internal
+
+namespace alg {
+
+constexpr unsigned int bit_ceil(unsigned int n) {
+    return n <= 1 ? 1 : internal::bit_ceil(n - 1, 1);
+}
 
 } // namespace alg
 } // namespace cp

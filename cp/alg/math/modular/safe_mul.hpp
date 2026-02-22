@@ -3,6 +3,20 @@
 #ifndef CP_ALG_MOD_SAFE_MUL
 #define CP_ALG_MOD_SAFE_MUL
 namespace cp {
+
+namespace internal {
+
+constexpr unsigned long long safe_mul(unsigned long long a, unsigned long long b, unsigned long long mod, unsigned long long res) {
+    return b == 0 ? res : safe_mul(
+        a >= mod - a ? a + a - mod : a + a,
+        b >> 1,
+        mod, 
+        (b & 1) ? (res >= mod - a ? res + a - mod : res + a) : res
+    );
+}
+
+} // namespace internal
+
 namespace alg {
 namespace mod {
 
@@ -18,17 +32,7 @@ constexpr unsigned long long safe_mul(unsigned long long a, unsigned long long b
 #ifdef __SIZEOF_INT128__
     return static_cast<unsigned long long>(static_cast<__uint128_t>(a) * b % mod);
 #else
-    unsigned long long res = 0;
-    while (b > 0) {
-        if (b & 1) {
-            res += a;
-            if (res >= mod) res -= mod;
-        }
-        a <<= 1;
-        if (a >= mod) a -= mod;
-        b >>= 1;
-    }
-    return res;
+    return internal::safe_mul(a, b, mod, 0);
 #endif
 }
 

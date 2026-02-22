@@ -60,7 +60,7 @@ Tp pollard_brent(Tp n) {
 namespace alg {
 
 template <typename Tp>
-constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
+cp_constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
     std::vector<Tp> factors;
     if (n < 2) return {};
     if (n <= 1000000000000ll) {

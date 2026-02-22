@@ -4,27 +4,25 @@
 #ifndef CP_ALG_MOD_INVERSE
 #define CP_ALG_MOD_INVERSE
 namespace cp {
+
+namespace internal {
+
+template <typename Tp>
+constexpr std::pair<Tp, Tp> inverse(long long s, long long t, long long m0, long long m1, Tp b) {
+    return t == 0 ? 
+        std::pair<Tp, Tp>{static_cast<Tp>(s), static_cast<Tp>(m0 < 0 ? m0 + static_cast<long long>(b / s) : m0)} :
+        inverse<Tp>(t, s - t * (s / t), m1, m0 - m1 * (s / t), b);
+}
+
+} // namespace internal
+
 namespace alg {
 namespace mod {
 
 template <typename Tp>
 constexpr std::pair<Tp, Tp> inverse(Tp a, Tp b) {
-    a = safe_mod(a, b);
-    if (a == 0) return {b, 0}; 
-
-    long long s = b, t = a;
-    long long m0 = 0, m1 = 1;
-
-    while (t) {
-        long long u = s / t;
-        s -= t * u;
-        m0 -= m1 * u;   
-        std::swap(s, t);
-        std::swap(m0, m1);
-    }
-
-    if (m0 < 0) m0 += b / s;
-    return {static_cast<Tp>(s), static_cast<Tp>(m0)};
+    return safe_mod(a, b) == 0 ? std::pair<Tp, Tp>{b, 0} :
+           internal::inverse<Tp>(b, safe_mod(a, b), 0, 1, b);
 }
 
 } // namespace mod
