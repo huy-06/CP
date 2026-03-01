@@ -10,6 +10,7 @@ template <typename Edge>
 class tvcc : public graph<Edge> {
 public:
     using edge_type = Edge;
+    using graph<edge_type>::adj;
 
     tvcc(int n = 0, int m = 0) {
         init(n, m);
@@ -48,20 +49,27 @@ private:
         std::function<void(int, int)> dfs = [&](int u, int p) -> void {
             in[u] = low[u] = timer++;
             int c = 0;
-            for (const auto& e : (*this)[u]) {
+
+            for (const auto& e : adj(u)) {
                 int v = e.to;
-                if (v == p) continue;
+                if (v == p) {
+                    continue;
+                }
+
                 if (in[v] == -1) {
                     dfs(v, u);
                     low[u] = std::min(low[u], low[v]);
+
                     if (low[v] >= in[u] && p != -1) {
                         mrk[u] = true;
                     }
+
                     ++c;
                 } else {
                     low[u] = std::min(low[u], in[v]);
                 }
             }
+
             if (p == -1 && c > 1) {
                 mrk[u] = true;
             }
@@ -78,6 +86,7 @@ private:
                 cts.push_back(u);
             }
         }
+
         ok = true;
     }
 };

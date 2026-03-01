@@ -10,6 +10,7 @@ template <typename Edge>
 class scc_graph : public graph<Edge> {
 public:
     using edge_type = Edge;
+    using graph<edge_type>::adj;
 
     scc_graph(int n = 0, int m = 0) {
         init(n, m);
@@ -85,7 +86,7 @@ private:
             in[u] = low[u] = timer++;
             stk.push_back(u);
 
-            for (const auto& e : (*this)[u]) {
+            for (const auto& e : adj(u)) {
                 int v = e.to;
                 if (in[v] == -1) {
                     dfs(v);
