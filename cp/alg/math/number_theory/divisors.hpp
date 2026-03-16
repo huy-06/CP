@@ -1,4 +1,5 @@
 #include <vector>
+#include "../../../init/constexpr.hpp"
 
 #ifndef CP_ALG_DIVISORS
 #define CP_ALG_DIVISORS

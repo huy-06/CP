@@ -9,6 +9,8 @@
 #include "../cst/style.hpp"
 #include "../ds/misc/random.hpp"
 
+// cd "e:\Code\CP\Tasks\CPP\cp\debug\" && g++ -std=c++23 -O2 check2.cpp -o check2 && "e:\Code\CP\Tasks\CPP\cp\debug\"check2
+
 std::ofstream fout;
 auto random = cp::ds::random;
 
@@ -16,19 +18,25 @@ void generate_test_case() {
     int t = random.next_int<int>(1, 1e2);
     fout << t << '\n';
     for (int tc = 0; tc < t; ++tc) {
+        std::vector<int> a;
         int n = random.next_int<int>(1, 1e3);
-        fout << n << '\n';
-        for (int i = 1; i <= n; ++i) {
-            fout << random.next_int<long long>() << '\n';
-            fout << random.next_int<long long>() << '\n';
-            fout << random.next_int<long long>() << '\n';
-            fout << random.next_int<long long>() << '\n';
+        for (int i = 0; i < n; ++i) {
+            int x = random.next_int<int>(1, 1e9);
+            int m = random.next_int<int>(1, 100);
+            for (int j = 0; j < m; ++j) {
+                a.push_back(x);
+            }
         }
+        fout << a.size() << '\n';
+        for (int i = 0; i < int(a.size()); ++i) {
+            fout << a[i] << ' ';
+        }
+        fout << '\n';
     }
 }
 
-const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
-const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\c.cpp)";
+const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
+const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
 // const std::string path_source_2 = R"(E:\Code\CP\Tasks\Python\a.py)";
 const std::string input_file = "test_input.txt";
 const std::string debug_file = "debug.txt";
