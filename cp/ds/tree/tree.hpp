@@ -54,10 +54,10 @@ public:
         built = false;
     }
 
-    void read_edge(int off = 1) {
+    void read_edge(int off = 1, std::istream& is = std::cin) {
         for (int i = 1; i < num_vertices(); ++i) {
             edge_type e;
-            std::cin >> e;
+            is >> e;
             e.from -= off;
             e.to   -= off;
             add_edge(std::move(e));

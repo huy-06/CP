@@ -1,3 +1,7 @@
+/// @author Thuw
+/// @since  16:30:05 25/04/2026
+#include "cp/init/library.hpp"
+
 #include <vector>
 #include <cassert>
 
@@ -7,7 +11,7 @@ namespace cp {
 namespace ds {
 
 /**
- * @brief Cấu trúc dữ liệu Segment Tree.
+ * @brief Cấu trúc dữ liệu Segment Tree (giống AtCoder Library).
  * 
  * @tparam Tp Kiểu dữ liệu của các phần tử trong Segment Tree.
  * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp 2 phần tử (ví dụ: cộng, max, min).
@@ -58,7 +62,7 @@ public:
     void init(const std::vector<value_type>& data) {
         n = static_cast<int>(data.size());
         for (size = 1; size < n; size <<= 1);
-        tree.assign(2 * size, e());
+        tree.assign(2 * size, e()); // Sử dụng phần tử đơn vị e() làm mặc định
         for (int i = 0; i < n; ++i) tree[size + i] = data[i];
         for (int i = size - 1; i > 0; --i) pull(i);
     }
@@ -80,8 +84,8 @@ public:
     /// @brief Truy vấn trong nửa khoảng[l, r) (0-indexed)
     value_type range_query(int l, int r) const {
         assert(0 <= l && l <= r && r <= n);
-        value_type sml = e();
-        value_type smr = e();
+        value_type sml = e(); // Accumulator trái
+        value_type smr = e(); // Accumulator phải
         l += size;
         r += size;
         while (l < r) {
@@ -90,7 +94,7 @@ public:
             l >>= 1;
             r >>= 1;
         }
-        return op(sml, smr);
+        return op(sml, smr); // Gộp kết quả trái và phải
     }
 
     /// @brief Truy vấn trên toàn bộ mảng[0, n)
@@ -165,3 +169,21 @@ private:
 } // namespace ds
 } // namespace cp
 #endif
+
+signed main() {
+    //! std::ios_base::sync_with_stdio(false);
+    //! std::cin.tie(nullptr);
+    //! std::cout.tie(nullptr);
+
+    int n;
+    std::cin >> n;
+    
+    std::vector<int> a(n);
+    for (int i = 0; i < n; ++i) {
+        std::cin >> a[i];
+    }
+
+    cp::ds::segment_tree<
+
+    return 0;
+}

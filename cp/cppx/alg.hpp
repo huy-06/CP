@@ -4,7 +4,7 @@
 #include <numeric>
 #include <cmath>
 #include <ext/pb_ds/assoc_container.hpp>
-#include "../alg/math/pow.hpp"
+// #include "../alg/math/pow.hpp"
 
 #ifndef CP_CPPX_ALG
 #define CP_CPPX_ALG

@@ -6,7 +6,7 @@
 namespace cp {
 namespace alg {
 
-template<typename Tp>
+template <typename Tp>
 cp_constexpr std::vector<Tp> divisors(Tp n) {
     std::vector<Tp> a, b;
     for (Tp i = 1; i * i <= n; ++i) {
@@ -15,7 +15,7 @@ cp_constexpr std::vector<Tp> divisors(Tp n) {
             b.push_back(n / i);
         }
     }
-    if (a.back() == b.back()) b.pop_back();
+    if (!a.empty() && !b.empty() && a.back() == b.back()) b.pop_back();
     a.insert(a.end(), b.rbegin(), b.rend());
     return a;
 }

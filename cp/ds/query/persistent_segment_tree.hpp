@@ -28,9 +28,9 @@ public:
         init(data);
     }
 
-    void init(int n, const value_type& val = value_type()) {
+    int init(int n, const value_type& val = value_type()) {
         std::vector<value_type> data(n, val);
-        init(data);
+        return init(data);
     }
 
     int init(const std::vector<value_type>& data) {

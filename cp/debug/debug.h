@@ -62,18 +62,6 @@ std::ofstream file_output("E:/Code/Tasks/debug.txt");
 std::ostream& operator<<(std::ostream& out, const __float128& value);    
 std::ostream& operator<<(std::ostream& out, const __int128& value);
 
-template <typename ValueType, size_t StaticRank>
-class MultiArray;
-
-namespace huy {
-namespace ds {
-
-template <typename Tp>
-class multiset;
-
-}
-}
-
 class huy_debug {
 private:
     template<typename T>
@@ -299,19 +287,6 @@ private:
         return oss.str();
     }
 
-    template <typename Tp>
-    std::string to_string_debug(const huy::ds::multiset<Tp>& a) {
-        std::ostringstream oss;
-        oss << "[";
-        bool ok = false;
-        for (const auto& it : a) {
-            if (ok) oss << ", ";
-            oss << to_string_debug(it);
-            ok = true;
-        }
-        oss << "]";
-        return oss.str();        
-    }
 #endif
 
 #ifdef LEETCODE
@@ -344,35 +319,6 @@ private:
     }
 #endif
 
-    template<typename T, size_t R>
-    std::string to_string_debug(const MultiArray<T, R>& tv) {
-        auto shape   = tv.dimensions();
-        auto strides = tv.strides();
-        auto data    = tv.data();
-        std::array<size_t, R> idx{};
-        std::ostringstream oss;
-
-        std::function<void(size_t)> rec = [&](size_t dim) {
-            oss << '[';
-            for (size_t i = 0; i < shape[dim]; ++i) {
-                idx[dim] = i;
-                if (dim + 1 < R) {
-                    rec(dim + 1);
-                } else {
-                    size_t offset = 0;
-                    for (size_t d = 0; d < R; ++d) {
-                        offset += idx[d] * strides[d];
-                    }
-                    oss << to_string_debug(data[offset]);
-                }
-                if (i + 1 < shape[dim]) oss << ", ";
-            }
-            oss << ']';
-        };
-
-        rec(0);
-        return oss.str();
-    }
 
     std::vector<std::string> split_string(const std::string& s) {
         int count = 1, depth = 0;
