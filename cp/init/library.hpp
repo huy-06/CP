@@ -3,7 +3,6 @@
 #ifndef CP_LIBRARY
 #define CP_LIBRARY
 
-#define CP_DEBUG
 // #define COUT_CYAN
 
 #include <vector>
@@ -29,7 +28,8 @@
 #include <random>
 
 #include "color.hpp"
-#include "../debug/debug.h"
+// #include "../debug/debug.h"
+#include "../debug/debug.hpp"
 // #include "constexpr.hpp"
 
 #endif

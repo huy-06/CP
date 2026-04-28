@@ -1,5 +1,6 @@
 #include <memory>
 #include "custom_hash.hpp"
+#include "../misc/formatter.hpp"
 
 #ifndef CP_DS_HASH_FAST_HASH_MAP
 #define CP_DS_HASH_FAST_HASH_MAP
@@ -280,5 +281,29 @@ private:
 };
 
 } // namespace ds
+//<
+namespace internal {
+
+template <typename... Args>
+struct formatter<ds::fast_hash_map<Args...>> {
+    static void print(std::ostream& os, const ds::fast_hash_map<Args...>& v) {
+        os << style::color_green << "fast_hash_map" << style::reset;
+        open_bracket(os, "(");
+        open_bracket(os, "[");
+        bool first = true;
+        for (const auto& x : v) {
+            if (!first) os << ", ";
+            first = false;
+            print_item(os, x.first);
+            os << ": ";
+            print_item(os, x.second);
+        }
+        close_bracket(os, "]");
+        close_bracket(os, ")");
+    }
+};
+
+} // namespace internal
+//>
 } // namespace cp
 #endif
