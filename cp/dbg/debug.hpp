@@ -1,3 +1,4 @@
+//<
 #include <iostream>
 #include <source_location>
 #include "../ds/misc/formatter.hpp"
@@ -23,7 +24,7 @@ void show(const std::string& indent, std::string names, Head head, Tail... tail)
 
     std::cerr << indent << style::color_white << name << style::reset;
     std::cerr << style::color_magenta << " = " << style::reset;
-    cp::internal::print_item(std::cerr, head);
+    print_item(std::cerr, head);
     
     if constexpr (sizeof...(tail) > 0) {
         std::cerr << "\n";
@@ -47,4 +48,5 @@ void console(const std::source_location& loc, const std::string& names, Args... 
 
 #define debug(...) cp::internal::console(std::source_location::current(), #__VA_ARGS__, __VA_ARGS__)
 
-#endif  
+#endif
+//>

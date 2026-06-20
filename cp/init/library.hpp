@@ -29,7 +29,7 @@
 
 #include "color.hpp"
 // #include "../debug/debug.h"
-#include "../debug/debug.hpp"
+#include "../dbg/debug.hpp"
 // #include "constexpr.hpp"
 
 #endif

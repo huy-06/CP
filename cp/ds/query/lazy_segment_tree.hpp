@@ -185,13 +185,13 @@ public:
                     l = (2 * l);
                     if (pred(op(sm, tree[l]))) {
                         sm = op(sm, tree[l]);
-                        l++;
+                        ++l;
                     }
                 }
                 return l - size;
             }
             sm = op(sm, tree[l]);
-            l++;
+            ++l;
         } while ((l & -l) != l);
         return n;
     }
@@ -207,7 +207,7 @@ public:
         for (int i = height; i >= 1; --i) push((r - 1) >> i);
         value_type sm = e();
         do {
-            r--;
+            --r;
             while (r > 1 && (r % 2)) r >>= 1;
             if (!pred(op(tree[r], sm))) {
                 while (r < size) {
@@ -215,7 +215,7 @@ public:
                     r = (2 * r) + 1;
                     if (pred(op(tree[r], sm))) {
                         sm = op(tree[r], sm);
-                        r--;
+                        --r;
                     }
                 }
                 return r + 1 - size;

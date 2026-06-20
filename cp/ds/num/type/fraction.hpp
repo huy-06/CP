@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include "../../../alg/math/number_theory/numeric.hpp"
+#include "../../../alg/math/nt/numeric.hpp"
 
 #ifndef CP_DS_FRACTION
 #define CP_DS_FRACTION

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
-#include "../../../alg/math/modular/pow_mod.hpp"
-#include "../../../alg/math/modular/inverse.hpp"
+#include "../../../alg/math/mod/pow_mod.hpp"
+#include "../../../alg/math/mod/inverse.hpp"
 
 #ifndef CP_DS_MODULAR_MOD_INT_61
 #define CP_DS_MODULAR_MOD_INT_61

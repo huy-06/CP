@@ -6,6 +6,7 @@
 #include <concepts>
 #include <compare>
 #include <algorithm>
+#include "../misc/formatter.hpp"
 
 #ifndef CP_DS_TENSOR_ND_ARRAY
 #define CP_DS_TENSOR_ND_ARRAY
@@ -187,5 +188,64 @@ private:
 };
 
 } // namespace ds
+//<
+namespace internal {
+
+template <typename Tp>
+struct formatter<ds::nd_array<Tp>> {
+private:
+    template <typename Iter>
+    static void print_recursive(std::ostream& os, Iter& it, const std::vector<std::size_t>& dims, std::size_t dim_index, std::size_t base_indent) {
+        if (dim_index == dims.size() - 1) {
+            open_bracket(os, "[");
+            for (std::size_t i = 0; i < dims[dim_index]; ++i) {
+                if (i > 0) os << ", ";
+                print_item(os, *it);
+                ++it;
+            }
+            close_bracket(os, "]");
+            return;
+        }
+
+        open_bracket(os, "[");
+        for (std::size_t i = 0; i < dims[dim_index]; ++i) {
+            if (i > 0) {
+                os << ",";
+                std::size_t newlines = dims.size() - dim_index - 1;
+                for (std::size_t n = 0; n < newlines; ++n) {
+                    os << "\n";
+                }
+                os << std::string(base_indent + dim_index + 1, ' ');
+            }
+            print_recursive(os, it, dims, dim_index + 1, base_indent);
+        }
+        close_bracket(os, "]");
+    }
+
+public:
+    static void print(std::ostream& os, const cp::ds::nd_array<Tp>& v) {
+        os << style::color_green << "nd_array" << style::reset;
+        
+        const auto& shape = v.shape();
+        os << "<";
+        for (std::size_t i = 0; i < shape.size(); ++i) {
+            if (i > 0) os << "x";
+            os << shape[i];
+        }
+        os << "> ";
+
+        if (v.empty() || shape.empty()) {
+            open_bracket(os, "[");
+            close_bracket(os, "]");
+            return;
+        }
+
+        auto it = v.begin();
+        print_recursive(os, it, shape, 0, 0);
+    }
+};
+
+} // namespace internal
+//>
 } // namespace cp
 #endif

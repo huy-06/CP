@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include "../../../init/constexpr.hpp"
-#include "../../../alg/math/arithmetic/arithmetic.hpp"
+#include "../../../alg/math/arith/arithmetic.hpp"
 
 #ifndef CP_DS_REAL
 #define CP_DS_REAL

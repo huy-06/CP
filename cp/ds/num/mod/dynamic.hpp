@@ -1,7 +1,7 @@
 #include <type_traits>
 #include <cassert>
-#include "../../../alg/math/modular/pow_mod.hpp"
-#include "../../../alg/math/modular/inverse.hpp"
+#include "../../../alg/math/mod/pow_mod.hpp"
+#include "../../../alg/math/mod/inverse.hpp"
 
 #ifndef CP_DS_MODULAR_DYNAMIC_MOD_INT
 #define CP_DS_MODULAR_DYNAMIC_MOD_INT

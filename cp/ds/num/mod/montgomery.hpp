@@ -3,7 +3,7 @@
 #include <utility>
 #include <limits>
 #include "../../../init/constexpr.hpp"
-#include "../../../alg/math/modular/safe_mod.hpp"
+#include "../../../alg/math/mod/safe_mod.hpp"
 
 #ifndef CP_DS_MODULAR_MONTGOMERY_MOD_INT
 #define CP_DS_MODULAR_MONTGOMERY_MOD_INT

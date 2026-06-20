@@ -1,6 +1,6 @@
 #include "convolution_ntt.hpp"
-#include "../../../ds/numeric/modular/combinatorics.hpp"
-#include "../arithmetic/arithmetic.hpp"
+#include "../../../ds/num/mod/combinatorics.hpp"
+#include "../arith/arithmetic.hpp"
 
 #ifndef CP_ALG_MATH_POLYNOMIAL_ALGEBRA
 #define CP_ALG_MATH_POLYNOMIAL_ALGEBRA

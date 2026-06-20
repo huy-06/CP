@@ -1,6 +1,6 @@
 #include <vector>
 #include <cassert>
-#include "../arithmetic/arithmetic.hpp"
+#include "../arith/arithmetic.hpp"
 
 #ifndef CP_ALG_MATH_MATRIX
 #define CP_ALG_MATH_MATRIX

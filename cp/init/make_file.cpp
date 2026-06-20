@@ -56,7 +56,10 @@ private:
     const std::vector<std::pair<std::string, std::string>> replacements = {
         {"🍀", "tc"},
         {"🌸", "t"},
-        {"🌻🌻🌻", "solve"}
+        {"🌻🌻🌻", "solve"},
+        {"🧊", "tc"},
+        {"🍉", "t"},
+        {"🍧🍧🍧", "solve"}
     };
 
     const std::vector<std::string> remove_call_patterns = {

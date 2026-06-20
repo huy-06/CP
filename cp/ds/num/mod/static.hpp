@@ -2,8 +2,8 @@
 #include <iostream>
 #include <tuple>
 #include "../../../init/constexpr.hpp"
-#include "../../../alg/math/modular/inverse.hpp"
-#include "../../../alg/math/number_theory/is_prime.hpp"
+#include "../../../alg/math/mod/inverse.hpp"
+#include "../../../alg/math/nt/is_prime.hpp"
 
 #ifndef CP_DS_MODULAR_STATIC_MOD_INT
 #define CP_DS_MODULAR_STATIC_MOD_INT

@@ -1,5 +1,5 @@
 #include "..\init\library.hpp"
-#include "..\debug\debug.h"
+#include "..\dbg\debug.h"
 
 #ifndef LEETCODE
 #define LEETCODE

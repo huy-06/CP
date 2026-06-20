@@ -137,7 +137,7 @@ public:
         add_edge(std::move(e));
     }
 
-    void read_edge(int m, int off = 1, std::istream& is = std::cin) {
+    void read_edges(int m, int off = 1, std::istream& is = std::cin) {
         for (int i = 0; i < m; ++i) {
             edge_type e;
             is >> e;
@@ -148,7 +148,7 @@ public:
         build();
     }
 
-    void read_unedge(int m, int off = 1, std::istream& is = std::cin) {
+    void read_unedges(int m, int off = 1, std::istream& is = std::cin) {
         for (int i = 0; i < m; ++i) {
             edge_type e;
             is >> e;
@@ -260,7 +260,7 @@ public:
         }
     }
 
-    int index(const edge_type& e) const {
+    int index(const edge_type& e) const {   
         assert(!edge_list.empty());
         return static_cast<int>(&e - edge_list.data());
     }

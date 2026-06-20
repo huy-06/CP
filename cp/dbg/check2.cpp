@@ -12,24 +12,17 @@
 // cd "e:\Code\CP\Tasks\CPP\cp\debug\" && g++ -std=c++23 -O2 check2.cpp -o check2 && "e:\Code\CP\Tasks\CPP\cp\debug\"check2
 
 std::ofstream fout;
-auto random = cp::ds::random;
+auto ran = cp::ds::random;
 
 void generate_test_case() {
-    int t = random.next_int<int>(1, 1e2);
+    int t = ran.nint();
     fout << t << '\n';
-    for (int tc = 0; tc < t; ++tc) {
-        std::vector<int> a;
-        int n = random.next_int<int>(1, 1e3);
+    for (int _ = 0; _ < t; ++_) {
+        int n = ran.nint(1, 1E6);
+        fout << n << '\n';
+
         for (int i = 0; i < n; ++i) {
-            int x = random.next_int<int>(1, 1e9);
-            int m = random.next_int<int>(1, 100);
-            for (int j = 0; j < m; ++j) {
-                a.push_back(x);
-            }
-        }
-        fout << a.size() << '\n';
-        for (int i = 0; i < int(a.size()); ++i) {
-            fout << a[i] << ' ';
+            fout << ran.nint(1, 1E6) << ' ';
         }
         fout << '\n';
     }
@@ -249,7 +242,7 @@ int main() {
     }
 
     std::cout << "all test cases " << style::color_green << "PASSED!" << style::reset << std::endl;
-    std::cout << style::bold << "congratulations!" << style::reset << std::endl;
+    std::cout << style::style_bold << "congratulations!" << style::reset << std::endl;
     
     std::cout << style::color_yellow << "summary " << prog1.source_path << ":" << style::reset 
          << " avg " << (sum_time_1 / total_tests) << "s, max " << max_time_1 << "s" << std::endl;

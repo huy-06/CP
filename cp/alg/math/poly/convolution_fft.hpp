@@ -3,7 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include "../../../cst/real.hpp"
-#include "../../../ds/numeric/modular/static.hpp"
+#include "../../../ds/num/mod/static.hpp"
 
 #ifndef CP_ALG_MATH_POLYNOMIAL_CONVOLUTION_FFT
 #define CP_ALG_MATH_POLYNOMIAL_CONVOLUTION_FFT

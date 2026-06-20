@@ -54,7 +54,7 @@ public:
         built = false;
     }
 
-    void read_edge(int off = 1, std::istream& is = std::cin) {
+    void read_edges(int off = 1, std::istream& is = std::cin) {
         for (int i = 1; i < num_vertices(); ++i) {
             edge_type e;
             is >> e;
@@ -92,7 +92,7 @@ protected:
 
     void add_unedge(edge_type e) = delete;
 
-    void read_unedge(int m, int off = 1) = delete;
+    void read_unedges(int m, int off = 1) = delete;
 
     void dfs(int u) {
         siz[u] = 1;

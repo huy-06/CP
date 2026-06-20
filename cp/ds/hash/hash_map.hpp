@@ -2,13 +2,13 @@
 #include "custom_hash.hpp"
 #include "../misc/formatter.hpp"
 
-#ifndef CP_DS_HASH_FAST_HASH_MAP
-#define CP_DS_HASH_FAST_HASH_MAP
+#ifndef CP_DS_HASH_HASH_MAP
+#define CP_DS_HASH_HASH_MAP
 namespace cp {
 namespace ds {
 
 template <typename Key, typename Val>
-class fast_hash_map {
+class hash_map {
 private:
     struct node {
         Key first;
@@ -95,17 +95,17 @@ public:
         MapPtr map;
     };
 
-    using iterator = iterator_base<entry, fast_hash_map*>;
-    using const_iterator = iterator_base<const_entry, const fast_hash_map*>;
+    using iterator = iterator_base<entry, hash_map*>;
+    using const_iterator = iterator_base<const_entry, const hash_map*>;
 
-    fast_hash_map(size_type n = 0) : num_elements(0), table_size(0), mask(0) {
+    hash_map(size_type n = 0) : num_elements(0), table_size(0), mask(0) {
         size_type k = 8;
         while (k < (n << 1)) 
             k <<= 1;
         build(k);
     }
 
-    fast_hash_map(const fast_hash_map& other) {
+    hash_map(const hash_map& other) {
         num_elements = other.num_elements;
         table_size = other.table_size;
         mask = other.mask;
@@ -117,9 +117,9 @@ public:
         }
     }
 
-    fast_hash_map(fast_hash_map&& other) noexcept = default;
+    hash_map(hash_map&& other) noexcept = default;
 
-    fast_hash_map& operator=(const fast_hash_map& other) {
+    hash_map& operator=(const hash_map& other) {
         if (this != &other) {
             num_elements = other.num_elements;
             table_size = other.table_size;
@@ -136,7 +136,7 @@ public:
         return *this;
     }
 
-    fast_hash_map& operator=(fast_hash_map&& other) noexcept = default;
+    hash_map& operator=(hash_map&& other) noexcept = default;
 
     iterator begin() {
         size_type i = 0;
@@ -285,9 +285,9 @@ private:
 namespace internal {
 
 template <typename... Args>
-struct formatter<ds::fast_hash_map<Args...>> {
-    static void print(std::ostream& os, const ds::fast_hash_map<Args...>& v) {
-        os << style::color_green << "fast_hash_map" << style::reset;
+struct formatter<ds::hash_map<Args...>> {
+    static void print(std::ostream& os, const ds::hash_map<Args...>& v) {
+        os << style::color_green << "hash_map" << style::reset;
         open_bracket(os, "(");
         open_bracket(os, "[");
         bool first = true;

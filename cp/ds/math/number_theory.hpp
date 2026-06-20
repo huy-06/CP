@@ -1,184 +1,116 @@
-#include <vector>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
+#include "../../alg/math/nt/factorize.hpp"
 
-#ifndef CP_DS_NUMBER_THEORY_EXT
-#define CP_DS_NUMBER_THEORY_EXT
-
+#ifndef CP_DS_NUMBER_THEORY
+#define CP_DS_NUMBER_THEORY
 namespace cp {
 namespace ds {
 
-template <int HARD_LIMIT = 500000000>
 class number_theory {
 public:
-    number_theory(int initial_limit = 1000000) : sieve_max(0) {
-        expand(std::min(initial_limit, HARD_LIMIT));
-    }
-
-    void expand(int n) {
-        if (n > HARD_LIMIT) n = HARD_LIMIT;
+    number_theory(int limit = 10000000) : n(limit) {
+        spf.resize(n + 1);
+        iota(spf.begin(), spf.end(), 0); 
         
-        if (n <= sieve_max) return;
-
-        min_prime.resize(n + 1, 0);
-        
-        for (int i = std::max(2, sieve_max + 1); i <= n; ++i) {
-            if (min_prime[i] == 0) {
-                min_prime[i] = i;
+        for (int i = 2; i <= n; i++) {
+            if (spf[i] == i) 
                 primes.push_back(i);
-            }
             for (int p : primes) {
-                if (p > min_prime[i] || static_cast<long long>(i) * p > n) break;
-                min_prime[i * p] = p;
-            }
-        }
-        sieve_max = n;
-    }
-
-    bool is_prime(long long n) {
-        if (n <= 1) 
-            return false;
-
-        if (n > sieve_max && n <= HARD_LIMIT) 
-            expand(n);
-
-        if (n <= sieve_max) 
-            return min_prime[n] == n;
-
-        for (long long p : primes) {
-            if (p * p > n) 
-                break;
-            if (n % p == 0) 
-                return false;
-        }
-        return true;
-    }
-
-    std::vector<std::pair<long long, int>> factorize(long long n) {
-        std::vector<std::pair<long long, int>> res;
-        
-        if (n > sieve_max && n <= HARD_LIMIT) 
-            expand(n);
-        
-        while (n > 1 && n <= sieve_max) {
-            int p = min_prime[n];
-            int count = 0;
-            while (n % p == 0) {
-                n /= p;
-                count++;
-            }
-            res.push_back({static_cast<long long>(p), count});
-        }
-        
-        if (n > 1) {
-            for (long long p : primes) {
-                if (p * p > n) 
+                if (p > spf[i] || 1LL * i * p > n) 
                     break;
-                if (n % p == 0) {
-                    int count = 0;
-                    while (n % p == 0) {
-                        n /= p;
-                        ++count;
-                    }
-                    res.push_back({p, count});
+                spf[i * p] = p;
+            }
+        }
+    }
+
+    bool is_prime(long long x) {
+        if (x <= n) 
+            return x > 1 && spf[x] == x;
+        return alg::is_prime(x);
+    }
+
+    std::vector<std::pair<long long, int>> factorize(long long x) {
+        if (x <= n) {
+            std::vector<std::pair<long long, int>> factors;
+            while (x > 1) {
+                int p = spf[x];
+                int cnt = 0;
+                while (spf[x] == p) {
+                    ++cnt;
+                    x /= p;
                 }
+                factors.push_back({p, cnt});
             }
-            if (n > 1) {
-                res.push_back({n, 1});
-            }
+            return factors;
+        } 
+        
+        return alg::factorize(x);
+    }
+
+    long long phi(long long x) {
+        auto factors = factorize(x);
+        long long res = x;
+        for (auto& f : factors) {
+            res -= res / f.first;
         }
         return res;
     }
 
-    long long phi(long long n) {
-        if (n == 1) 
-            return 1;
-
-        auto factors = factorize(n);
-
-        long long ans = n;
-        for (auto& p : factors) {
-            ans -= ans / p.first;
+    long long count_divisors(long long x) {
+        auto factors = factorize(x);
+        long long cnt = 1;
+        for (auto& f : factors) {
+            cnt *= (f.second + 1);
         }
-        return ans;
+        return cnt;
     }
 
-    long long count_divisors(long long n) {
-        if (n == 1) 
-            return 1;
-
-        auto factors = factorize(n);
-
-        long long ans = 1;
-        for (auto& p : factors) {
-            ans *= (p.second + 1);
-        }
-        return ans;
-    }
-
-    long long sum_divisors(long long n) {
-        if (n == 1) 
-            return 1;
-
-        auto factors = factorize(n);
-        
-        long long ans = 1;
-        for (auto& p : factors) {
-            long long p_val = p.first;
-            int exponent = p.second;
-
-            long long term = 1;
+    long long sum_divisors(long long x) {
+        auto factors = factorize(x);
+        long long sum_total = 1;
+        for (auto& f : factors) {
+            long long p = f.first;
+            long long sum = 1;
             long long p_pow = 1;
-            for (int i = 0; i < exponent; ++i) {
-                p_pow *= p_val;
-                term += p_pow;
+            for (int i = 1; i <= f.second; ++i) {
+                p_pow *= p;
+                sum += p_pow;
             }
-            ans *= term;
+            sum_total *= sum;
         }
-        return ans;
+        return sum_total;
     }
 
-    std::vector<long long> get_divisors(long long n) {
-        if (n == 1) 
-            return {1};
-
-        auto factors = factorize(n);
+    std::vector<long long> get_divisors(long long x) {
+        auto factors = factorize(x);
+        std::vector<long long> divisors;
         
-        long long num_divs = 1;
-        for(auto& p : factors) {
-            num_divs *= (p.second + 1);
-        }
-        
-        std::vector<long long> divs;
-        divs.reserve(num_divs);
-        divs.push_back(1);
-
-        for (auto& p : factors) {
-            long long prime = p.first;
-            int exponent = p.second;
-            int current_size = divs.size(); 
-            
-            for (int i = 0; i < current_size; ++i) {
-                long long temp = divs[i];
-                for (int e = 0; e < exponent; ++e) {
-                    temp *= prime;
-                    divs.push_back(temp);
-                }
+        std::function<void(int, long long)> dfs = [&](int idx, long long val) -> void {
+            if (idx == factors.size()) {
+                divisors.push_back(val);
+                return;
             }
-        }
-        std::sort(divs.begin(), divs.end());
-        return divs;
+            long long p = factors[idx].first;
+            long long p_pow = 1;
+            for (int i = 0; i <= factors[idx].second; ++i) {
+                dfs(idx + 1, val * p_pow);
+                if (i < factors[idx].second) 
+                    p_pow *= p;
+            }
+        };
+    
+        dfs(0, 1);
+        sort(divisors.begin(), divisors.end());
+        return divisors;
     }
-
-    int current_limit() const { 
-        return sieve_max;
+    
+    const std::vector<int>& get_primes() const {
+        return primes;
     }
 
 private:
-    int sieve_max;
-    std::vector<int> min_prime;
-    std::vector<int> primes;
+    int n;
+    std::vector<int> spf;
+    std::vector<int> primes; 
 };
 
 } // namespace ds

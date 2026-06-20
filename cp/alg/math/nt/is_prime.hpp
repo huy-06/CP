@@ -1,4 +1,4 @@
-#include "../modular/pow_mod.hpp"
+#include "../mod/pow_mod.hpp"
 // #include "../../../cst/primes.hpp"
 
 #ifndef CP_ALG_IS_PRIME
