@@ -7,7 +7,9 @@
 
 #ifndef CP_DS_RANDOM
 #define CP_DS_RANDOM
-namespace cp::internal {
+namespace cp {
+    
+namespace internal {
 
 class randomizer {
 private:
@@ -134,11 +136,13 @@ public:
     }
 };
 
-} // namespace cp::internal
+} // namespace internal
 
-namespace cp::ds {
+namespace ds {
 
 inline internal::randomizer random;
 
-} // namspace cp::ds
+} // namspace ds
+
+} // namespace cp
 #endif

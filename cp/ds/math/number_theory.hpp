@@ -85,7 +85,7 @@ public:
         std::vector<long long> divisors;
         
         std::function<void(int, long long)> dfs = [&](int idx, long long val) -> void {
-            if (idx == factors.size()) {
+            if (idx == (int) factors.size()) {
                 divisors.push_back(val);
                 return;
             }

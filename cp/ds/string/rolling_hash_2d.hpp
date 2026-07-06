@@ -1,7 +1,7 @@
 #include <vector>
 #include <string>
 #include "../../alg/utils/random.hpp"
-#include "../numeric/modular/int_61.hpp"
+#include "../num/mod/montgomery.hpp"
 
 #ifndef CP_DS_STRING_ROLLING_HASH_2D
 #define CP_DS_STRING_ROLLING_HASH_2D
@@ -10,7 +10,7 @@ namespace ds {
 
 class rolling_hash_2d {
 public:
-    using value_type = mod_int_61;
+    using value_type = montgomery_mod_int<(1ull << 61) - 1>;
 
     rolling_hash_2d() : n(0), m(0) {}
 

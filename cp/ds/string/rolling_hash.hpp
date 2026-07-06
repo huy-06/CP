@@ -1,7 +1,7 @@
 #include <vector>
 #include <string>
 #include "../../alg/utils/random.hpp"
-#include "../numeric/modular/montgomery.hpp"
+#include "../num/mod/montgomery.hpp"
 
 #ifndef CP_DS_STRING_ROLLING_HASH
 #define CP_DS_STRING_ROLLING_HASH

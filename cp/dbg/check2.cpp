@@ -9,23 +9,13 @@
 #include "../cst/style.hpp"
 #include "../ds/misc/random.hpp"
 
-// cd "e:\Code\CP\Tasks\CPP\cp\debug\" && g++ -std=c++23 -O2 check2.cpp -o check2 && "e:\Code\CP\Tasks\CPP\cp\debug\"check2
+// cd "e:\Code\CP\Tasks\CPP\cp\dbg\" ; if ($?) { g++ -std=c++23 -O2 check2.cpp -o check2 } ; if ($?) { .\check2 }
 
 std::ofstream fout;
 auto ran = cp::ds::random;
 
 void generate_test_case() {
-    int t = ran.nint();
-    fout << t << '\n';
-    for (int _ = 0; _ < t; ++_) {
-        int n = ran.nint(1, 1E6);
-        fout << n << '\n';
-
-        for (int i = 0; i < n; ++i) {
-            fout << ran.nint(1, 1E6) << ' ';
-        }
-        fout << '\n';
-    }
+    fout << ran.nint(1, 1E9) << ' ' << ran.nint(1, 1E9) << '\n';
 }
 
 const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\a.cpp)";

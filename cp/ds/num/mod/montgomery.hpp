@@ -2,11 +2,13 @@
 #include <iostream>
 #include <utility>
 #include <limits>
+#include <functional>
 #include "../../../init/constexpr.hpp"
 #include "../../../alg/math/mod/safe_mod.hpp"
 
 #ifndef CP_DS_MODULAR_MONTGOMERY_MOD_INT
 #define CP_DS_MODULAR_MONTGOMERY_MOD_INT
+
 namespace cp {
 namespace ds {
 
@@ -201,7 +203,21 @@ constexpr int montgomery_mod_int<MOD>::bit_width;
 
 using mont998244353 = montgomery_mod_int<998244353>;
 using mont1000000007 = montgomery_mod_int<1000000007>;
+using mont2_61_1 = montgomery_mod_int<(1ULL << 61) - 1>;
 
 } // namespace ds
 } // namespace cp
+
+namespace std {
+
+template <unsigned long long MOD>
+struct hash<cp::ds::montgomery_mod_int<MOD>> {
+    size_t operator()(const cp::ds::montgomery_mod_int<MOD>& m) const noexcept {
+        using value_type = typename cp::ds::montgomery_mod_int<MOD>::value_type;
+        return hash<value_type>{}(m.val());
+    }
+};
+
+} // namespace std
+
 #endif

@@ -274,9 +274,9 @@ public:
         *this = x;
     }
 
-    constexpr big_int(std::string_view s) {
-        read(s);
-    }
+    // constexpr big_int(std::string_view s) {
+    //     read(s);
+    // }
 
     constexpr big_int(const std::string& s) {
         read(s);

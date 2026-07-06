@@ -1,11 +1,5 @@
 #include <vector>
-#include <array>
-#include <stdexcept>
-#include <format>
 #include <cassert>
-#include <concepts>
-#include <compare>
-#include <algorithm>
 #include "../misc/formatter.hpp"
 
 #ifndef CP_DS_TENSOR_ND_ARRAY
