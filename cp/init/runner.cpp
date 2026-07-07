@@ -6,6 +6,7 @@
 #include <chrono>
 #include <filesystem>
 #include <sstream>
+#include <cmath> 
 #include <windows.h>
 #include "../cst/style.hpp"
 
@@ -14,10 +15,10 @@ namespace fs = std::filesystem;
 // --- configuration ---
 constexpr const char* make_file_exe = R"(e:\Code\CP\Tasks\CPP\cp\init\make_file.exe)";
 constexpr double time_limit = 5.0;
+constexpr long double float_epsilon = 1E-6;
 
 // --- ansi color codes ---
 namespace style = cp::cst::style;
-
 
 struct test_case {
     bool has_expected;
@@ -50,8 +51,37 @@ std::vector<std::string> tokenize(const std::string& text) {
     return tokens;
 }
 
+bool is_equal_token(const std::string& actual, const std::string& expected, long double eps = float_epsilon) {
+    if (actual == expected) return true;
+
+    try {
+        std::size_t pos_act, pos_exp;
+        long double val_act = std::stold(actual, &pos_act);
+        long double val_exp = std::stold(expected, &pos_exp);
+
+        if (pos_act == actual.length() && pos_exp == expected.length()) {
+            long double diff = std::abs(val_act - val_exp);
+            return diff <= eps * std::max(1.0L, std::abs(val_exp));
+        }
+    } catch (...) {
+
+    }
+    
+    return false;
+}
+
 bool check_token_match(const std::string& actual, const std::string& expected) {
-    return tokenize(actual) == tokenize(expected);
+    std::vector<std::string> actual_tokens = tokenize(actual);
+    std::vector<std::string> expected_tokens = tokenize(expected);
+    
+    if (actual_tokens.size() != expected_tokens.size()) return false;
+    
+    for (std::size_t i = 0; i < actual_tokens.size(); ++i) {
+        if (!is_equal_token(actual_tokens[i], expected_tokens[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // --- visual diff generator ---
@@ -75,20 +105,19 @@ std::string colorize_layout(std::string actual, const std::string& expected, con
         } else { 
             std::string word = match[1].str();
             if (target_idx < expected_tokens.size()) {
-                if (word == expected_tokens[target_idx]) {
-                    result += color_match + word + std::string(style::reset); // đúng -> xanh
+                if (is_equal_token(word, expected_tokens[target_idx])) {
+                    result += color_match + word + std::string(style::reset);
                 } else {
-                    result += color_mismatch + word + std::string(style::reset); // sai -> đỏ
+                    result += color_mismatch + word + std::string(style::reset);
                 }
                 target_idx++;
             } else {
-                result += color_mismatch + word + std::string(style::reset); // dư thừa -> đỏ
+                result += color_mismatch + word + std::string(style::reset);
             }
         }
         next++;
     }
     
-    // nếu thiếu chữ so với expected, dán trực tiếp vào cuối bằng màu vàng, giữ nguyên form
     if (target_idx < expected_tokens.size()) {
         std::string leftovers = "";
         std::size_t exp_token_idx = 0;
@@ -133,11 +162,9 @@ void print_visual_diff(const std::string& actual, const std::string& expected) {
     std::vector<std::string> actual_tokens = tokenize(actual);
     std::vector<std::string> expected_tokens = tokenize(expected);
     
-    // expected in màu trắng xám bình thường làm gốc
     std::cout << style::color_black << "expected:" << style::reset << "\n";
     std::cout << style::color_white << trim(expected) << style::reset << "\n";
     
-    // actual áp dụng logic màu sắc mới
     std::string colored_actual = colorize_layout(actual, expected, expected_tokens, style::color_green, style::color_red, style::color_yellow);
     std::cout << style::color_black << "actual:" << style::reset << "\n";
     std::cout << colored_actual << (colored_actual.empty() || colored_actual.back() == '\n' ? "" : "\n");
@@ -297,7 +324,6 @@ int main(int argc, char* argv[]) {
     
     std::vector<test_case> test_cases = parse_test_cases(src_content);
     
-    // logic xác định mode
     int run_mode = 1; // 1: manual, 2: run only, 3: evaluate
     if (!test_cases.empty()) {
         run_mode = 2;
@@ -309,7 +335,6 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // in ra mode đang sử dụng
     if (run_mode == 1) {
         std::cout << style::color_white << "mode: " << style::color_green << "manual" << style::reset << "\n";
         system(("\"" + exe_file.string() + "\"").c_str());
