@@ -390,6 +390,9 @@ int main(int argc, char* argv[]) {
         }
         
         if (!is_ac && !res.is_timeout) {
+            std::cout << style::color_black << "input:" << style::reset << "\n";
+            std::cout << style::color_white << test.input << style::reset << "\n";
+
             if (global_debug) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
                 
@@ -402,6 +405,7 @@ int main(int argc, char* argv[]) {
                 system(run_cmd.c_str());
                 remove(temp_in.c_str());
             }
+            
             print_visual_diff(res.output, test.expected_out);
         }
     }

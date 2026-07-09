@@ -3,16 +3,16 @@
 		"scope": "cpp",
 		"prefix": "!retime",
 		"body": [
-			"/// @author Huy",
+			"/// @author Thuw",
 			"/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR"
 		],
 		"description": "reset time"
 	},
-	"main code c++": {
+	"CP Single Test Case": {
 		"scope": "cpp",
-		"prefix": "!init",
+		"prefix": "!cp-single",
 		"body": [
-			"/// @author Huy",
+			"/// @author Thuw",
 			"/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR",
 			"#include \"cp/init/library.hpp\"",
 			"",
@@ -24,15 +24,21 @@
 			"    ${1:/* Code here */}",
 			"",
 			"    return 0;",
-			"}"
+			"}",
+			"/*",
+			"[IN]",
+			"",
+			"[OUT]",
+			"",
+			"*/"
 		],
-		"description": "main code c++"
+		"description": "C++ Template for Competitive Programming (Single Test Case)"
 	},
 	"main code c++w with template": {
 		"scope": "cpp",
 		"prefix": "!cppx",
 		"body": [
-			"/// @author Huy",
+			"/// @author Thuw",
 			"/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR",
 			"#include \"cp/init/library.hpp\"",
 			"#include \"cp/cppx/library.hpp\"",
@@ -45,15 +51,43 @@
 			"    ${1:/* Code here */}",
 			"",
 			"    return 0;",
-			"}"
+			"}",
+			"/*",
+			"[IN]",
+			"",
+			"[OUT]",
+			"",
+			"*/"
 		],
 		"description": "main code c++ similar python"
 	},
-	"main for test": {
+	"CP Multiple Test Cases": {
 		"scope": "cpp",
-		"prefix": "!tests",
+		"prefix": "!cp-multi",
 		"body": [
-			"/// @author Huy",
+			// "/// @author Thuw",
+			// "/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR",
+			// "#include \"cp/init/library.hpp\"",
+			// "",
+			// "signed main() {",
+			// "    //! std::ios_base::sync_with_stdio(false);",
+			// "    //! std::cin.tie(nullptr);",
+			// "    //! std::cout.tie(nullptr);",
+			// "",
+			// "    auto 🌻🌻🌻 = [&](int tc) -> void {",
+			// "        ${1:/* Code here */}",
+			// "    };",
+			// "",
+			// "    int 🌸;",
+			// "    std::cin >> 🌸;",
+			// "",
+			// "    for (int 🍀 = 1; 🍀 <= 🌸; ++🍀) {",
+			// "        🌻🌻🌻(🍀);",
+			// "    }",
+			// "",
+			// "    return 0;",
+			// "}"
+			"/// @author Thuw",
 			"/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR",
 			"#include \"cp/init/library.hpp\"",
 			"",
@@ -62,27 +96,33 @@
 			"    //! std::cin.tie(nullptr);",
 			"    //! std::cout.tie(nullptr);",
 			"",
-			"    auto 🌻🌻🌻 = [&](int tc) -> void {",
+			"    auto 🍧🍧🍧 = [&](int tc) -> void {",
 			"        ${1:/* Code here */}",
 			"    };",
 			"",
-			"    int 🌸;",
-			"    std::cin >> 🌸;",
+			"    int 🧊;",
+			"    std::cin >> 🧊;",
 			"",
-			"    for (int 🍀 = 1; 🍀 <= 🌸; ++🍀) {",
-			"        🌻🌻🌻(🍀);",
+			"    for (int 🍉 = 1; 🍉 <= 🧊; ++🍉) {",
+			"        🍧🍧🍧(🍉);",
 			"    }",
 			"",
 			"    return 0;",
-			"}"
+			"}",
+			"/*",
+			"[IN]",
+			"",
+			"[OUT]",
+			"",
+			"*/"
 		],
-		"description": "main for test"
+		"description": "C++ Template for Competitive Programming (Multiple Test Cases)"
 	},
 	"main code c++ for leetcode": {
 		"scope": "cpp",
 		"prefix": "!leetcode",
 		"body": [
-			"/// @author Huy",
+			"/// @author Thuw",
 			"/// @since  $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND $CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR",
 			"//<",
 			"#include \"cp/leetcode/leetcode.hpp\"",
@@ -96,30 +136,5 @@
 			"//>"
 		],
 		"description": "main code c++ for leetcode"
-	},
-	"file debug": {
-		"scope": "cpp",
-		"prefix": "!debug",
-		"body": [
-			"#ifdef HUY_DEBUG",
-			"#include \"debug/debug.h\"",
-			"#else",
-			"#define debug(...) if (0)",
-			"#endif",
-		],
-		"description": "file debug"
-	},
-	"increase processing speed": {
-		"scope": "cpp",
-		"prefix": "!faster",
-		"body": [
-			"#undef _GLIBCXX_DEBUG",
-			" ",
-			"#pragma GCC optimize(\"O3, unroll-loops\")",
-			"#include <bits/stdc++.h>",
-			" ",
-			"#pragma GCC target(\"avx2, bmi, bmi2, lzcnt, popcnt\")"
-		],
-		"description": "increase processing speed"
-	},
+	}
 }
