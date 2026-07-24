@@ -105,6 +105,11 @@ public:
         return min_left(root, 0, n, r, sm, pred);
     }
 
+    // Tìm phần tử nhỏ thứ K giữa 2 phiên bản (root_l và root_r)
+    int find_kth(int root_l, int root_r, int k) const {
+        return find_kth(root_l, root_r, 0, n, k);
+    }
+
     // Hàm tiện ích để reserve bộ nhớ nếu biết trước số lượng update
     void reserve(int update_count) {
         nodes.reserve(nodes.size() + update_count * (std::__lg(n) + 2));
@@ -209,6 +214,20 @@ private:
             if (res != mid) return res;
         }
         return min_left(nodes[u].l, l, mid, qr, sm, pred);
+    }
+
+    int find_kth(int ul, int ur, int l, int r, int k) const {
+        if (l == r - 1) {
+            return l;
+        }
+        int mid = l + (r - l) / 2;
+
+        int cnt_l = nodes[nodes[ur].l].val - nodes[nodes[ul].l].val;
+        if (k <= cnt_l) {
+            return find_kth(nodes[ul].l, nodes[ur].l, l, mid, k);
+        } else {
+            return find_kth(nodes[ul].r, nodes[ur].r, mid, r, k - cnt_l);
+        }
     }
 };
 
