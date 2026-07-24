@@ -117,5 +117,45 @@
         "cpp": "e:\\Code\\CP\\Tasks\\CPP\\cp\\init\\runner.exe $fullFileName",
 
         "cs": "cd $dir && dotnet run"
-    }
+    },
+    "workbench.colorTheme": "Dracula Theme",
+    "code-runner.runInTerminal": true,
+    "editor.tokenColorCustomizations": {
+        "[Dracula Theme]": {
+            "textMateRules": [
+                {
+                    "scope": "entity.name.namespace.cpp",
+                    "settings": {
+                        "foreground": "#8BE9FD"
+                    }
+                },
+                {
+                    "scope": "storage.type",
+                    "settings": {
+                        "foreground": "#CC99FF"
+                    }
+                },
+                // {
+                //     "scope": "entity.name.function.preprocessor.cpp",
+                //     "settings": {
+                //         "foreground": "#CC99FF"
+                //     }
+                // }
+            ]
+        }
+    },
+    "background.fullscreen": {
+        "images": [
+            // "file:///E:/Downloads/Pictures/videoframe_9956.png"
+            "file:///E:/Downloads/Pictures/background.jpg"
+        ],
+        // "opacity": 0.09,
+        "size": "cover",
+        "position": "center",
+        "interval": 0
+    },
+    "powermode.enabled": true,
+    "powermode.combo.location": "off",
+    "powermode.shake.intensity": 0,
+    "powermode.presets": "magic"
 }
