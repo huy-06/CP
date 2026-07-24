@@ -39,14 +39,14 @@ public:
     }
 
     // Lấy hash đoạn [l, r) (0-based)
-    value_type get(int l, int r) const {
+    value_type range_hash(int l, int r) const {
         assert(0 <= l && r <= n);
         return pref[r] - pref[l] * pow[r - l];
     }
     
     // Lấy hash cả chuỗi
-    value_type get() const {
-        return get(0, n);
+    value_type all_hash() const {
+        return range_hash(0, n);
     }
     
 private:

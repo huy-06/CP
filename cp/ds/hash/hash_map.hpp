@@ -1,4 +1,6 @@
 #include <memory>
+#include <utility>
+#include <iterator> // Thêm thư viện này để dùng std::reverse_iterator và iterator_tags
 #include "custom_hash.hpp"
 #include "../misc/formatter.hpp"
 
@@ -11,8 +13,7 @@ template <typename Key, typename Val>
 class hash_map {
 private:
     struct node {
-        Key first;
-        Val second;
+        std::pair<Key, Val> kv;
         bool occupied;
 
         node() : occupied(false) {}
@@ -21,58 +22,24 @@ private:
 public:
     using size_type = std::size_t;
 
-    struct entry {
-        const Key& first;
-        Val& second;
-
-        operator std::pair<Key, Val>() const {
-            return std::make_pair(first, second);
-        }
-
-        operator std::tuple<const Key&, Val&>() const {
-            return std::forward_as_tuple(first, second);
-        }
-
-        entry* operator->() {
-            return this;
-        }
-    };
-
-    struct const_entry {
-        const Key& first;
-        const Val& second;
-
-        operator std::pair<Key, Val>() const {
-            return std::make_pair(first, second);
-        }
-
-        operator std::tuple<const Key&, const Val&>() const {
-            return std::forward_as_tuple(first, second);
-        }
-
-        const const_entry* operator->() const {
-            return this;
-        }
-    };
-
-    template <typename EntryType, typename MapPtr>
+    template <typename PairType, typename MapPtr>
     class iterator_base {
     public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = EntryType;
+        using iterator_category = std::bidirectional_iterator_tag; 
+        using value_type = PairType;
         using difference_type = std::ptrdiff_t;
-        using pointer = EntryType*;
-        using reference = EntryType;
+        using pointer = PairType*;
+        using reference = PairType&;
 
         iterator_base(size_type _idx, MapPtr _map) 
             : idx(_idx), map(_map) {}
 
-        EntryType operator*() const {
-            return { map->table[idx].first, map->table[idx].second };
+        reference operator*() const {
+            return reinterpret_cast<reference>(map->table[idx].kv);
         }
 
-        EntryType operator->() const {
-            return { map->table[idx].first, map->table[idx].second };
+        pointer operator->() const {
+            return reinterpret_cast<pointer>(&map->table[idx].kv);
         }
 
         iterator_base& operator++() {
@@ -80,6 +47,25 @@ public:
             while (idx < map->table_size && !map->table[idx].occupied)
                 ++idx;
             return *this;
+        }
+
+        iterator_base operator++(int) {
+            iterator_base tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        iterator_base& operator--() {
+            --idx;
+            while (idx < map->table_size && !map->table[idx].occupied)
+                --idx;
+            return *this;
+        }
+
+        iterator_base operator--(int) {
+            iterator_base tmp = *this;
+            --(*this);
+            return tmp;
         }
 
         bool operator==(const iterator_base& other) const {
@@ -95,8 +81,11 @@ public:
         MapPtr map;
     };
 
-    using iterator = iterator_base<entry, hash_map*>;
-    using const_iterator = iterator_base<const_entry, const hash_map*>;
+    using iterator = iterator_base<std::pair<const Key, Val>, hash_map*>;
+    using const_iterator = iterator_base<const std::pair<const Key, Val>, const hash_map*>;
+    
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     hash_map(size_type n = 0) : num_elements(0), table_size(0), mask(0) {
         size_type k = 8;
@@ -160,6 +149,30 @@ public:
         return const_iterator(table_size, this);
     }
 
+    reverse_iterator rbegin() {
+        return reverse_iterator(end());
+    }
+
+    reverse_iterator rend() {
+        return reverse_iterator(begin());
+    }
+
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(end());
+    }
+    
+    const_reverse_iterator rend() const {
+        return const_reverse_iterator(begin());
+    }
+
+    const_reverse_iterator crbegin() const {
+        return const_reverse_iterator(end());
+    }
+
+    const_reverse_iterator crend() const {
+        return const_reverse_iterator(begin());
+    }
+
     size_type size() const {
         return num_elements;
     }
@@ -186,13 +199,13 @@ public:
 
         size_type i = find_index(key);
         if (!table[i].occupied) {
-            table[i].first = key;
-            table[i].second = Val{};
+            table[i].kv.first = key;
+            table[i].kv.second = Val{};
             table[i].occupied = true;
             ++num_elements;
         }
 
-        return table[i].second;
+        return table[i].kv.second;
     }
 
     iterator find(const Key& key) {
@@ -223,13 +236,12 @@ public:
 
             if (!table[j].occupied) break;
 
-            size_type k = hasher(table[j].first) & mask;
+            size_type k = hasher(table[j].kv.first) & mask;
             
             bool k_is_in_cyclic_interval = (i < j) ? (i < k && k <= j) : (i < k || k <= j);
 
             if (!k_is_in_cyclic_interval) {
-                table[i].first = std::move(table[j].first);
-                table[i].second = std::move(table[j].second);
+                table[i].kv = std::move(table[j].kv);
                 table[i].occupied = true;
 
                 table[j].occupied = false;
@@ -254,7 +266,7 @@ private:
 
     inline size_type find_index(const Key& key) const {
         size_type i = hasher(key) & mask;
-        while (table[i].occupied && !(table[i].first == key)) {
+        while (table[i].occupied && !(table[i].kv.first == key)) {
             i = (i + 1) & mask;
         }
         return i;
@@ -268,11 +280,10 @@ private:
         num_elements = 0;
         for (size_type i = 0; i < old_size; ++i) {
             if (old_table[i].occupied) {
-                size_type j = hasher(old_table[i].first) & mask;
+                size_type j = hasher(old_table[i].kv.first) & mask;
                 while (table[j].occupied) j = (j + 1) & mask;
                 
-                table[j].first = std::move(old_table[i].first);
-                table[j].second = std::move(old_table[i].second);
+                table[j].kv = std::move(old_table[i].kv);
                 table[j].occupied = true;
                 ++num_elements;
             }

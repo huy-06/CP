@@ -1,4 +1,5 @@
 #include <iostream>
+#include <functional>
 
 #ifndef CP_DS_GEO_POINT
 #define CP_DS_GEO_POINT
@@ -97,4 +98,20 @@ public:
 
 } // namespace ds
 } // namespace cp
+
+namespace std {
+
+template <typename Tp>
+struct hash<cp::ds::point<Tp>> {
+    size_t operator()(const cp::ds::point<Tp>& p) const noexcept {
+        std::hash<Tp> hasher;
+        size_t h1 = hasher(p.x);
+        size_t h2 = hasher(p.y);
+        
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+    }
+};
+
+} // namespace std
+
 #endif

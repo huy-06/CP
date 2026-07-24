@@ -7,7 +7,16 @@
 namespace cp {
 namespace ds {
 
-template <typename Tp>
+/**
+ * @brief Cấu trúc dữ liệu Persistent Segment Tree.
+ * 
+ * @tparam Tp Kiểu dữ liệu của các phần tử trong Cây.
+ * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp 2 phần tử (vd: cộng, max, min).
+ *            Thỏa mãn: op(a, op(b, c)) == op(op(a, b), c).
+ * @tparam e Con trỏ hàm trả về phần tử đơn vị (Identity element) của phép toán `op`.
+ *           Thỏa mãn: op(a, e()) == op(e(), a) == a.
+ */
+template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
 class persistent_segment_tree {
 public:
     using value_type = Tp;
@@ -15,20 +24,20 @@ public:
     struct node {
         int l = -1;
         int r = -1;
-        value_type val;
+        value_type val = e();
     };
 
     persistent_segment_tree() : n(0) {}
 
-    persistent_segment_tree(int n, const value_type& val = value_type()) {
+    explicit persistent_segment_tree(int n, const value_type& val = e()) {
         init(n, val);
     }
 
-    persistent_segment_tree(const std::vector<value_type>& data) {
+    explicit persistent_segment_tree(const std::vector<value_type>& data) {
         init(data);
     }
 
-    int init(int n, const value_type& val = value_type()) {
+    int init(int n, const value_type& val = e()) {
         std::vector<value_type> data(n, val);
         return init(data);
     }
@@ -63,13 +72,14 @@ public:
         return new_root;
     }
 
-    // Truy vấn trên phiên bản có gốc là root
+    // Truy vấn trên phiên bản có gốc là root, nửa khoảng [l, r)
     value_type range_query(int root, int l, int r) const {
         assert(0 <= l && l <= r && r <= n);
-        if (l == r) return value_type();
+        if (l == r) return e();
         return range_query(root, 0, n, l, r);
     }
 
+    // Truy vấn 1 điểm trên phiên bản có gốc là root
     value_type point_query(int root, int p) const {
         assert(0 <= p && p < n);
         return range_query(root, 0, n, p, p + 1);
@@ -79,9 +89,9 @@ public:
     template <typename F>
     int max_right(int root, int l, F&& pred) const {
         assert(0 <= l && l <= n);
-        assert(pred(value_type()));
+        assert(pred(e()));
         if (l == n) return n;
-        value_type sm = value_type();
+        value_type sm = e();
         return max_right(root, 0, n, l, sm, pred);
     }
 
@@ -89,13 +99,13 @@ public:
     template <typename F>
     int min_left(int root, int r, F&& pred) const {
         assert(0 <= r && r <= n);
-        assert(pred(value_type()));
+        assert(pred(e()));
         if (r == 0) return 0;
-        value_type sm = value_type();
+        value_type sm = e();
         return min_left(root, 0, n, r, sm, pred);
     }
 
-    // Hàm tiện ích để reserve bộ nhớ nếu biết trước số lượng truy vấn
+    // Hàm tiện ích để reserve bộ nhớ nếu biết trước số lượng update
     void reserve(int update_count) {
         nodes.reserve(nodes.size() + update_count * (std::__lg(n) + 2));
     }
@@ -117,7 +127,7 @@ private:
 
     void pull(int u) {
         if (nodes[u].l != -1 && nodes[u].r != -1) {
-            nodes[u].val = nodes[nodes[u].l].val + nodes[nodes[u].r].val;
+            nodes[u].val = op(nodes[nodes[u].l].val, nodes[nodes[u].r].val);
         }
     }
 
@@ -157,14 +167,16 @@ private:
         int mid = l + (r - l) / 2;
         if (qr <= mid) return range_query(nodes[u].l, l, mid, ql, qr);
         if (ql >= mid) return range_query(nodes[u].r, mid, r, ql, qr);
-        return range_query(nodes[u].l, l, mid, ql, qr) + 
-               range_query(nodes[u].r, mid, r, ql, qr);
+        
+        // Kết hợp kết quả từ cây con trái và phải bằng hàm op
+        return op(range_query(nodes[u].l, l, mid, ql, qr), 
+                  range_query(nodes[u].r, mid, r, ql, qr));
     }
 
     template <typename F>
     int max_right(int u, int l, int r, int ql, value_type& sm, F&& pred) const {
         if (l >= ql) {
-            value_type new_sm = sm + nodes[u].val;
+            value_type new_sm = op(sm, nodes[u].val);
             if (pred(new_sm)) {
                 sm = new_sm;
                 return r;
@@ -183,7 +195,7 @@ private:
     template <typename F>
     int min_left(int u, int l, int r, int qr, value_type& sm, F&& pred) const {
         if (r <= qr) {
-            value_type new_sm = nodes[u].val + sm;
+            value_type new_sm = op(nodes[u].val, sm); 
             if (pred(new_sm)) {
                 sm = new_sm;
                 return l;

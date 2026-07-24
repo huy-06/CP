@@ -1,6 +1,6 @@
 #include "vector.hpp"
 #include "segment.hpp"
-#include "../../alg/math/arithmetic/arithmetic.hpp"
+#include "../../alg/math/arith/arithmetic.hpp"
 
 #ifndef CP_DS_GEO_LINE
 #define CP_DS_GEO_LINE

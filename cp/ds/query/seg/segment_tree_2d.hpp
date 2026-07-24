@@ -3,26 +3,32 @@
 
 #ifndef CP_DS_QUERY_SEGMENT_TREE_2D
 #define CP_DS_QUERY_SEGMENT_TREE_2D
-
 namespace cp {
 namespace ds {
 
-template <typename Tp>
+/**
+ * @brief Cấu trúc dữ liệu Segment Tree 2 Chiều (2D Segment Tree).
+ * 
+ * @tparam Tp Kiểu dữ liệu của các phần tử.
+ * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp (vd: cộng, max, min).
+ * @tparam e Con trỏ hàm trả về phần tử đơn vị.
+ */
+template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
 class segment_tree_2d {
 public:
     using value_type = Tp;
 
     segment_tree_2d() : n(0), m(0), size_n(0), size_m(0) {}
 
-    segment_tree_2d(int n, int m, const value_type& val = value_type()) {
+    explicit segment_tree_2d(int n, int m, const value_type& val = e()) {
         init(n, m, val);
     }
 
-    segment_tree_2d(const std::vector<std::vector<value_type>>& data) {
+    explicit segment_tree_2d(const std::vector<std::vector<value_type>>& data) {
         init(data);
     }
 
-    void init(int n, int m, const value_type& val = value_type()) {
+    void init(int n, int m, const value_type& val = e()) {
         std::vector<std::vector<value_type>> data(n, std::vector<value_type>(m, val));
         init(data);
     }
@@ -36,7 +42,7 @@ public:
         for (size_n = 1; size_n < n; size_n <<= 1);
         for (size_m = 1; size_m < m; size_m <<= 1);
 
-        tree.assign(4 * size_n * size_m, value_type());
+        tree.assign(4 * size_n * size_m, e());
 
         for (int i = 0; i < n; ++i) {
             int row_idx = size_n + i;
@@ -85,21 +91,22 @@ public:
         assert(0 <= xs && xs <= xe && xe <= n);
         assert(0 <= ys && ys <= ye && ye <= m);
 
-        value_type res = value_type();
+        value_type sml = e();
+        value_type smr = e();
         int lx = xs + size_n;
         int rx = xe + size_n;
 
         while (lx < rx) {
             if (lx & 1) {
-                res = res + query_y(lx++, ys, ye);
+                sml = op(sml, query_y(lx++, ys, ye));
             }
             if (rx & 1) {
-                res = res + query_y(--rx, ys, ye);
+                smr = op(query_y(--rx, ys, ye), smr);
             }
             lx >>= 1;
             rx >>= 1;
         }
-        return res;
+        return op(sml, smr);
     }
 
     value_type all_query() const {
@@ -116,26 +123,26 @@ private:
     }
 
     void pull_y(int x, int y) {
-        tree[id(x, y)] = tree[id(x, y << 1)] + tree[id(x, (y << 1) | 1)];
+        tree[id(x, y)] = op(tree[id(x, y << 1)], tree[id(x, (y << 1) | 1)]);
     }
 
     void pull_x(int x, int y) {
-        tree[id(x, y)] = tree[id(x << 1, y)] + tree[id((x << 1) | 1, y)];
+        tree[id(x, y)] = op(tree[id(x << 1, y)], tree[id((x << 1) | 1, y)]);
     }
 
     value_type query_y(int row_idx, int ys, int ye) const {
-        value_type sml = value_type();
-        value_type smr = value_type();
+        value_type sml = e();
+        value_type smr = e();
         int ly = ys + size_m;
         int ry = ye + size_m;
 
         while (ly < ry) {
-            if (ly & 1) sml = sml + tree[id(row_idx, ly++)];
-            if (ry & 1) smr = tree[id(row_idx, --ry)] + smr;
+            if (ly & 1) sml = op(sml, tree[id(row_idx, ly++)]);
+            if (ry & 1) smr = op(tree[id(row_idx, --ry)], smr);
             ly >>= 1;
             ry >>= 1;
         }
-        return sml + smr;
+        return op(sml, smr);
     }
 };
 

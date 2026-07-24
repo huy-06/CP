@@ -52,7 +52,7 @@ public:
     }
 
     // Lấy hash đoạn [xs, xe), [ys, ye) (0-based)
-    value_type get(int xs, int ys, int xe, int ye) const {
+    value_type rect_hash(int xs, int ys, int xe, int ye) const {
         assert(0 <= xs && xs <= xe && xe <= n);
         assert(0 <= ys && ys <= ye && ye <= m);
         if (xs == xe || ys == ye) return value_type(0);
@@ -66,8 +66,8 @@ public:
     }
     
     // Lấy hash cả chuỗi
-    value_type get() const {
-        return get(0, 0, n, m);
+    value_type all_hash() const {
+        return rect_hash(0, 0, n, m);
     }
     
 private:
