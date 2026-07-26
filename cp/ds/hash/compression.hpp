@@ -40,6 +40,14 @@ public:
         return get(v);
     }
 
+    int lower_bound(const value_type& v) const {
+        return (int) std::distance(vals.begin(), std::lower_bound(vals.begin(), vals.end(), v));
+    }
+
+    int upper_bound(const value_type& v) const {
+        return (int) std::distance(vals.begin(), std::upper_bound(vals.begin(), vals.end(), v));
+    }
+
     value_type original(int p) const {
         return vals[p];
     }

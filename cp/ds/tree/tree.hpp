@@ -77,7 +77,7 @@ public:
         return dep[u];
     }
 
-    int subsize(int u) {
+    int subtree(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
         return siz[u];
