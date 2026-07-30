@@ -4,6 +4,11 @@
 #define CP_ALG_GEOMETRY_DISTANCE
 namespace cp {
 namespace alg {
+
+template <class Tp>
+Tp manhattan(const ds::point<Tp>& a, const ds::point<Tp>& b) {
+    return alg::abs(a.x - b.x) + alg::abs(a.y - b.y);
+}
     
 template <class Tp>
 Tp distance(const ds::point<Tp>& a, const ds::point<Tp>& b) {

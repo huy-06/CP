@@ -121,7 +121,8 @@ private:
     std::vector<int> roots;
 
     int copy_node(int u) {
-        nodes.push_back(nodes[u]);
+        node nd = nodes[u];
+        nodes.push_back(nd);
         return int(nodes.size()) - 1;
     }
 
@@ -142,8 +143,10 @@ private:
             nodes[u].val = data[l];
         } else {
             int mid = l + (r - l) / 2;
-            nodes[u].l = build(l, mid, data);
-            nodes[u].r = build(mid, r, data);
+            int l_child = build(l, mid, data);
+            int r_child = build(mid, r, data);
+            nodes[u].l = l_child;
+            nodes[u].r = r_child;
             pull(u);
         }
         return u;
@@ -156,9 +159,11 @@ private:
         } else {
             int mid = l + (r - l) / 2;
             if (p < mid) {
-                nodes[new_u].l = modify(nodes[u].l, l, mid, p, v);
+                int child = modify(nodes[u].l, l, mid, p, v);
+                nodes[new_u].l = child;
             } else {
-                nodes[new_u].r = modify(nodes[u].r, mid, r, p, v);
+                int child = modify(nodes[u].r, mid, r, p, v);
+                nodes[new_u].r = child;
             }
             pull(new_u);
         }
@@ -180,6 +185,7 @@ private:
 
     template <typename F>
     int max_right(int u, int l, int r, int ql, value_type& sm, F&& pred) const {
+        if (r <= ql) return r;
         if (l >= ql) {
             value_type new_sm = op(sm, nodes[u].val);
             if (pred(new_sm)) {
@@ -192,13 +198,14 @@ private:
         int res = -1;
         if (ql < mid) {
             res = max_right(nodes[u].l, l, mid, ql, sm, pred);
-            if (res != mid) return res;
+            if (res < mid) return res;
         }
         return max_right(nodes[u].r, mid, r, ql, sm, pred);
     }
 
     template <typename F>
     int min_left(int u, int l, int r, int qr, value_type& sm, F&& pred) const {
+        if (l >= qr) return l;
         if (r <= qr) {
             value_type new_sm = op(nodes[u].val, sm); 
             if (pred(new_sm)) {
@@ -211,7 +218,7 @@ private:
         int res = -1;
         if (qr > mid) {
             res = min_left(nodes[u].r, mid, r, qr, sm, pred);
-            if (res != mid) return res;
+            if (res > mid) return res;
         }
         return min_left(nodes[u].l, l, mid, qr, sm, pred);
     }

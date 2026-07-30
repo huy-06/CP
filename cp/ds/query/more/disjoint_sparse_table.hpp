@@ -5,7 +5,6 @@
 
 #ifndef CP_DS_DISJOINT_SPARSE_TABLE
 #define CP_DS_DISJOINT_SPARSE_TABLE
-
 namespace cp {
 namespace ds {
 
@@ -14,16 +13,21 @@ namespace ds {
  * Phù hợp với các phép toán có tính kết hợp (như nhân, cộng, min, max, gcd...).
  * KHÔNG hỗ trợ cập nhật (Static range queries).
  * 
- * @param Tp Kiểu dữ liệu, yêu cầu định nghĩa:
- * struct info {
- *      // ... dữ liệu
- * };
- * info operator+(const info& a, const info& b) {
- *      // logic gộp (merge), ví dụ: phép nhân modulo
- *      return ...;
- * }
+ * @tparam Tp Kiểu dữ liệu của các phần tử.
+ * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp 2 phần tử (ví dụ: cộng, max, min).
+ *            Hàm này phải thỏa mãn tính kết hợp: op(a, op(b, c)) == op(op(a, b), c).
+ * @tparam e Con trỏ hàm trả về phần tử đơn vị (Identity element) của phép toán `op`.
+ * 
+ * @par Ví dụ sử dụng:
+ * @code
+ * using Tp = int;
+ * Tp op(Tp a, Tp b) { return std::min(a, b); }
+ * Tp e() { return 1e9; } // Vô cùng lớn đối với phép tìm min
+ * 
+ * cp::ds::disjoint_sparse_table<Tp, op, e> dst(data);
+ * @endcode
  */
-template <typename Tp>
+template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
 class disjoint_sparse_table {
 public:
     using value_type = Tp;
@@ -55,7 +59,7 @@ public:
                 value_type cur = data[mid - 1];
                 table[k][mid - 1] = cur;
                 for (int i = mid - 2; i >= start; --i) {
-                    cur = data[i] + cur;
+                    cur = op(data[i], cur);
                     table[k][i] = cur;
                 }
 
@@ -63,7 +67,7 @@ public:
                 table[k][mid] = cur;
                 int end = std::min(start + len, n);
                 for (int i = mid + 1; i < end; ++i) {
-                    cur = cur + data[i];
+                    cur = op(cur, data[i]);
                     table[k][i] = cur;
                 }
             }
@@ -77,8 +81,12 @@ public:
      * @return Kết quả gộp đoạn [l, r-1]
      */
     value_type range_query(int l, int r) const {
-        assert(0 <= l && l < r && r <= n);
+        assert(0 <= l && l <= r && r <= n);
         
+        if (l == r) {
+            return e();
+        }
+
         int r_inclusive = r - 1;
 
         if (l == r_inclusive) {
@@ -87,7 +95,7 @@ public:
 
         int k = 31 - __builtin_clz(l ^ r_inclusive);
         
-        return table[k][l] + table[k][r_inclusive];
+        return op(table[k][l], table[k][r_inclusive]);
     }
 
 private:

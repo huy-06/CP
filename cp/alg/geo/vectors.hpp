@@ -1,8 +1,8 @@
 
 #include <algorithm>
 #include "../../cst/real.hpp"
-#include "../../ds/geometry/vector.hpp"
-#include "../../alg/math/arithmetic/arithmetic.hpp"
+#include "../../ds/geo/vector.hpp"
+#include "../../alg/math/arith/arithmetic.hpp"
 
 #ifndef CP_ALG_GEOMETRY_VECTORS
 #define CP_ALG_GEOMETRY_VECTORS

@@ -1,5 +1,5 @@
 #include "vectors.hpp"
-#include "../../ds/geometry/segment.hpp"
+#include "../../ds/geo/segment.hpp"
 
 #ifndef CP_ALG_GEOMETRY_SEGMENTS
 #define CP_ALG_GEOMETRY_SEGMENTS

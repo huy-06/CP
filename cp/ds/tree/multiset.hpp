@@ -11,9 +11,9 @@ public:
     using value_type = Tp;
     
     struct iterator {
-        typename cp::ds::set<std::pair<value_type, int>>::const_iterator it;
+        typename set<std::pair<value_type, int>>::const_iterator it;
 
-        iterator(typename cp::ds::set<std::pair<value_type, int>>::const_iterator i) : it(i) {}
+        iterator(typename set<std::pair<value_type, int>>::const_iterator i) : it(i) {}
 
         const value_type& operator*() const {
             return it->first;
@@ -112,7 +112,7 @@ public:
     }
 
 private:
-    cp::ds::set<std::pair<value_type, int>> s;
+    set<std::pair<value_type, int>> s;
     int tick = 0;
 };
 

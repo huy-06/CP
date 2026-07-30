@@ -1,6 +1,6 @@
 #include <queue>
-#include "../../ds/edge/weight.hpp"
-#include "../../ds/graph/graph.hpp"
+#include "../../../ds/edge/weight.hpp"
+#include "../../../ds/graph/graph.hpp"
 
 #ifndef CP_ALG_GRAPH_SHORTEST_PATH_BOTTLENECK
 #define CP_ALG_GRAPH_SHORTEST_PATH_BOTTLENECK
@@ -8,9 +8,9 @@ namespace cp {
 namespace alg {
 
 /// @brief minimize maximum edge
-template<typename Edge>
+template <typename Edge>
 std::vector<typename Edge::value_type> bottleneck(const ds::graph<Edge>& g, int src = 0) {
-    using value_type = Edge::value_type;
+    using value_type = typename Edge::value_type;
     using pii = std::pair<int, value_type>;
 
     int n = g.num_vertices();

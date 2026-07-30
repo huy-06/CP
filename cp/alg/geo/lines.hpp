@@ -1,5 +1,5 @@
 #include "rays.hpp"
-#include "../../ds/geometry/line.hpp"
+#include "../../ds/geo/line.hpp"
 
 #ifndef CP_ALG_GEOMETRY_LINES
 #define CP_ALG_GEOMETRY_LINES

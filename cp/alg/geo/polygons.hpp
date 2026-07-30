@@ -1,5 +1,5 @@
 #include "intersect.hpp"
-#include "../../ds/geometry/polygon.hpp"
+#include "../../ds/geo/polygon.hpp"
 
 #ifndef CP_ALG_GEOMETRY_POLYGONS
 #define CP_ALG_GEOMETRY_POLYGONS

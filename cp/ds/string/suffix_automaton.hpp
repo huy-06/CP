@@ -1,4 +1,4 @@
-#include "../hash/fast_hash_map.hpp"
+#include "../hash/hash_map.hpp"
 
 #ifndef CP_DS_STRING_SUFFIX_AUTOMATON
 #define CP_DS_STRING_SUFFIX_AUTOMATON
@@ -13,7 +13,7 @@ public:
     class state {
     public:
         int len, link;
-        cp::ds::fast_hash_map<value_type, int> next;
+        hash_map<value_type, int> next;
 
         long long cnt = 0;
         int first_pos = -1;

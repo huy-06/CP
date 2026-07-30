@@ -1,6 +1,6 @@
 #include <vector>
 #include "lines.hpp"
-#include "../../ds/geometry/intersection.hpp"
+#include "../../ds/geo/intersection.hpp"
 
 #ifndef CP_ALG_GEOMETRY_INTERSECT
 #define CP_ALG_GEOMETRY_INTERSECT

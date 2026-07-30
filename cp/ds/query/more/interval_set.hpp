@@ -6,7 +6,6 @@
 
 #ifndef CP_DS_INTERVAL_SET
 #define CP_DS_INTERVAL_SET
-
 namespace cp {
 namespace ds {
 

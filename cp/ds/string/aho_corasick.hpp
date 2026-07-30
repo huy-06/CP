@@ -1,5 +1,5 @@
 #include <queue>
-#include "../hash/fast_hash_map.hpp"
+#include "../hash/hash_map.hpp"
 
 #ifndef CP_DS_STRING_AHO_CORASICK
 #define CP_DS_STRING_AHO_CORASICK
@@ -13,7 +13,7 @@ public:
 
     class state {
     public:
-        ds::fast_hash_map<value_type, int> next;
+        hash_map<value_type, int> next;
         int link = 0;
         int min_len = INT_MAX;
 

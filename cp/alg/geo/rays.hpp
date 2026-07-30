@@ -1,5 +1,5 @@
 #include "segments.hpp"
-#include "../../ds/geometry/ray.hpp"
+#include "../../ds/geo/ray.hpp"
 
 #ifndef CP_ALG_GEOMETRY_RAYS
 #define CP_ALG_GEOMETRY_RAYS

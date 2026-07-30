@@ -45,7 +45,7 @@ public:
 
 private:
     int n;
-    ds::scc_graph<edge_type> scc;
+    scc_graph<edge_type> scc;
     std::vector<bool> assignment;
 };
 
