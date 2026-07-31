@@ -29,6 +29,15 @@ public:
         return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
     }
 
+    template <typename... Args>
+    size_t operator()(const std::tuple<Args...>& t) const {
+        size_t h = 0;
+        std::apply([&](const auto&... args) {
+            ((h ^= (*this)(args) + 0x9e3779b9 + (h << 6) + (h >> 2)), ...);
+        }, t);
+        return h;
+    }
+
     template <typename T>
     size_t operator()(const std::vector<T>& v) const {
         size_t h = 0;
