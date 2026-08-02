@@ -27,6 +27,14 @@ struct test_case {
 };
 
 // --- helper functions ---
+void safe_remove(const std::string& filepath) {
+    std::error_code ec;
+    for (int i = 0; i < 10; ++i) {
+        if (!fs::exists(filepath, ec)) break;
+        if (fs::remove(filepath, ec)) break;
+        Sleep(20); // Dùng Sleep() của windows.h (đơn vị: ms)
+    }
+}
 
 std::string trim(const std::string& str) {
     std::size_t first = str.find_first_not_of(" \t\r\n");
@@ -200,6 +208,8 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     if (hIn == INVALID_HANDLE_VALUE || hOut == INVALID_HANDLE_VALUE) {
         if (hIn != INVALID_HANDLE_VALUE) CloseHandle(hIn);
         if (hOut != INVALID_HANDLE_VALUE) CloseHandle(hOut);
+        safe_remove(in_filename);
+        safe_remove(out_filename);
         return res;
     }
 
@@ -226,6 +236,8 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
         
         if (wait_result == WAIT_TIMEOUT) {
             TerminateProcess(pi.hProcess, 1);
+            // FIX TLE: Chờ tối đa 1s để tiến trình con giải phóng hoàn toàn File Handle
+            WaitForSingleObject(pi.hProcess, 1000);
             res.is_timeout = true;
         } else {
             DWORD exit_code;
@@ -249,8 +261,9 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
         }
     }
     
-    remove(in_filename.c_str());
-    remove(out_filename.c_str());
+    // FIX: Dùng safe_remove có cơ chế retry thay cho remove() đơn thuần
+    safe_remove(in_filename);
+    safe_remove(out_filename);
     
     return res;
 }
@@ -364,7 +377,8 @@ int main(int argc, char* argv[]) {
             
             std::cout << "\n";
             system((run_cmd + " < " + temp_in).c_str());
-            remove(temp_in.c_str());
+            
+            safe_remove(temp_in);
             
             auto end_time = std::chrono::high_resolution_clock::now();
             double time_taken = std::chrono::duration<double>(end_time - start_time).count();
@@ -403,7 +417,8 @@ int main(int argc, char* argv[]) {
                 
                 std::string run_cmd = "cmd.exe /c \"\"" + exe_file.string() + "\" < " + temp_in + "\"";
                 system(run_cmd.c_str());
-                remove(temp_in.c_str());
+                
+                safe_remove(temp_in);
             }
             
             print_visual_diff(res.output, test.expected_out);

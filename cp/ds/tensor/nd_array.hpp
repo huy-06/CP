@@ -226,7 +226,7 @@ public:
             if (i > 0) os << "x";
             os << shape[i];
         }
-        os << "> ";
+        os << ">\n";
 
         if (v.empty() || shape.empty()) {
             open_bracket(os, "[");
