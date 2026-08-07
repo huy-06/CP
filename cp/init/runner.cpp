@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <sstream>
 #include <cmath> 
+#include <iomanip>
 #include <windows.h>
 #include "../cst/style.hpp"
 
@@ -32,7 +33,7 @@ void safe_remove(const std::string& filepath) {
     for (int i = 0; i < 10; ++i) {
         if (!fs::exists(filepath, ec)) break;
         if (fs::remove(filepath, ec)) break;
-        Sleep(20); // Dùng Sleep() của windows.h (đơn vị: ms)
+        Sleep(20);
     }
 }
 
@@ -183,15 +184,17 @@ void print_visual_diff(const std::string& actual, const std::string& expected) {
 struct run_result {
     int exit_code;
     std::string output;
+    std::string error_output;
     double time_taken;
     bool is_timeout;
 };
 
 run_result run_with_timeout(const std::string& exe_file, const std::string& input_str, double timeout_sec) {
-    run_result res = { -1, "", 0.0, false };
+    run_result res = { -1, "", "", 0.0, false };
     
     std::string in_filename = "_temp_runner.in";
     std::string out_filename = "_temp_runner.out";
+    std::string err_filename = "_temp_runner.err";
     
     std::ofstream in_file(in_filename);
     in_file << input_str;
@@ -204,12 +207,15 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
 
     HANDLE hIn = CreateFileA(in_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     HANDLE hOut = CreateFileA(out_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hErr = CreateFileA(err_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    if (hIn == INVALID_HANDLE_VALUE || hOut == INVALID_HANDLE_VALUE) {
+    if (hIn == INVALID_HANDLE_VALUE || hOut == INVALID_HANDLE_VALUE || hErr == INVALID_HANDLE_VALUE) {
         if (hIn != INVALID_HANDLE_VALUE) CloseHandle(hIn);
         if (hOut != INVALID_HANDLE_VALUE) CloseHandle(hOut);
+        if (hErr != INVALID_HANDLE_VALUE) CloseHandle(hErr);
         safe_remove(in_filename);
         safe_remove(out_filename);
+        safe_remove(err_filename);
         return res;
     }
 
@@ -218,7 +224,7 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     si.wShowWindow = SW_HIDE;
     si.hStdInput = hIn;
     si.hStdOutput = hOut;
-    si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    si.hStdError = hErr;
     
     PROCESS_INFORMATION pi;
     
@@ -236,7 +242,6 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
         
         if (wait_result == WAIT_TIMEOUT) {
             TerminateProcess(pi.hProcess, 1);
-            // FIX TLE: Chờ tối đa 1s để tiến trình con giải phóng hoàn toàn File Handle
             WaitForSingleObject(pi.hProcess, 1000);
             res.is_timeout = true;
         } else {
@@ -251,6 +256,7 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     
     CloseHandle(hIn);
     CloseHandle(hOut);
+    CloseHandle(hErr);
     
     if (!res.is_timeout) {
         std::ifstream out_file(out_filename);
@@ -259,11 +265,18 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
             ss << out_file.rdbuf();
             res.output = ss.str();
         }
+    
+        std::ifstream err_file(err_filename);
+        if (err_file) {
+            std::ostringstream ss;
+            ss << err_file.rdbuf();
+            res.error_output = ss.str();
+        }
     }
     
-    // FIX: Dùng safe_remove có cơ chế retry thay cho remove() đơn thuần
     safe_remove(in_filename);
     safe_remove(out_filename);
+    safe_remove(err_filename);
     
     return res;
 }
@@ -367,22 +380,28 @@ int main(int argc, char* argv[]) {
         std::cout << style::color_white << "test " << style::color_blue << (i + 1) << style::color_white << ": " << style::reset;
         
         if (!test.has_expected) {
-            auto start_time = std::chrono::high_resolution_clock::now();
-            std::string run_cmd = "cmd.exe /c \"\"" + exe_file.string() + "\"\"";
+            run_result res = run_with_timeout(exe_file.string(), test.input, time_limit);
             
-            std::string temp_in = "_temp_manual.in";
-            std::ofstream out(temp_in);
-            out << test.input;
-            out.close();
-            
-            std::cout << "\n";
-            system((run_cmd + " < " + temp_in).c_str());
-            
-            safe_remove(temp_in);
-            
-            auto end_time = std::chrono::high_resolution_clock::now();
-            double time_taken = std::chrono::duration<double>(end_time - start_time).count();
-            std::cout << style::color_black << "done: " << style::color_white << "[" << style::color_yellow << time_taken << "s" << style::color_white << "]" << style::reset << "\n";
+            if (res.is_timeout) {
+                std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << time_limit << "s" << style::color_white << "]" << style::reset << "\n";
+                passed_all = false;
+            } else if (res.exit_code != 0) {
+                std::cout << style::color_red << "rte " << style::color_white << "[" << style::color_yellow << res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
+                passed_all = false;
+            } else {
+                std::cout << "\n";
+                
+                if (global_debug && !res.error_output.empty()) {
+                    std::cout << style::color_black << "debug:" << style::reset << "\n";
+                    std::cout << style::color_yellow << res.error_output << style::reset;
+                    if (res.error_output.back() != '\n') std::cout << "\n";
+                }
+                
+                std::cout << res.output;
+                if (!res.output.empty() && res.output.back() != '\n') std::cout << "\n";
+                
+                std::cout << style::color_black << "done: " << style::color_white << "[" << style::color_yellow << res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
+            }
             continue;
         }
         
@@ -407,18 +426,10 @@ int main(int argc, char* argv[]) {
             std::cout << style::color_black << "input:" << style::reset << "\n";
             std::cout << style::color_white << test.input << style::reset << "\n";
 
-            if (global_debug) {
+            if (global_debug && !res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
-                
-                std::string temp_in = "_temp_debug.in";
-                std::ofstream out(temp_in);
-                out << test.input;
-                out.close();
-                
-                std::string run_cmd = "cmd.exe /c \"\"" + exe_file.string() + "\" < " + temp_in + "\"";
-                system(run_cmd.c_str());
-                
-                safe_remove(temp_in);
+                std::cout << style::color_yellow << res.error_output << style::reset;
+                if (res.error_output.back() != '\n') std::cout << "\n";
             }
             
             print_visual_diff(res.output, test.expected_out);
