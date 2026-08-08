@@ -1,3 +1,5 @@
+// cd "e:\Code\CP\Tasks\CPP\cp\init\" ; if ($?) { g++ -std=c++23 -O2 runner.cpp -o runner } ; if ($?) { .\runner }
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,13 +15,18 @@
 
 namespace fs = std::filesystem;
 
-// --- configuration ---
 constexpr const char* make_file_exe = R"(e:\Code\CP\Tasks\CPP\cp\init\make_file.exe)";
 constexpr double time_limit = 5.0;
 constexpr long double float_epsilon = 1E-6;
 
-// --- ansi color codes ---
 namespace style = cp::cst::style;
+
+enum class run_mode {
+    auto_mode,
+    manual,
+    run_only,
+    evaluate,
+};
 
 struct test_case {
     bool has_expected;
@@ -27,13 +34,12 @@ struct test_case {
     std::string expected_out;
 };
 
-// --- helper functions ---
 void safe_remove(const std::string& filepath) {
     std::error_code ec;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 20; ++i) {
         if (!fs::exists(filepath, ec)) break;
         if (fs::remove(filepath, ec)) break;
-        Sleep(20);
+        Sleep(30);
     }
 }
 
@@ -93,8 +99,6 @@ bool check_token_match(const std::string& actual, const std::string& expected) {
     return true;
 }
 
-// --- visual diff generator ---
-
 std::string colorize_layout(std::string actual, const std::string& expected, const std::vector<std::string>& expected_tokens, 
                             const std::string& color_match, const std::string& color_mismatch, const std::string& color_missing) {
     std::string result = "";
@@ -128,40 +132,50 @@ std::string colorize_layout(std::string actual, const std::string& expected, con
     }
     
     if (target_idx < expected_tokens.size()) {
-        std::string leftovers = "";
+        std::string trailing_newlines = "";
+        while (!result.empty() && (result.back() == '\n' || result.back() == '\r')) {
+            trailing_newlines = result.back() + trailing_newlines;
+            result.pop_back();
+        }
+
         std::size_t exp_token_idx = 0;
-        std::string prepended_space = "";
-        bool start_collecting = false;
-        
         std::sregex_iterator next_exp(clean_expected.begin(), clean_expected.end(), re);
         
+        bool start_collecting = false;
+        std::string missing_str = "";
+        std::string pending_space = "";
+
         while (next_exp != end) {
             std::smatch match = *next_exp;
             if (match[1].matched) { 
                 if (exp_token_idx == target_idx) {
                     start_collecting = true;
+                    missing_str += pending_space;
+                }
+                if (start_collecting) {
+                    missing_str += color_missing + match[1].str() + std::string(style::reset);
                 }
                 exp_token_idx++;
-            } else if (!start_collecting) {
-                prepended_space = match[2].str();
-            }
-            
-            if (start_collecting) {
-                if (match[1].matched) {
-                    leftovers += color_missing + match[1].str() + std::string(style::reset);
+            } else {
+                if (start_collecting) {
+                    missing_str += match[2].str();
                 } else {
-                    leftovers += match[2].str();
+                    pending_space = match[2].str();
                 }
             }
             next_exp++;
         }
-        
-        if (!actual.empty() && actual.back() != '\n' && actual.back() != ' ' && actual.back() != '\t') {
-            if (prepended_space.empty()) prepended_space = " ";
-            result += prepended_space;
+
+        if (!missing_str.empty()) {
+            if (!result.empty() && missing_str.front() != ' ' && missing_str.front() != '\n' && missing_str.front() != '\t') {
+                result += " ";
+            }
+            result += missing_str;
         }
-        
-        result += leftovers; 
+
+        if (!trailing_newlines.empty() && (result.empty() || (result.back() != '\n' && result.back() != '\r'))) {
+            result += trailing_newlines;
+        }
     }
     
     return result;
@@ -178,8 +192,6 @@ void print_visual_diff(const std::string& actual, const std::string& expected) {
     std::cout << style::color_black << "actual:" << style::reset << "\n";
     std::cout << colored_actual << (colored_actual.empty() || colored_actual.back() == '\n' ? "" : "\n");
 }
-
-// --- process execution ---
 
 struct run_result {
     int exit_code;
@@ -205,14 +217,14 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
 
-    HANDLE hIn = CreateFileA(in_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE hOut = CreateFileA(out_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE hErr = CreateFileA(err_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE h_in = CreateFileA(in_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE h_out = CreateFileA(out_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE h_err = CreateFileA(err_filename.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    if (hIn == INVALID_HANDLE_VALUE || hOut == INVALID_HANDLE_VALUE || hErr == INVALID_HANDLE_VALUE) {
-        if (hIn != INVALID_HANDLE_VALUE) CloseHandle(hIn);
-        if (hOut != INVALID_HANDLE_VALUE) CloseHandle(hOut);
-        if (hErr != INVALID_HANDLE_VALUE) CloseHandle(hErr);
+    if (h_in == INVALID_HANDLE_VALUE || h_out == INVALID_HANDLE_VALUE || h_err == INVALID_HANDLE_VALUE) {
+        if (h_in != INVALID_HANDLE_VALUE) CloseHandle(h_in);
+        if (h_out != INVALID_HANDLE_VALUE) CloseHandle(h_out);
+        if (h_err != INVALID_HANDLE_VALUE) CloseHandle(h_err);
         safe_remove(in_filename);
         safe_remove(out_filename);
         safe_remove(err_filename);
@@ -222,9 +234,9 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     STARTUPINFOA si = { sizeof(STARTUPINFOA) };
     si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
-    si.hStdInput = hIn;
-    si.hStdOutput = hOut;
-    si.hStdError = hErr;
+    si.hStdInput = h_in;
+    si.hStdOutput = h_out;
+    si.hStdError = h_err;
     
     PROCESS_INFORMATION pi;
     
@@ -254,18 +266,20 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
         CloseHandle(pi.hThread);
     }
     
-    CloseHandle(hIn);
-    CloseHandle(hOut);
-    CloseHandle(hErr);
+    CloseHandle(h_in);
+    CloseHandle(h_out);
+    CloseHandle(h_err);
     
-    if (!res.is_timeout) {
+    {
         std::ifstream out_file(out_filename);
         if (out_file) {
             std::ostringstream ss;
             ss << out_file.rdbuf();
             res.output = ss.str();
         }
-    
+    }
+
+    {
         std::ifstream err_file(err_filename);
         if (err_file) {
             std::ostringstream ss;
@@ -280,8 +294,6 @@ run_result run_with_timeout(const std::string& exe_file, const std::string& inpu
     
     return res;
 }
-
-// --- test case parser ---
 
 std::vector<test_case> parse_test_cases(const std::string& source) {
     std::vector<test_case> cases;
@@ -316,8 +328,6 @@ std::vector<test_case> parse_test_cases(const std::string& source) {
     return cases;
 }
 
-// --- main runner ---
-
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "usage: runner.exe <source_file.cpp>\n";
@@ -337,7 +347,60 @@ int main(int argc, char* argv[]) {
     std::string src_content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     f.close();
 
-    bool global_debug = (src_content.find("[DEBUG]") != std::string::npos);
+    bool show_debug = (src_content.find("[NO DEBUG]") == std::string::npos);
+
+    bool has_manual_tag = (src_content.find("[MANUAL]") != std::string::npos);
+    bool has_run_only_tag = (src_content.find("[RUN ONLY]") != std::string::npos);
+    bool has_evaluate_tag = (src_content.find("[EVALUATE]") != std::string::npos);
+
+    int tag_count = (has_manual_tag ? 1 : 0) + (has_run_only_tag ? 1 : 0) + (has_evaluate_tag ? 1 : 0);
+    if (tag_count > 1) {
+        std::cerr << style::color_red << "mode error: multiple mode tags detected ([MANUAL], [RUN ONLY], [EVALUATE]). Please use only one mode tag." << style::reset << "\n";
+        return 1;
+    }
+
+    std::vector<test_case> test_cases = parse_test_cases(src_content);
+    
+    run_mode current_mode = run_mode::auto_mode;
+
+    if (has_manual_tag) {
+        current_mode = run_mode::manual;
+    } else if (has_run_only_tag) {
+        if (test_cases.empty()) {
+            std::cerr << style::color_red << "mode error: forced [RUN ONLY] mode but no [IN] block found in source file!" << style::reset << "\n";
+            return 1;
+        }
+        current_mode = run_mode::run_only;
+    } else if (has_evaluate_tag) {
+        if (test_cases.empty()) {
+            std::cerr << style::color_red << "mode error: forced [EVALUATE] mode but no [IN] block found in source file!" << style::reset << "\n";
+            return 1;
+        }
+        bool has_expected_out = false;
+        for (const auto& tc : test_cases) {
+            if (tc.has_expected) {
+                has_expected_out = true;
+                break;
+            }
+        }
+        if (!has_expected_out) {
+            std::cerr << style::color_red << "mode error: forced [EVALUATE] mode but no [OUT] block found in source file!" << style::reset << "\n";
+            return 1;
+        }
+        current_mode = run_mode::evaluate;
+    } else {
+        if (test_cases.empty()) {
+            current_mode = run_mode::manual;
+        } else {
+            current_mode = run_mode::run_only;
+            for (const auto& tc : test_cases) {
+                if (tc.has_expected) {
+                    current_mode = run_mode::evaluate;
+                    break;
+                }
+            }
+        }
+    }
     
     std::string make_cmd = "cmd.exe /c \"cd /d \"" + dir_path.string() + "\" && echo " + src_file.filename().string() + " | \"" + std::string(make_file_exe) + "\" > NUL 2>&1\"";
     system(make_cmd.c_str());
@@ -347,25 +410,12 @@ int main(int argc, char* argv[]) {
         std::cout << style::color_red << "compile failed." << style::reset << "\n";
         return 1;
     }
-    
-    std::vector<test_case> test_cases = parse_test_cases(src_content);
-    
-    int run_mode = 1; // 1: manual, 2: run only, 3: evaluate
-    if (!test_cases.empty()) {
-        run_mode = 2;
-        for (const auto& tc : test_cases) {
-            if (tc.has_expected) {
-                run_mode = 3;
-                break;
-            }
-        }
-    }
-    
-    if (run_mode == 1) {
+
+    if (current_mode == run_mode::manual) {
         std::cout << style::color_white << "mode: " << style::color_green << "manual" << style::reset << "\n";
         system(("\"" + exe_file.string() + "\"").c_str());
         return 0;
-    } else if (run_mode == 2) {
+    } else if (current_mode == run_mode::run_only) {
         std::cout << style::color_white << "mode: " << style::color_green << "run only" << style::reset << "\n";
     } else {
         std::cout << style::color_white << "mode: " << style::color_green << "evaluate" << style::reset << "\n";
@@ -376,12 +426,13 @@ int main(int argc, char* argv[]) {
     
     for (std::size_t i = 0; i < test_cases.size(); ++i) {
         const auto& test = test_cases[i];
-        
         std::cout << style::color_white << "test " << style::color_blue << (i + 1) << style::color_white << ": " << style::reset;
         
-        if (!test.has_expected) {
-            run_result res = run_with_timeout(exe_file.string(), test.input, time_limit);
-            
+        run_result res = run_with_timeout(exe_file.string(), test.input, time_limit);
+
+        bool evaluate_this_case = (current_mode == run_mode::evaluate && test.has_expected);
+
+        if (!evaluate_this_case) {
             if (res.is_timeout) {
                 std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << time_limit << "s" << style::color_white << "]" << style::reset << "\n";
                 passed_all = false;
@@ -390,22 +441,28 @@ int main(int argc, char* argv[]) {
                 passed_all = false;
             } else {
                 std::cout << "\n";
-                
-                if (global_debug && !res.error_output.empty()) {
-                    std::cout << style::color_black << "debug:" << style::reset << "\n";
-                    std::cout << style::color_yellow << res.error_output << style::reset;
-                    if (res.error_output.back() != '\n') std::cout << "\n";
+            }
+            
+            if (show_debug && !res.error_output.empty()) {
+                std::cout << style::color_black << "debug:" << style::reset << "\n";
+                std::cout << style::color_yellow << res.error_output << style::reset;
+                if (res.error_output.back() != '\n') std::cout << "\n";
+            }
+            
+            if (!res.output.empty()) {
+                if (res.is_timeout || res.exit_code != 0) {
+                    std::cout << style::color_black << "output:" << style::reset << "\n";
                 }
-                
                 std::cout << res.output;
-                if (!res.output.empty() && res.output.back() != '\n') std::cout << "\n";
-                
+                if (res.output.back() != '\n') std::cout << "\n";
+            }
+            
+            if (!res.is_timeout && res.exit_code == 0) {
                 std::cout << style::color_black << "done: " << style::color_white << "[" << style::color_yellow << res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             }
             continue;
         }
         
-        run_result res = run_with_timeout(exe_file.string(), test.input, time_limit);
         bool is_ac = false;
         
         if (res.is_timeout) {
@@ -422,21 +479,29 @@ int main(int argc, char* argv[]) {
             passed_all = false;
         }
         
-        if (!is_ac && !res.is_timeout) {
+        if (!is_ac) {
             std::cout << style::color_black << "input:" << style::reset << "\n";
             std::cout << style::color_white << test.input << style::reset << "\n";
 
-            if (global_debug && !res.error_output.empty()) {
+            if (show_debug && !res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
                 std::cout << style::color_yellow << res.error_output << style::reset;
                 if (res.error_output.back() != '\n') std::cout << "\n";
             }
-            
-            print_visual_diff(res.output, test.expected_out);
+
+            if (res.is_timeout || res.exit_code != 0) {
+                if (!res.output.empty()) {
+                    std::cout << style::color_black << "actual:" << style::reset << "\n";
+                    std::cout << res.output;
+                    if (res.output.back() != '\n') std::cout << "\n";
+                }
+            } else {
+                print_visual_diff(res.output, test.expected_out);
+            }
         }
     }
     
-    if (run_mode == 3) {
+    if (current_mode == run_mode::evaluate) {
         if (passed_all) {
             std::cout << style::color_green << "all tests passed!" << style::reset << "\n";
         } else {

@@ -1,4 +1,5 @@
 #include "set.hpp"
+#include "../../misc/formatter.hpp"
 
 #ifndef CP_DS_TREE_MULTISET
 #define CP_DS_TREE_MULTISET
@@ -103,6 +104,7 @@ public:
         return s.order_of_key({x, 2e9}) - s.order_of_key({x, INT_MIN});
     }
 
+    // Trả về vị trí phần tử < x
     size_t order_of_key(const value_type& x) const {
         return s.order_of_key({x, INT_MIN});
     }
@@ -117,5 +119,27 @@ private:
 };
 
 } // namespace ds
+//<
+namespace internal {
+
+template <typename Tp>
+struct formatter<ds::multiset<Tp>> {
+    static void print(std::ostream& os, const ds::multiset<Tp>& v) {
+        os << style::color_green << "multiset" << style::reset;
+        open_bracket(os, "(");
+        open_bracket(os, "[");
+        bool first = true;
+        for (const auto& x : v) {
+            if (!first) os << ", ";
+            first = false;
+            print_item(os, x);
+        }
+        close_bracket(os, "]");
+        close_bracket(os, ")");
+    }
+};
+
+} // namespace internal
+//>
 } // namespace cp
 #endif

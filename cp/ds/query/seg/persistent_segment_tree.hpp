@@ -16,7 +16,11 @@ namespace ds {
  * @tparam e Con trỏ hàm trả về phần tử đơn vị (Identity element) của phép toán `op`.
  *           Thỏa mãn: op(a, e()) == op(e(), a) == a.
  */
-template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
+template <
+    class Tp, 
+    Tp (*op)(Tp, Tp), 
+    Tp (*e)()
+>
 class persistent_segment_tree {
 public:
     using value_type = Tp;

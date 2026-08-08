@@ -30,7 +30,11 @@ namespace ds {
  * cp::ds::segment_tree<Tp, op, e> seg(10); // Cây có 10 phần tử
  * @endcode
  */
-template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
+template <
+    class Tp, 
+    Tp (*op)(Tp, Tp), 
+    Tp (*e)()
+>
 class segment_tree {
 public:
     using value_type = Tp;

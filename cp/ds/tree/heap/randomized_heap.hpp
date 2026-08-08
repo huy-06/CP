@@ -3,7 +3,7 @@
 #include <functional>
 #include <cassert>
 #include <cstdlib>
-#include "../../alg/utils/random.hpp"
+#include "../../../alg/utils/random.hpp"
 
 #ifndef CP_DS_RANDOMIZED_HEAP
 #define CP_DS_RANDOMIZED_HEAP

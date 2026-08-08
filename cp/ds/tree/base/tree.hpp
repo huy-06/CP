@@ -1,5 +1,5 @@
-#include "../edge/edge.hpp"
-#include "../graph/graph.hpp"
+#include "../../edge/edge.hpp"
+#include "../../graph/graph.hpp"
 
 #ifndef CP_DS_GRAPH_TREE
 #define CP_DS_GRAPH_TREE

@@ -3,7 +3,6 @@
 
 #ifndef CP_DS_LINK_CUT_TREE
 #define CP_DS_LINK_CUT_TREE
-
 namespace cp {
 namespace ds {
 

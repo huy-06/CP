@@ -68,8 +68,13 @@ namespace ds {
  * @endcode
  */
 template <
-    class Tp, Tp (*op)(Tp, Tp), Tp (*e)(),
-    class Tg, Tp (*mapping)(Tg, Tp), Tg (*composition)(Tg, Tg), Tg (*id)()
+    class Tp, 
+    Tp (*op)(Tp, Tp),
+    Tp (*e)(),
+    class Tg, 
+    Tp (*mapping)(Tg, Tp), 
+    Tg (*composition)(Tg, Tg), 
+    Tg (*id)()
 >
 class lazy_segment_tree {
 public:

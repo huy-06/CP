@@ -13,7 +13,11 @@ namespace ds {
  * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp (vd: cộng, max, min).
  * @tparam e Con trỏ hàm trả về phần tử đơn vị.
  */
-template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
+template <
+    class Tp, 
+    Tp (*op)(Tp, Tp), 
+    Tp (*e)()
+>
 class segment_tree_2d {
 public:
     using value_type = Tp;
