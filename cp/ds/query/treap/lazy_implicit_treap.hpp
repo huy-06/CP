@@ -205,7 +205,7 @@ public:
      * @param r Chỉ số kết thúc đoạn cần chuyển (không gồm r)
      * @param target_pos Vị trí chèn trong mảng sau khi đã cắt đoạn [l, r) ra
      */
-    void move_range(int l, int r, int target_pos) {
+    void range_move(int l, int r, int target_pos) {
         assert(0 <= l && l <= r && r <= size());
         if (l == r) return;
 
