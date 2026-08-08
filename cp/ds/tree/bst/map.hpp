@@ -1,4 +1,5 @@
 #include <ext/pb_ds/assoc_container.hpp>
+#include "../../misc/formatter.hpp"
 
 #ifndef CP_DS_TREE_MAP
 #define CP_DS_TREE_MAP

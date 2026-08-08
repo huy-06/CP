@@ -1,5 +1,4 @@
 #include "set.hpp"
-#include "../../misc/formatter.hpp"
 
 #ifndef CP_DS_TREE_MULTISET
 #define CP_DS_TREE_MULTISET
