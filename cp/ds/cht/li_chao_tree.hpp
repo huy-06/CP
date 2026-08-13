@@ -44,6 +44,7 @@ public:
 private:
     struct line {
         value_type m, c;
+        
         value_type eval(value_type x) const {
             return m * x + c;
         }

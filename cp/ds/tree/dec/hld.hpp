@@ -66,6 +66,17 @@ public:
         built = true;
     }
 
+    void read_edges(int off = 1, std::istream& is = std::cin) {
+        for (int i = 1; i < num_vertices(); ++i) {
+            edge_type e;
+            is >> e;
+            e.from -= off;
+            e.to -= off;
+            this->add_edge(std::move(e));
+        }
+        build(); 
+    }
+
     int top(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
