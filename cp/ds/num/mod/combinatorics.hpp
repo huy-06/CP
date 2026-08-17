@@ -130,6 +130,7 @@ private:
         num = n;
     }
 };
+
 } // namespace ds
 } // namespace cp
 #endif

@@ -230,7 +230,7 @@ public:
             out << '\n';
         }
         out.close();
-        int ret = system("python cp/debug/draw_graph.py");
+        int ret = system("python cp/dbg/draw_graph.py");
         if (ret != 0) {
             std::cerr << "Failed to run draw_graph.py (return code " << ret << ")\n";
             return;

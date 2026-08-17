@@ -7,7 +7,7 @@
 #include <chrono>
 #include <windows.h>
 #include "../cst/style.hpp"
-#include "../ds/misc/random.hpp"
+#include "../ds/neo/random.hpp"
 
 // cd "e:\Code\CP\Tasks\CPP\cp\dbg\" ; if ($?) { g++ -std=c++23 -O2 check2.cpp -o check2 } ; if ($?) { .\check2 }
 

@@ -2,8 +2,8 @@
 #include <cassert>
 #include "../misc/formatter.hpp"
 
-#ifndef CP_DS_TENSOR_ND_ARRAY
-#define CP_DS_TENSOR_ND_ARRAY
+#ifndef CP_DS_ND_ARRAY
+#define CP_DS_ND_ARRAY
 namespace cp {
 namespace ds {
 

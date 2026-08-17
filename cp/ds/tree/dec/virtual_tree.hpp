@@ -1,7 +1,7 @@
 #include "hld.hpp"
 
-#ifndef CP_DS_TREE_VIRTUAL
-#define CP_DS_TREE_VIRTUAL
+#ifndef CP_DS_TREE_VIRTUAL_TREE
+#define CP_DS_TREE_VIRTUAL_TREE
 namespace cp {
 namespace ds {
 
