@@ -1,3 +1,5 @@
+// cd "e:\Code\CP\Tasks\CPP\cp\init\" ; if ($?) { g++ -std=c++23 -O2 make_file.cpp -o make_file } ; if ($?) { .\make_file }
+
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
@@ -46,6 +48,7 @@ private:
     
     bool valid = true;
     bool is_first_line = true; 
+    bool last_line_was_empty = true;
 
     const std::vector<std::string> keep_tokens = {
         "@author",
@@ -59,7 +62,10 @@ private:
         {"🌻🌻🌻", "solve"},
         {"🧊", "tc"},
         {"🍉", "t"},
-        {"🍧🍧🍧", "solve"}
+        {"🍧🍧🍧", "solve"},
+        {"🎁", "tc"},
+        {"🧦", "t"},
+        {"🎄🎄🎄", "solve"}
     };
 
     const std::vector<std::string> remove_call_patterns = {
@@ -233,12 +239,26 @@ private:
 
             pos_slash = line.find("//");
             if (pos_slash != std::string::npos) {
+                size_t slash_end = pos_slash;
+                while (slash_end < line.size() && line[slash_end] == '/') {
+                    slash_end++;
+                }
+                
+                bool is_hash_comment = false;
+                if (slash_end < line.size() && line[slash_end] == '#') {
+                    is_hash_comment = true;
+                    line.erase(slash_end, 1);
+                }
+
                 std::string_view comment_part = std::string_view(line).substr(pos_slash);
-                bool keep = false;
-                for (const auto& tok : keep_tokens) {
-                    if (comment_part.find(tok) != std::string_view::npos) {
-                        keep = true;
-                        break;
+                bool keep = is_hash_comment;
+                
+                if (!keep) {
+                    for (const auto& tok : keep_tokens) {
+                        if (comment_part.find(tok) != std::string_view::npos) {
+                            keep = true;
+                            break;
+                        }
                     }
                 }
 
@@ -275,9 +295,11 @@ private:
 
             if (!current_trim.empty()) {
                 write_line(line);
+                last_line_was_empty = false;
             } else {
-                if (originally_blank) {
+                if (originally_blank && !last_line_was_empty) {
                     write_line("");
+                    last_line_was_empty = true;
                 }
             }
         }
