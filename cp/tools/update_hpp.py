@@ -2,10 +2,6 @@ import os
 import re
 from pathlib import Path
 
-# Regular expression to match C++ include directives
-# Group 1: The include syntax (e.g., #include ")
-# Group 2: The actual file path (e.g., ../../ds/misc/random.hpp)
-# Group 3: The closing quote or bracket (e.g., ")
 INCLUDE_REGEX = re.compile(r'(#include\s+["<])([^">]+)([">])')
 
 def find_includes(directory, search_text, extensions=("*.hpp", "*.cpp")):
@@ -23,7 +19,6 @@ def find_includes(directory, search_text, extensions=("*.hpp", "*.cpp")):
                         match = INCLUDE_REGEX.search(line)
                         if match:
                             include_path = match.group(2)
-                            # Check if the search text is part of the include path
                             if search_text in include_path:
                                 print(f"  [+] Match found in: {filepath} (Line {line_num})")
                                 print(f"      Code: {line.strip()}")
@@ -37,7 +32,6 @@ def find_includes(directory, search_text, extensions=("*.hpp", "*.cpp")):
         print(f"[DONE] Found {found_count} matching include(s).")
 
 def replace_includes(directory, search_text, replace_text, extensions=("*.hpp", "*.cpp")):
-    """Finds matching include paths and replaces the ENTIRE old path with the new path."""
     print(f"\n[REPLACE] Replacing includes containing '{search_text}' with '{replace_text}'...")
     modified_files = 0
     
@@ -59,11 +53,8 @@ def replace_includes(directory, search_text, replace_text, extensions=("*.hpp", 
                         suffix = match.group(3)
                         
                         if search_text in include_path:
-                            # Replace the line with the new path
-                            # Example: #include "../../ds/misc/random.hpp" -> #include "new_path/random.hpp"
                             new_line = f"{prefix}{replace_text}{suffix}\n"
                             
-                            # Keep leading spaces/tabs if any exist before #include
                             leading_whitespace = lines[i][:lines[i].find('#')]
                             lines[i] = leading_whitespace + new_line
                             
@@ -83,11 +74,7 @@ def replace_includes(directory, search_text, replace_text, extensions=("*.hpp", 
     else:
         print(f"[DONE] Successfully updated {modified_files} file(s).")
 
-def main():
-    print("="*60)
-    print(" C++ INCLUDE PATH REFACTORING TOOL ")
-    print("="*60)
-    
+def main():    
     target_dir = input("Enter target directory path (Press Enter for current directory): ").strip()
     if not target_dir:
         target_dir = "."
