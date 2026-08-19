@@ -181,12 +181,50 @@ std::string colorize_layout(std::string actual, const std::string& expected, con
     return result;
 }
 
+std::string colorize_expected(std::string expected, const std::vector<std::string>& actual_tokens, 
+                              const std::string& color_normal, const std::string& color_highlight) {
+    std::string result = "";
+    std::size_t target_idx = 0;
+    
+    expected = strip_ansi(expected);
+    
+    std::regex re(R"((\S+)|(\s+))");
+    std::sregex_iterator next(expected.begin(), expected.end(), re);
+    std::sregex_iterator end;
+    
+    while (next != end) {
+        std::smatch match = *next;
+        if (match[2].matched) { 
+            result += match[2].str();
+        } else { 
+            std::string exp_word = match[1].str();
+            bool is_wrong_or_missing = false;
+            
+            if (target_idx >= actual_tokens.size() || !is_equal_token(actual_tokens[target_idx], exp_word)) {
+                is_wrong_or_missing = true;
+            }
+            
+            if (is_wrong_or_missing) {
+                result += color_highlight + exp_word + std::string(style::reset);
+            } else {
+                result += color_normal + exp_word + std::string(style::reset);
+            }
+            target_idx++;
+        }
+        next++;
+    }
+    
+    return result;
+}
+
 void print_visual_diff(const std::string& actual, const std::string& expected) {
     std::vector<std::string> actual_tokens = tokenize(actual);
     std::vector<std::string> expected_tokens = tokenize(expected);
     
+    std::string colored_expected = colorize_expected(expected, actual_tokens, style::color_white, style::color_yellow);
+    
     std::cout << style::color_black << "expected:" << style::reset << "\n";
-    std::cout << style::color_white << trim(expected) << style::reset << "\n";
+    std::cout << colored_expected << (colored_expected.empty() || colored_expected.back() == '\n' ? "" : "\n");
     
     std::string colored_actual = colorize_layout(actual, expected, expected_tokens, style::color_green, style::color_red, style::color_yellow);
     std::cout << style::color_black << "actual:" << style::reset << "\n";
