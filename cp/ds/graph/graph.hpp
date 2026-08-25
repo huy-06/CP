@@ -109,35 +109,29 @@ public:
             head[i] += head[i - 1];
         }
 
-        std::vector<edge_type> sorted_edges(edge_list.size());
         std::vector<int> cur = head;
+        std::vector<edge_type> sorted(edge_list.size());
 
         for (const auto& e : edge_list) {
-            sorted_edges[cur[e.from]++] = e;
+            sorted[cur[e.from]++] = e;
         }
 
-        edge_list = std::move(sorted_edges);
+        edge_list = std::move(sorted);
         built = true;
     }
 
-    void add_edge(const edge_type& e) {
+    virtual void add_edge(const edge_type& e) {
         assert(0 <= e.from && e.from < num_vertices());
         assert(0 <= e.to && e.to < num_vertices());
         edge_list.push_back(e);
         built = false;
     }
 
-    void add_edge(edge_type&& e) {
-        assert(0 <= e.from && e.from < num_vertices());
-        assert(0 <= e.to && e.to < num_vertices());
-        edge_list.emplace_back(std::move(e));
-        built = false;
-    }
-
-    void add_unedge(edge_type e) {
+    virtual void add_unedge(const edge_type& e) {
+        edge_type rev_e = e;
+        std::swap(rev_e.from, rev_e.to);
         add_edge(e);
-        std::swap(e.from, e.to);
-        add_edge(std::move(e));
+        add_edge(rev_e);
     }
 
     void read_edges(int m, int off = 1, std::istream& is = std::cin) {
@@ -146,7 +140,7 @@ public:
             is >> e;
             e.from -= off;
             e.to   -= off;
-            add_edge(std::move(e));
+            add_edge(e);
         }
         build();
     }
@@ -157,7 +151,7 @@ public:
             is >> e;
             e.from -= off;
             e.to   -= off;
-            add_unedge(std::move(e));
+            add_unedge(e);
         }
         build();
     }
@@ -240,7 +234,7 @@ public:
 //>
     }
 
-    std::vector<edge_type> get_edges() const {
+    virtual std::vector<edge_type> get_edges() const {
         return edge_list;
     }
 

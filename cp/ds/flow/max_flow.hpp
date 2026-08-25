@@ -41,7 +41,7 @@ public:
         std::vector<int> pos(edge_list.size());
         std::vector<edge_type> sorted(edge_list.size());
 
-        for (int i = 0; i < (int) edge_list.size(); ++i) {
+        for (int i = 0; i < static_cast<int>(edge_list.size()); ++i) {
             pos[i] = cur[edge_list[i].from]++;
             sorted[pos[i]] = edge_list[i];
         }
@@ -52,7 +52,7 @@ public:
         fwd_ids.clear();
         fwd_ids.reserve(edge_list.size() / 2);
 
-        for (int i = 0; i < (int) edge_list.size(); i += 2) {
+        for (int i = 0; i < static_cast<int>(edge_list.size()); i += 2) {
             int id_fwd = pos[i];
             int id_rev = pos[i + 1];
             
@@ -68,43 +68,22 @@ public:
     }
 
 
-    void add_edge(edge_type e) {
+    void add_edge(const edge_type& e) override {
         graph<edge_type>::add_edge(e);
-        std::swap(e.from, e.to);
-        e.cap = 0;
-        graph<edge_type>::add_edge(std::move(e));
-    }
-    
-    void add_unedge(edge_type e) {
         edge_type rev_e = e;
         std::swap(rev_e.from, rev_e.to);
-        add_edge(std::move(e));
-        add_edge(std::move(rev_e));
+        rev_e.cap = 0;
+        graph<edge_type>::add_edge(rev_e);
     }
 
-    void read_edge(int m, int off = 1, std::istream& is = std::cin) {
-        for (int i = 0; i < m; ++i) {
-            edge_type e;
-            is >> e;
-            e.from -= off;
-            e.to   -= off;
-            add_edge(std::move(e));
-        }
-        build();
-    }
-    
-    void read_unedge(int m, int off = 1, std::istream& is = std::cin) {
-        for (int i = 0; i < m; ++i) {
-            edge_type e;
-            is >> e;
-            e.from -= off;
-            e.to   -= off;
-            add_unedge(std::move(e));
-        }
-        build();
+    void add_unedge(const edge_type& e) override {
+        edge_type rev_e = e;
+        std::swap(rev_e.from, rev_e.to);
+        graph<edge_type>::add_edge(e);
+        graph<edge_type>::add_edge(rev_e);
     }
 
-    bool change_edge(edge_type e) {
+    bool change_edge(const edge_type& e) {
         build();
         int u = e.from;
         for (int i = head[u]; i < head[u + 1]; ++i) {
@@ -119,7 +98,7 @@ public:
         return false;
     }
 
-    std::vector<edge_type> get_edges() const {
+    std::vector<edge_type> get_edges() const override {
         if (!built) const_cast<max_flow*>(this)->build();
 
         std::vector<edge_type> res;
@@ -156,20 +135,20 @@ public:
     std::vector<bool> min_cut(int s) {
         build();
         std::vector<bool> vis(n, false);
-        std::queue<int>   q;
+        std::queue<int>   que;
         
         vis[s] = true;
-        q.push(s);
+        que.push(s);
         
-        while (!q.empty()) {
-            int u = q.front();
-            q.pop();
+        while (!que.empty()) {
+            int u = que.front();
+            que.pop();
             
             for (const auto& e : (*this)[u]) {
                 int v = e.to;
                 if (!vis[v] && e.cap - e.flow > 0) {
                     vis[v] = true;
-                    q.push(v);
+                    que.push(v);
                 }
             }
         }
@@ -191,14 +170,14 @@ private:
 
     bool bfs(int s, int t) {
         std::fill(lvl.begin(), lvl.end(), -1);
-        std::queue<int> q;
+        std::queue<int> que;
         
         lvl[s] = 0;
-        q.push(s);
+        que.push(s);
         
-        while (!q.empty()) {
-            int u = q.front(); 
-            q.pop();
+        while (!que.empty()) {
+            int u = que.front(); 
+            que.pop();
             
             for (int i = head[u]; i < head[u + 1]; ++i) {
                 const auto& e = edge_list[i];
@@ -208,7 +187,7 @@ private:
                     lvl[v] = lvl[u] + 1;
                     if (v == t) 
                         return true;
-                    q.push(v);
+                    que.push(v);
                 }
             }
         }

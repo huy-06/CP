@@ -22,23 +22,13 @@ public:
         init(n, m);
     }
 
-    void add_edge(edge_type e) {
+    void add_edge(edge_type e) override {
+        edge_type rev_e = e;
+        std::swap(rev_e.from, rev_e.to);
+        rev_e.cap  = 0;
+        rev_e.cost = -rev_e.cost;
         graph<edge_type>::add_edge(e);
-        std::swap(e.from, e.to);
-        e.cap  = 0;
-        e.cost = -e.cost;
-        graph<edge_type>::add_edge(std::move(e));
-    }
-
-    void read_edge(int m, int off = 1, std::istream& is = std::cin) {
-        for (int i = 0; i < m; ++i) {
-            edge_type e;
-            is >> e;
-            e.from -= off;
-            e.to   -= off;
-            add_edge(std::move(e));
-        }
-        build();
+        graph<edge_type>::add_edge(rev_e);
     }
 
     void build() override {
@@ -57,7 +47,7 @@ public:
         std::vector<int> pos(edge_list.size());
         std::vector<edge_type> sorted(edge_list.size());
 
-        for (size_t i = 0; i < edge_list.size(); ++i) {
+        for (int i = 0; i < static_cast<int>(edge_list.size()); ++i) {
             pos[i] = cur[edge_list[i].from]++;
             sorted[pos[i]] = edge_list[i];
         }
@@ -65,7 +55,7 @@ public:
         fwd_ids.clear();
         fwd_ids.reserve(edge_list.size() / 2);
 
-        for (size_t i = 0; i < edge_list.size(); i += 2) {
+        for (int i = 0; i < static_cast<int>(edge_list.size()); i += 2) {
             int id_fwd = pos[i];
             int id_rev = pos[i + 1];
 
@@ -79,7 +69,7 @@ public:
         built     = true;
     }
 
-    std::vector<edge_type> get_edges() const {
+    std::vector<edge_type> get_edges() const override {
         if (!built) const_cast<min_cost_flow*>(this)->build();
         
         std::vector<edge_type> res;
