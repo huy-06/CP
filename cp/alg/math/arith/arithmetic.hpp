@@ -133,6 +133,55 @@ cp_constexpr auto log10(const Tp& x) -> decltype(x.eps(), Tp()) {
     return Tp(std::log10(x.val()));
 }
 
+template <typename T1, typename T2>
+cp_constexpr auto log(const T1& a, const T2& b) -> decltype(std::log(b) / std::log(a)) {
+    return std::log(b) / std::log(a);
+}
+
+template <typename Tp>
+cp_constexpr auto log(const Tp& a, const Tp& b) -> decltype(b.eps(), Tp()) {
+    return log(b) / log(a);
+}
+
+template <typename T1, typename T2>
+cp_constexpr auto log_floor(T1 a_in, T2 b_in) -> typename std::enable_if<std::is_integral<T1>::value && std::is_integral<T2>::value, int>::type {
+    using com = typename std::common_type<T1, T2>::type;
+
+    com a = static_cast<com>(a_in);
+    com b = static_cast<com>(b_in);
+    
+    if (a <= 1 || b <= 0) return 0;
+
+    int res = 0;
+    while (b >= a) {
+        b /= a;
+        res++;
+    }
+    return res;
+}
+
+template <typename T1, typename T2>
+cp_constexpr auto log_ceil(T1 a_in, T2 b_in) -> typename std::enable_if<std::is_integral<T1>::value && std::is_integral<T2>::value, int>::type {
+    using com = typename std::common_type<T1, T2>::type;
+    com a = static_cast<com>(a_in);
+    com b = static_cast<com>(b_in);
+    
+    if (a <= 1 || b <= 0) return 0;
+
+    int res = 0;
+    bool is_perfect_power = true;
+    
+    while (b >= a) {
+        if (b % a != 0) is_perfect_power = false;
+        b /= a;
+        res++;
+    }
+    
+    if (b > 1) is_perfect_power = false;
+
+    return is_perfect_power ? res : res + 1;
+}
+
 template <typename Tp>
 cp_constexpr auto exp(const Tp& x) -> typename std::enable_if<std::is_arithmetic<Tp>::value, Tp>::type {
     return std::exp(x);

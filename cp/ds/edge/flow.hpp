@@ -3,7 +3,6 @@
 
 #ifndef CP_DS_GRAPH_EDGE_FLOW
 #define CP_DS_GRAPH_EDGE_FLOW
-
 namespace cp {
 namespace ds {
     
@@ -11,14 +10,16 @@ template <typename Tp>
 struct flow_edge {
     using value_type = Tp;
 
-    int from;
-    int to;
+    int        from;
+    int        to;
     value_type cap;
     value_type flow;
+    int        rev;
+    
     static constexpr value_type inf = std::numeric_limits<value_type>::max() / 2;
 
-    flow_edge(int from = 0, int to = 0, value_type cap = 0, value_type flow = 0)
-        : from(from), to(to), cap(cap), flow(flow) {}
+    flow_edge(int from = 0, int to = 0, value_type cap = 0, value_type flow = 0, int rev = -1)
+        : from(from), to(to), cap(cap), flow(flow), rev(rev) {}
 
     friend std::istream& operator>>(std::istream& is, flow_edge& e) {
         is >> e.from >> e.to >> e.cap;
@@ -30,6 +31,7 @@ struct flow_edge {
         return os;
     }
 };
+
 template<typename value_type>
 constexpr value_type flow_edge<value_type>::inf;
 

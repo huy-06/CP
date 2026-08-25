@@ -1,4 +1,3 @@
-#include <queue>
 #include "graph.hpp"
 
 #ifndef CP_DS_GRAPH_TECC
@@ -10,160 +9,132 @@ template <typename Edge>
 class tecc : public graph<Edge> {
 public:
     using edge_type = Edge;
-    using graph<edge_type>::num_edges;
-    using graph<edge_type>::index;
     using graph<edge_type>::adj;
-
-    tecc(int n = 0, int m = 0) {
-        init(n, m);
-    }
-
-    void init(int n = 0, int m = 0) {
-        graph<edge_type>::init(n, m);
-        cid.clear();
-        brs.clear();
-        mrk.clear();
-        cnt = 0;
-        ok1 = false;
-        ok2 = false;
-    }
-
-    const std::vector<bool>& mark() {
-        if (!ok1) work1();
-        return mrk;
-    }
-
-    const std::vector<edge_type>& bridges() {
-        if (!ok1) work1();
-        return brs;
-    }
-
-    const std::pair<int, std::vector<int>&> comp() {
-        if (!ok2) work2();
-        return { cnt, cid };
-    }
-
-    graph<edge_type> compress() {
-        if (!ok2) work2();
-
-        graph<edge_type> g(cnt);
-        for (int i = 0; i < num_edges(); ++i) {
-            if (mrk[i] && edge_list[i].from < edge_list[i].to) {
-                int u = cid[edge_list[i].from];
-                int v = cid[edge_list[i].to];
-
-                if (u != v) {
-                    edge_type new_e = edge_list[i];
-                    new_e.from = u;
-                    new_e.to   = v;
-                    g.add_unedge(new_e);
-                }
-            }
-        }
-        g.build();
-
-        return g;
-    }
-
-private:
-    using graph<edge_type>::n;
+    using graph<edge_type>::num_edges;
     using graph<edge_type>::edge_list;
 
-    std::vector<int>  cid;
-    std::vector<bool> mrk;
-    std::vector<edge_type> brs;
-    int  cnt = 0;
-    bool ok1 = false;
-    bool ok2 = false;
+    using graph<edge_type>::graph;
+    using graph<edge_type>::init;
 
-    void work1() {
-        mrk.assign(num_edges(), false);
-        brs.clear();
-
-        std::vector<int> in(n, -1), low(n, -1);
-        int timer = 0; cnt = 0;
-
-        std::function<void(int, int)> dfs = [&](int u, int pid) {
-            in[u] = low[u] = timer++;
-
-            for (const auto& e : adj(u)) {
-                int v = e.to;
-                
-                if (v == pid) {
-                    continue;
-                }
-
-                if (in[v] == -1) {
-                    dfs(v, u);
-                    low[u] = std::min(low[u], low[v]);
-
-                    if (low[v] > in[u]) {
-                        mrk[index(e)] = true;
-                        
-                        for (const auto& rev_e : adj(v)) {
-                            if (rev_e.to == u) {
-                                mrk[index(rev_e)] = true;
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    low[u] = std::min(low[u], in[v]);
-                }
-            }
-        };
-
-        for (int u = 0; u < n; ++u) {
-            if (in[u] == -1) {
-                dfs(u, -1);
-            }
-        }
-
-        for (int i = 0; i < num_edges(); ++i) {
-            if (mrk[i] && edge_list[i].from < edge_list[i].to) {
-                brs.push_back(edge_list[i]);
-            }
-        }
-        ok1 = true;
-    }
-
-    void work2() {
-        if (!ok1) work1();
+    void build() override {
+        if (built) return;
+        
+        graph<edge_type>::build();
 
         cid.assign(n, -1);
         cnt = 0;
 
-        for (int i = 0; i < n; ++i) {
-            if (cid[i] != -1) {
-                continue;
-            }
+        std::vector<int> in(n, -1), low(n, -1);
+        std::vector<int> stk;
+        stk.reserve(n);
+        int timer = 0;
 
-            std::queue<int> q;
-            q.push(i);
-            cid[i] = cnt;
+        auto dfs = [&](auto const& self, int u, int p) -> void {
+            in[u] = low[u] = timer++;
+            stk.push_back(u);
 
-            while (!q.empty()) {
-                int u = q.front();
-                q.pop();
+            bool skipped_p = false;
+            
+            for (const auto& e : adj(u)) {
+                int v = e.to;
+                
+                if (v == p && !skipped_p) {
+                    skipped_p = true;
+                    continue;
+                }
 
-                for (const auto& e : adj(u)) {
-                    int v = e.to;
-                    
-                    if (mrk[index(e)]) {
-                        continue;
-                    }
-
-                    if (cid[v] == -1) {
-                        cid[v] = cnt;
-                        q.push(v);
-                    }
+                if (in[v] == -1) {
+                    self(self, v, u);
+                    low[u] = std::min(low[u], low[v]);
+                } else {
+                    low[u] = std::min(low[u], in[v]);
                 }
             }
-            ++cnt;
+
+            if (low[u] == in[u]) {
+                while (true) {
+                    int v = stk.back();
+                    stk.pop_back();
+                    cid[v] = cnt;
+                    if (v == u) break;
+                }
+                ++cnt;
+            }
+        };
+
+        for (int i = 0; i < n; ++i) {
+            if (in[i] == -1) {
+                dfs(dfs, i, -1);
+            }
         }
 
-        ok2 = true;
+        mrk.assign(num_edges(), false);
+        brs.clear();
+
+        for (int i = 0; i < num_edges(); ++i) {
+            const auto& e = edge_list[i];
+            if (cid[e.from] != cid[e.to]) {
+                mrk[i] = true;
+                if (e.from < e.to) {
+                    brs.push_back(e);
+                }
+            }
+        }
+
+        built = true;
     }
+
+    const std::vector<bool>& mark() {
+        if (!built) build();
+        return mrk;
+    }
+
+    const std::vector<edge_type>& bridges() {
+        if (!built) build();
+        return brs;
+    }
+
+    std::pair<int, const std::vector<int>&> comp() {
+        if (!built) build();
+        return { cnt, cid };
+    }
+
+    graph<edge_type> compress() {
+        if (!built) build();
+
+        std::vector<edge_type> new_edges;
+        new_edges.reserve(brs.size() * 2);
+
+        for (const auto& e : edge_list) {
+            int u = cid[e.from];
+            int v = cid[e.to];
+            if (u != v) {
+                edge_type new_e = e;
+                new_e.from = u;
+                new_e.to   = v;
+                new_edges.push_back(std::move(new_e));
+            }
+        }
+
+        std::sort(new_edges.begin(), new_edges.end());
+        new_edges.erase(std::unique(new_edges.begin(), new_edges.end(),
+            [](const edge_type& a, const edge_type& b) {
+                return a.from == b.from && a.to == b.to;
+            }), 
+            new_edges.end()
+        );
+
+        return graph<edge_type>(new_edges);
+    }
+
+private:
+    using graph<edge_type>::n;
+    using graph<edge_type>::built;
+
+    int cnt;
+    std::vector<int>  cid;
+    std::vector<bool> mrk;
+    std::vector<edge_type> brs;
 };
 
 } // namespace ds

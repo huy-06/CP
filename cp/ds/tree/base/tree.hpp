@@ -12,38 +12,50 @@ public:
     using edge_type = Edge;
     using graph<edge_type>::num_vertices;
 
-    tree(int n = 0) {
-        init(n);
+    tree(int n = 0, int root = 0) : root(root) {
+        init(n, root);
     }
 
-    tree(const graph<edge_type>& g, int u = 0) {
-        init(g, u);
+    tree(const graph<edge_type>& g, int root = 0) {
+        init(g, root);
     }
 
-    void init(int n) {
-        graph<edge_type>::init(n);
+    void init(int n, int root = 0) {
+        graph<edge_type>::init(n, n - 1);
+        this->root = root;
         par.assign(n, -1);
         dep.assign(n, 0);
         siz.assign(n, 0);
         built = false;
     }
 
-    void init(const graph<edge_type>& g, int u = 0) {
-        assert(0 <= u && u < g.num_vertices());
+    void init(const graph<edge_type>& g, int root = 0) {
+        assert(0 <= root && root < g.num_vertices());
         init(g.num_vertices());
         for (const auto& e : g.get_edges()) {
             if (e.from < e.to) {
                 add_edge(e);
             }
         }
-        build(u);
+        build(root);
     }
 
-    void build(int u = 0) {
-        assert(0 <= u && u < num_vertices());
+    void build() override {
         if (built) return;
+        build(root);
+    }
+
+    virtual void build(int root) {
+        assert(0 <= root && root < num_vertices());
+        if (built && this->root == root) return;
+
+        this->root = root;
         graph<edge_type>::build();
-        dfs(u);
+
+        par.assign(n, -1);
+        dep.assign(n, 0);
+        siz.assign(n, 0);
+        dfs(root);
         built = true;
     }
 
@@ -65,6 +77,11 @@ public:
         build();
     }
 
+    virtual void set_root(int root) {
+        if (built && this->root == root) return;
+        build(root);
+    }
+
     int parent(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
@@ -84,8 +101,10 @@ public:
     }
 
 protected:
+    using graph<edge_type>::n;
     using graph<edge_type>::built;
 
+    int root;
     std::vector<int> par;
     std::vector<int> dep;
     std::vector<int> siz;

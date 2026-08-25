@@ -11,20 +11,20 @@ public:
     using edge_type = Edge;
     using tree<edge_type>::num_vertices;
 
-    hld(int n = 0) {
-        init(n);
+    hld(int n = 0, int root = 0) {
+        init(n, root);
     }
 
-    hld(const graph<edge_type>& g, int u = 0) {
-        init(g, u);
+    hld(const graph<edge_type>& g, int root = 0) {
+        init(g, root);
     }
 
-    hld(const tree<edge_type>& tree, int u = 0) {
-        init(tree, u);
+    hld(const tree<edge_type>& tree, int root = 0) {
+        init(tree, root);
     }
 
-    void init(int n) {
-        tree<edge_type>::init(n);
+    void init(int n, int root = 0) {
+        tree<edge_type>::init(n, root);
         inp.assign(n, 0);
         out.assign(n, 0);
         ord.assign(n, 0);
@@ -34,35 +34,54 @@ public:
         built = false;
     }
 
-    void init(const graph<edge_type>& g, int u = 0) {
-        assert(0 <= u && u < g.num_vertices());
+    void init(const graph<edge_type>& g, int root = 0) {
+        assert(0 <= root && root < g.num_vertices());
         init(g.num_vertices());
         for (const auto& e : g.get_edges()) {
             if (e.from < e.to) {
                 tree<edge_type>::add_edge(e);
             }
         }
-        build(u);
+        build(root);
     }
 
-    void init(const tree<edge_type>& tree, int u = 0)  {
-        assert(0 <= u && u < tree.num_vertices());
+    void init(const tree<edge_type>& tree, int root = 0)  {
+        assert(0 <= root && root < tree.num_vertices());
         init(tree.num_vertices());
         for (const auto& e : tree.get_edges()) {
             if (e.from < e.to) {
                 add_edge(e);
             }
         }
-        build(u);
+        build(root);
     }
 
-    void build(int u = 0) {
-        assert(0 <= u && u < num_vertices());
+    void build() override {
         if (built) return;
-        tree<edge_type>::build(u);
-        dfs1(u);
-        lead[u] = u;
-        dfs2(u);
+        build(root);
+    }
+
+    void build(int root = 0) override {
+        assert(0 <= root && root < num_vertices());
+        if (built && this->root == root) return;
+
+        this->root = root;
+        graph<edge_type>::build(); 
+        
+        par.assign(n, -1);
+        dep.assign(n, 0);
+        siz.assign(n, 0);
+        inp.assign(n, 0);
+        out.assign(n, 0);
+        ord.assign(n, 0);
+        lead.assign(n, 0);
+        heavy.assign(n, -1);
+        timer = 0;
+
+        dfs1(root);
+        lead[root] = root;
+        dfs2(root);
+        
         built = true;
     }
 
@@ -213,10 +232,12 @@ public:
     }
 
 private:
+    using graph<edge_type>::n;
     using tree<edge_type>::siz;
     using tree<edge_type>::par;
     using tree<edge_type>::dep;
     using tree<edge_type>::head;
+    using tree<edge_type>::root;
     using tree<edge_type>::built;
     using tree<edge_type>::edge_list;
 

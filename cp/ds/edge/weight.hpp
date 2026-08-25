@@ -3,7 +3,6 @@
 
 #ifndef CP_DS_GRAPH_EDGE_WEIGHT
 #define CP_DS_GRAPH_EDGE_WEIGHT
-
 namespace cp {
 namespace ds {
 

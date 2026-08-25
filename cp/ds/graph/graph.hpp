@@ -1,4 +1,5 @@
 #include <vector>
+#include <cassert>
 #include <algorithm>
 #include "../edge/edge.hpp"
 
@@ -47,6 +48,8 @@ public:
         init(edges);
     }
 
+    virtual ~graph() = default;
+
     void init(int n = 0, int m = 0) {
         this->n = n;
         built = false;
@@ -91,7 +94,7 @@ public:
     }
 
 
-    void build() {
+    virtual void build() {
         if (built) return;
 
         head.assign(n + 1, 0);
