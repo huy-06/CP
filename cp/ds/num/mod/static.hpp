@@ -1,6 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include <tuple>
+#include "is_modint.hpp"
 #include "../../../init/constexpr.hpp"
 #include "../../../alg/math/mod/inverse.hpp"
 #include "../../../alg/math/nt/is_prime.hpp"
@@ -148,6 +149,9 @@ private:
 
 using mint998244353  = ds::static_mod_int<998244353>;
 using mint1000000007 = ds::static_mod_int<1000000007>;
+
+template <unsigned long long MOD>
+inline constexpr bool is_modint_v<static_mod_int<MOD>> = true;
 
 } // namespace ds
 } // namespace cp

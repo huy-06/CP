@@ -262,6 +262,38 @@ std::vector<Tp> taylor_shift(const std::vector<Tp>& p, Tp c) {
     return res;
 }
 
+template <typename T1, typename T2>
+T1 lagrange(const std::vector<T1>& y, T2 k) {
+    int m = (int)y.size();
+    if (m == 0) return 0;
+    
+    if (k >= 0 && k < m) return y[(int)k];
+
+    static ds::combinatorics<T1> comb;
+
+    T1 x = T1(k); 
+
+    std::vector<T1> pref(m, 1);
+    for (int i = 1; i < m; ++i) {
+        pref[i] = pref[i - 1] * (x - (i - 1));
+    }
+
+    T1 ans = 0;
+    T1 suff = 1;
+    for (int i = m - 1; i >= 0; --i) {
+        T1 term = y[i] * pref[i] * suff * comb.inv_fact(i) * comb.inv_fact(m - 1 - i);
+        if ((m - 1 - i) & 1) {
+            ans -= term;
+        } else {
+            ans += term;
+        }
+        suff *= (x - i); 
+    }
+
+    return ans;
+}
+
+
 } // namespace alg
 
 namespace internal {
@@ -313,118 +345,106 @@ std::pair<std::vector<Tp>,
     return { Q, R };
 }
 
-template <typename Tp>
-void build_subproduct_tree (
-    int p, int l, int r,
-    const std::vector<Tp>& pts,
-    std::vector<std::vector<Tp>>& tree
-) {
-    if (l == r) {
-        tree[p] = { -pts[l], Tp(1) };
-        return;
-    }
-    int m = (l + r) / 2;
-    build_subproduct_tree(2 * p, l, m, pts, tree);
-    build_subproduct_tree(2 * p + 1, m + 1, r, pts, tree);
-    tree[p] = alg::convolution(tree[2 * p], tree[2 * p + 1]);
-}
-
-template <typename Tp>
-void eval_recursive (
-    int p, int l, int r, 
-    std::vector<Tp> poly,
-    const std::vector<std::vector<Tp>>& tree,
-    std::vector<Tp>& res
-) {
-    if (l == r) {
-        if (!poly.empty()) {
-            res[l] = poly[0];
-        } else {
-            res[l] = Tp(0);
-        }
-        return;
-    }
-
-    int m = (l + r) / 2;
-
-    auto left = div_mod(poly, tree[2 * p]);
-    eval_recursive(2 * p, l, m, left.second, tree, res);
-
-    auto right = div_mod(poly, tree[2 * p + 1]);
-    eval_recursive(2 * p + 1, m + 1, r, right.second, tree, res);
-}
-
-template <typename Tp>
-std::vector<Tp> interp_recursive (
-    int p, int l, int r,
-    const std::vector<Tp>& y,
-    const std::vector<std::vector<Tp>>& tree
-) {
-    if (l == r) {
-        return { y[l] };
-    }
-
-    int m = (l + r) / 2;
-
-    auto left = interp_recursive(2 * p, l, m, y, tree);
-    auto right = interp_recursive(2 * p + 1, m + 1, r, y, tree);
-
-    auto p1 = alg::convolution(left, tree[2 * p + 1]);
-    auto p2 = alg::convolution(right, tree[2 * p]);
-
-    int siz = std::max(p1.size(), p2.size());
-    p1.resize(siz); p2.resize(siz);
-
-    for (int i = 0; i < siz; ++i) {
-        p1[i] += p2[i];
-    }
-    return p1;
-}
-
 } // namespace internal
 
 namespace alg {
 
 template <typename Tp>
-std::vector<Tp> multipoint_evaluation(const std::vector<Tp>& p, const std::vector<Tp>& pts) {
+std::vector<Tp> multipoint_evaluation(const std::vector<Tp>& poly, const std::vector<Tp>& pts) {
     if (pts.empty()) return {};
-    if (p.empty()) return std::vector<Tp>(pts.size(), Tp(0));
+    if (poly.empty()) return std::vector<Tp>(pts.size(), Tp(0));
 
-    int m = int(pts.size());
-    std::vector<std::vector<Tp>> tree(4 * m);
-    
-    internal::build_subproduct_tree(1, 0, m - 1, pts, tree);
+    int n = (int)pts.size();
+    std::vector<std::vector<Tp>> tree(4 * n);
 
-    std::vector<Tp> res(m);
+    auto build = [&](this auto&& self, int u, int l, int r) -> void {
+        if (l == r) {
+            tree[u] = {-pts[l], Tp(1)};
+            return;
+        }
+        int m = l + (r - l) / 2;
+        self(2 * u, l, m);
+        self(2 * u + 1, m + 1, r);
+        tree[u] = convolution(tree[2 * u], tree[2 * u + 1]);
+    };
+    build(1, 0, n - 1);
 
-    auto root = internal::div_mod(p, tree[1]);
-    internal::eval_recursive(1, 0, m - 1, root.second, tree, res);
+    std::vector<Tp> res(n);
+    auto eval = [&](this auto&& self, int u, int l, int r, std::vector<Tp> cur_poly) -> void {
+        if (l == r) {
+            res[l] = cur_poly.empty() ? Tp(0) : cur_poly[0];
+            return;
+        }
+        int m = l + (r - l) / 2;
+        self(2 * u, l, m, internal::div_mod(cur_poly, tree[2 * u]).second);
+        self(2 * u + 1, m + 1, r, internal::div_mod(cur_poly, tree[2 * u + 1]).second);
+    };
 
+    eval(1, 0, n - 1, internal::div_mod(poly, tree[1]).second);
     return res;
 }
 
 template <typename Tp>
 std::vector<Tp> interpolation(const std::vector<Tp>& x, const std::vector<Tp>& y) {
     assert(x.size() == y.size());
-    int n = int(x.size());
+    int n = (int)x.size();
     if (n == 0) return {};
 
     std::vector<std::vector<Tp>> tree(4 * n);
-    internal::build_subproduct_tree(1, 0, n - 1, x, tree);
+    
+    // 1. Dựng subproduct tree
+    auto build = [&](this auto&& self, int u, int l, int r) -> void {
+        if (l == r) {
+            tree[u] = {-x[l], Tp(1)};
+            return;
+        }
+        int m = l + (r - l) / 2;
+        self(2 * u, l, m);
+        self(2 * u + 1, m + 1, r);
+        tree[u] = convolution(tree[2 * u], tree[2 * u + 1]);
+    };
+    build(1, 0, n - 1);
 
-    std::vector<Tp> M = tree[1];
-    std::vector<Tp> dM = derivative(M);
+    std::vector<Tp> val(n);
+    // 2. Tính giá trị đa thức (multipoint evaluation) dùng chung tree vừa dựng
+    auto eval = [&](this auto&& self, int u, int l, int r, std::vector<Tp> cur_poly) -> void {
+        if (l == r) {
+            val[l] = cur_poly.empty() ? Tp(0) : cur_poly[0];
+            return;
+        }
+        int m = l + (r - l) / 2;
+        self(2 * u, l, m, internal::div_mod(cur_poly, tree[2 * u]).second);
+        self(2 * u + 1, m + 1, r, internal::div_mod(cur_poly, tree[2 * u + 1]).second);
+    };
+    
+    std::vector<Tp> dM = derivative(tree[1]);
+    eval(1, 0, n - 1, dM); 
 
-    std::vector<Tp> vals = multipoint_evaluation(dM, x);
-
-    std::vector<Tp> y_div_dM(n);
+    std::vector<Tp> c(n);
     for (int i = 0; i < n; ++i) {
-        y_div_dM[i] = y[i] / vals[i];
+        c[i] = y[i] / val[i];
     }
 
-    return internal::interp_recursive(1, 0, n - 1, y_div_dM, tree);
-}
+    // 3. Nội suy (Interpolation)
+    auto interp = [&](this auto&& self, int u, int l, int r) -> std::vector<Tp> {
+        if (l == r) return {c[l]};
+        int m = l + (r - l) / 2;
+        auto L = self(2 * u, l, m);
+        auto R = self(2 * u + 1, m + 1, r);
+        
+        auto P1 = convolution(L, tree[2 * u + 1]);
+        auto P2 = convolution(R, tree[2 * u]);
+        
+        int sz = std::max(P1.size(), P2.size());
+        P1.resize(sz);
+        for (int i = 0; i < (int)P2.size(); ++i) {
+            P1[i] += P2[i];
+        }
+        return P1;
+    };
 
+    return interp(1, 0, n - 1);
+}
 } // namespace alg
 
 } // namespace cp

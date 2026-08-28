@@ -1,5 +1,5 @@
-#include <type_traits>
 #include <cassert>
+#include "is_modint.hpp"
 #include "../../../alg/math/mod/pow_mod.hpp"
 #include "../../../alg/math/mod/inverse.hpp"
 
@@ -137,6 +137,9 @@ private:
     value_type value;
     static inline value_type modular;
 };
+
+template <typename Tp, int Id>
+inline constexpr bool is_modint_v<dynamic_mod_int<Tp, Id>> = true;
 
 } // namespace ds
 } // namespace cp

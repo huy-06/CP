@@ -132,6 +132,7 @@ public:
         return ans;
     }
 
+    // trả về true nếu vẫn còn đường đi từ s đến u
     std::vector<bool> min_cut(int s) {
         build();
         std::vector<bool> vis(n, false);

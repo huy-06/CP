@@ -1,8 +1,6 @@
 #include <cassert>
 #include <iostream>
-#include <utility>
-#include <limits>
-#include <functional>
+#include "is_modint.hpp"
 #include "../../../init/constexpr.hpp"
 #include "../../../alg/math/mod/safe_mod.hpp"
 
@@ -204,6 +202,9 @@ constexpr int montgomery_mod_int<MOD>::bit_width;
 using mont998244353 = montgomery_mod_int<998244353>;
 using mont1000000007 = montgomery_mod_int<1000000007>;
 using mont2_61_1 = montgomery_mod_int<(1ULL << 61) - 1>;
+
+template <unsigned long long MOD>
+inline constexpr bool is_modint_v<montgomery_mod_int<MOD>> = true;
 
 } // namespace ds
 } // namespace cp

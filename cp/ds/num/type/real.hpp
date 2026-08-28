@@ -37,6 +37,11 @@ public:
     explicit constexpr operator value_type() const noexcept {
         return value;
     }
+    
+    template <typename Tp, typename std::enable_if<std::is_arithmetic<Tp>::value, int>::type = 0>
+    explicit constexpr operator Tp() const noexcept {
+        return static_cast<Tp>(value);
+    }
 
     static constexpr int precision() noexcept {
         value_type e = eps();

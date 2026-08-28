@@ -1,5 +1,5 @@
 #include <vector>
-#include <utility>
+#include "montgomery.hpp"
 
 #ifndef CP_DS_MODULAR_COMBINATORICS
 #define CP_DS_MODULAR_COMBINATORICS
@@ -20,11 +20,13 @@ public:
         return facts[n];
     }
 
+    // Số cách chọn k phần tử từ tập hợp n phần tử (không quan tâm thứ tự).
     value_type C(int n, int k) {
         if (k < 0 || k > n) return value_type(0);
         return fact(n) / (fact(k) * fact(n - k));
     }
 
+    // Số cách chọn có thứ tự k phần tử từ tập hợp n phần tử.
     value_type A(int n, int k) {
         if (k < 0 || k > n) return value_type(0);
         return fact(n) / fact(n - k);
@@ -49,7 +51,7 @@ private:
 };
 
 template <typename Tp>
-class combinatorics<Tp, decltype((void)std::declval<Tp>().inv(), void())> {
+class combinatorics<Tp, decltype((void) std::declval<Tp>().inv(), void())> {
 public:
     using value_type = Tp;
 
@@ -78,22 +80,26 @@ public:
         return invs[n];
     }
 
+    // Số cách chọn k phần tử từ tập hợp n phần tử (không quan tâm thứ tự).
     value_type C(int n, int k) {
         if (k < 0 || k > n) return 0;
         return fact(n) * inv_fact(k) * inv_fact(n - k);
     }
 
+    // Số cách chọn có thứ tự k phần tử từ tập hợp n phần tử.
     value_type A(int n, int k) {
         if (k < 0 || k > n) return 0;
         return fact(n) * inv_fact(n - k);
     }
 
+    // Số cách chia k phần tử giống nhau vào n nhóm phân biệt.
     value_type H(int n, int k) {
         if (n < 0 || k < 0) return 0;
         if (n == 0 && k == 0) return 1;
         return C(n + k - 1, k);
     }
 
+    // Thường dùng đếm số dãy ngoặc hợp lệ, số cây nhị phân, đường đi Dyck,...
     value_type catalan(int n) {
         return C(n << 1, n) * inv(n + 1);
     }
