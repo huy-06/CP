@@ -4,79 +4,62 @@
 #ifndef CP_ALG_IS_PRIME
 #define CP_ALG_IS_PRIME
 namespace cp {
-
-namespace internal {
-    
-constexpr int get_s(unsigned long long d, int s = 0) {
-    return (d & 1) == 0 ? get_s(d >> 1, s + 1) : s;
-}
-
-constexpr unsigned long long get_d(unsigned long long d) {
-    return (d & 1) == 0 ? get_d(d >> 1) : d;
-}
-
-constexpr bool mr_loop(unsigned long long x, unsigned long long n, int r, int s) {
-    return r == s ? false :
-            (x == n - 1 ? true :
-            mr_loop(alg::mod::safe_mul(x, x, n), n, r + 1, s));
-}
-
-constexpr bool mr_test(unsigned long long a, unsigned long long n, unsigned long long d, int s) {
-    return a >= n ? true :
-            (alg::mod::pow_mod(a, d, n) == 1 || alg::mod::pow_mod(a, d, n) == n - 1 ? true :
-            mr_loop(alg::mod::safe_mul(alg::mod::pow_mod(a, d, n), alg::mod::pow_mod(a, d, n), n), n, 1, s));
-}
-
-constexpr bool chk_32(unsigned n, unsigned d, int s, int idx) {
-    return idx == 0 ? mr_test(2, n, d, s) && chk_32(n, d, s, 1) :
-            idx == 1 ? mr_test(7, n, d, s) && chk_32(n, d, s, 2) :
-            idx == 2 ? mr_test(61, n, d, s) : true;
-}
-
-constexpr bool chk_64(unsigned long long n, unsigned long long d, int s, int idx) {
-    return idx == 0 ? mr_test(2, n, d, s) && chk_64(n, d, s, 1) :
-            idx == 1 ? mr_test(325, n, d, s) && chk_64(n, d, s, 2) :
-            idx == 2 ? mr_test(9375, n, d, s) && chk_64(n, d, s, 3) :
-            idx == 3 ? mr_test(28178, n, d, s) && chk_64(n, d, s, 4) :
-            idx == 4 ? mr_test(450775, n, d, s) && chk_64(n, d, s, 5) :
-            idx == 5 ? mr_test(9780504, n, d, s) && chk_64(n, d, s, 6) :
-            idx == 6 ? mr_test(1795265022, n, d, s) : true;
-}
-
-constexpr bool is_prime_32(unsigned n) {
-    return n < 2 ? false : (n % 2 == 0 ? n == 2 : (n % 3 == 0 ? n == 3 : (n % 5 == 0 ? n == 5 : 
-            (n % 7 == 0 ? n == 7 : (n % 11 == 0 ? n == 11 : (n % 13 == 0 ? n == 13 : 
-            (n % 17 == 0 ? n == 17 : (n % 19 == 0 ? n == 19 : (n % 23 == 0 ? n == 23 : 
-            (n % 29 == 0 ? n == 29 : (n % 31 == 0 ? n == 31 : (n % 37 == 0 ? n == 37 : 
-            chk_32(n, get_d(n - 1), get_s(n - 1), 0)))))))))))));
-}
-
-constexpr bool is_prime_64(unsigned long long n) {
-    return n < 2 ? false : (n % 2 == 0 ? n == 2 : (n % 3 == 0 ? n == 3 : (n % 5 == 0 ? n == 5 : 
-            (n % 7 == 0 ? n == 7 : (n % 11 == 0 ? n == 11 : (n % 13 == 0 ? n == 13 : 
-            (n % 17 == 0 ? n == 17 : (n % 19 == 0 ? n == 19 : (n % 23 == 0 ? n == 23 : 
-            (n % 29 == 0 ? n == 29 : (n % 31 == 0 ? n == 31 : (n % 37 == 0 ? n == 37 : 
-            chk_64(n, get_d(n - 1), get_s(n - 1), 0)))))))))))));
-}
-
-} // namespace internal
-
 namespace alg {
 
-constexpr bool is_prime(unsigned n) { 
-    return internal::is_prime_32(n);
-}
+template <typename Tp>
+constexpr bool is_prime(Tp n) {
+    if constexpr (std::is_signed_v<Tp>) {
+        if (n < 2) return false;
+    }
+    
+    using uint_t = mod::ds::make_unsigned_t<Tp>;
+    uint_t un = static_cast<uint_t>(n);
+    
+    if (un < 2) 
+        return false;
+    if (un == 2 || un == 3) 
+        return true;
+    if (un % 2 == 0) 
+        return false;
 
-constexpr bool is_prime(int n) {
-    return n < 2 ? false : internal::is_prime_32(static_cast<unsigned>(n));
-}
+    constexpr uint_t small_primes[] = {3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37};
+    for (uint_t p : small_primes) {
+        if (un == p) 
+            return true;
+        if (un % p == 0) 
+            return false;
+    }
 
-constexpr bool is_prime(unsigned long long n) {
-    return internal::is_prime_64(n);
-}
+    uint_t d = un - 1;
+    int s = std::countr_zero(d);
+    d >>= s;
 
-constexpr bool is_prime(long long n) {
-    return n < 2 ? false : internal::is_prime_64(static_cast<unsigned long long>(n));
+    auto test_miller_rabin = [&](uint_t a) constexpr -> bool {
+        if (a >= un) return true; 
+        uint_t x = mod::pow_mod(a, d, un);
+        if (x == 1 || x == un - 1) return true;
+        for (int r = 1; r < s; ++r) {
+            x = mod::safe_mul(x, x, un);
+            if (x == un - 1) return true;
+        }
+        return false;
+    };
+
+    if constexpr (sizeof(uint_t) <= 4) {
+        constexpr uint_t bases[] = {2, 7, 61};
+        for (uint_t a : bases) {
+            if (!test_miller_rabin(a)) 
+                return false;
+        }
+    } else {
+        constexpr uint_t bases[] = {2, 325, 9375, 28178, 450775, 9780504, 1795265022};
+        for (uint_t a : bases) {
+            if (!test_miller_rabin(a)) 
+                return false;
+        }
+    }
+    
+    return true;
 }
 
 } // namespace alg

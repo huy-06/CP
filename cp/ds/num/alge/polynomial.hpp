@@ -13,7 +13,7 @@ public:
     using value_type = Tp;
 
     polynomial(int n = 1, const value_type& v = value_type(0))
-        : f(n, v) { trim(); }
+        : f(n, v) {}
 
     template <typename Up>
     polynomial(const std::vector<Up>& v)
@@ -270,7 +270,36 @@ public:
         return solve(solve, 1, 0, m - 1);
     }
 
-    // Tự quy hoạch vào * operator nội tuyến không cấp dư 
+    polynomial operator+() const {
+        return *this;
+    }
+
+    polynomial operator-() const {
+        polynomial res = *this;
+        for (auto& val : res.f) {
+            val = -val;
+        }
+        return res;
+    }
+
+    polynomial& operator+=(const polynomial& rhs) {
+        if (size() < rhs.size()) f.resize(rhs.size());
+        for (int i = 0; i < rhs.size(); ++i) {
+            f[i] += rhs.f[i];
+        }
+        trim();
+        return *this;
+    }
+
+    polynomial& operator-=(const polynomial& rhs) {
+        if (size() < rhs.size()) f.resize(rhs.size());
+        for (int i = 0; i < rhs.size(); ++i) {
+            f[i] -= rhs.f[i];
+        }
+        trim();
+        return *this;
+    }
+
     polynomial& operator*=(const polynomial& rhs) {
         if (f.empty() || rhs.empty()) {
             f.clear();
@@ -311,44 +340,6 @@ public:
         return *this;
     }
 
-    friend polynomial operator/(polynomial lhs, const polynomial& rhs) {
-        return lhs /= rhs;
-    }
-
-    friend polynomial operator%(polynomial lhs, const polynomial& rhs) {
-        return lhs %= rhs;
-    }
-
-    polynomial operator+() const {
-        return *this;
-    }
-
-    polynomial operator-() const {
-        polynomial res = *this;
-        for (auto& val : res.f) {
-            val = -val;
-        }
-        return res;
-    }
-
-    polynomial& operator+=(const polynomial& rhs) {
-        if (size() < rhs.size()) f.resize(rhs.size());
-        for (int i = 0; i < rhs.size(); ++i) {
-            f[i] += rhs.f[i];
-        }
-        trim();
-        return *this;
-    }
-
-    polynomial& operator-=(const polynomial& rhs) {
-        if (size() < rhs.size()) f.resize(rhs.size());
-        for (int i = 0; i < rhs.size(); ++i) {
-            f[i] -= rhs.f[i];
-        }
-        trim();
-        return *this;
-    }
-
     // Dịch phải toán học nhân hệ số
     polynomial operator<<(int k) const {
         if (k < 0) return *this >> (-k);
@@ -378,6 +369,14 @@ public:
 
     friend polynomial operator*(polynomial lhs, const polynomial& rhs) {
         return lhs *= rhs;
+    }
+
+    friend polynomial operator/(polynomial lhs, const polynomial& rhs) {
+        return lhs /= rhs;
+    }
+
+    friend polynomial operator%(polynomial lhs, const polynomial& rhs) {
+        return lhs %= rhs;
     }
 
     friend bool operator==(const polynomial& lhs, const polynomial& rhs) {
@@ -470,7 +469,7 @@ private:
         mint irate2[30], irate3[30], iroot2;
 
         ntt_info() {
-            mint rt = mint(cp::alg::mod::primitive_root(mint::mod()));
+            mint rt = mint(alg::mod::primitive_root(mint::mod()));
             int rank = __builtin_ctz(mint::mod() - 1);
 
             std::vector<mint> es(rank + 1), ies(rank + 1);
@@ -517,10 +516,10 @@ private:
 
         int len = 0;
         while (len < h) {
-            if (h - len == 1) { 
+            if (h - len == 1) {
                 int p = 1 << (h - len - 1);
                 mint rot = 1;
-             
+
                 for (int s = 0; s < (1 << len); ++s) {
                     int offset = s << (h - len);
 
@@ -532,12 +531,12 @@ private:
                         a[i + offset + p] = l - r;
                     }
 
-                    if (s + 1 != (1 << len)) 
+                    if (s + 1 != (1 << len))
                         rot *= info.rate2[__builtin_ctz(~(unsigned int)(s))];
                 }
 
                 ++len;
-            } else { 
+            } else {
                 int p = 1 << (h - len - 2);
                 mint rot = 1, imag = info.root2;
 
@@ -547,22 +546,21 @@ private:
                     int offset = s << (h - len);
 
                     for (int i = 0; i < p; ++i) {
-                        auto md0 = a[i + offset + p] * rot;
-                        auto md1 = a[i + offset + 2 * p] * rot2;
-                        auto md2 = a[i + offset + 3 * p] * rot3;
+                        auto a0 = a[i + offset];
+                        auto a1 = a[i + offset + p] * rot;
+                        auto a2 = a[i + offset + 2 * p] * rot2;
+                        auto a3 = a[i + offset + 3 * p] * rot3;
 
-                        auto t0 = a[i + offset] + md1;
-                        auto t1 = md0 + md2;
-                        auto t2 = a[i + offset] - md1;
-                        auto t3 = (md0 - md2) * imag;
+                        auto t0 = a0 + a2, t2 = a0 - a2;
+                        auto t1 = a1 + a3, t3 = (a1 - a3) * imag;
 
                         a[i + offset]         = t0 + t1;
-                        a[i + offset + p]     = t2 + t3;
-                        a[i + offset + 2 * p] = t0 - t1;
+                        a[i + offset + p]     = t0 - t1;
+                        a[i + offset + 2 * p] = t2 + t3;
                         a[i + offset + 3 * p] = t2 - t3;
                     }
 
-                    if (s + 1 != (1 << len)) 
+                    if (s + 1 != (1 << len))
                         rot *= info.rate3[__builtin_ctz(~(unsigned int)(s))];
                 }
 
@@ -595,7 +593,7 @@ private:
                         a[i + offset + p] = (l - r) * rot;
                     }
 
-                    if (s + 1 != (1 << (len - 1))) 
+                    if (s + 1 != (1 << (len - 1)))
                         rot *= info.irate2[__builtin_ctz(~(unsigned int)(s))];
                 }
 
@@ -610,24 +608,24 @@ private:
                     int offset = s << (h - len + 2);
 
                     for (int i = 0; i < p; i++) {
-                        auto l0 = a[i + offset];
-                        auto l1 = a[i + offset + p];
-                        auto l2 = a[i + offset + 2 * p];
-                        auto l3 = a[i + offset + 3 * p];
+                        auto a0 = a[i + offset];
+                        auto a1 = a[i + offset + p];
+                        auto a2 = a[i + offset + 2 * p];
+                        auto a3 = a[i + offset + 3 * p];
 
-                        auto a2 = l0 - l2, a0 = l0 + l2;
-                        auto a3 = (l1 - l3) * imag, a1 = l1 + l3;
+                        auto t0 = a0 + a1, t2 = a0 - a1;
+                        auto t1 = a2 + a3, t3 = (a2 - a3) * imag;
 
-                        a[i + offset]         = a0 + a1;
-                        a[i + offset + p]     = (a2 + a3) * rot;
-                        a[i + offset + 2 * p] = (a0 - a1) * rot2;
-                        a[i + offset + 3 * p] = (a2 - a3) * rot3;
+                        a[i + offset]         = t0 + t1;
+                        a[i + offset + p]     = (t2 + t3) * rot;
+                        a[i + offset + 2 * p] = (t0 - t1) * rot2;
+                        a[i + offset + 3 * p] = (t2 - t3) * rot3;
                     }
 
-                    if (s + 1 != (1 << (len - 2))) 
+                    if (s + 1 != (1 << (len - 2)))
                         rot *= info.irate3[__builtin_ctz(~(unsigned int)(s))];
                 }
-
+                
                 len -= 2;
             }
         }
@@ -650,97 +648,142 @@ private:
     }
 
     static std::vector<value_type> conv(const std::vector<value_type>& a, const std::vector<value_type>& b) {
-        int n = int(a.size()), m = int(b.size());
-        if (std::min(n, m) <= 60) return brute_mul<value_type>(a, b); 
+        int n = a.size(), m = b.size();
+        if (std::min(n, m) <= 60) return brute_mul(a, b);
 
-        if constexpr (cp::ds::is_modint_v<value_type>) { 
-            int req = n + m - 1, sz = 1; 
-            while (sz < req) sz <<= 1;
+        int req = n + m - 1;
+        int siz = std::bit_ceil(static_cast<unsigned int>(req));
 
-            std::vector<value_type> f(a.begin(), a.end());
-            f.resize(sz, value_type(0));
+        if constexpr (is_modint_v<value_type> && (value_type::mod() == 998244353 || value_type::mod() == 167772161 || value_type::mod() == 469762049 || value_type::mod() == 754974721 || std::countr_zero(value_type::mod() - 1) >= 15)) {
+            int rank = __builtin_ctz(value_type::mod() - 1);
+            int len  = 1 << rank;
 
-            std::vector<value_type> g(b.begin(), b.end());
-            g.resize(sz, value_type(0));
+            if (req <= len) {
+                std::vector<value_type> f(siz), g(siz);
+                std::copy(a.begin(), a.end(), f.begin());
+                std::copy(b.begin(), b.end(), g.begin());
 
-            ntt<value_type>(f);
-            ntt<value_type>(g);
+                ntt(f); 
+                ntt(g);
 
-            for (int i = 0; i < sz; ++i) f[i] *= g[i];
+                for (int i = 0; i < siz; ++i) {
+                    f[i] *= g[i];
+                }
+                intt(f); 
+                f.resize(req);
 
-            intt<value_type>(f);
-            f.resize(req);
+                return f;
+            }
 
-            return f;
-        } else if constexpr (std::is_integral_v<value_type>) { 
-            int req = n + m - 1, sz = 1; 
-            while (sz < req) sz <<= 1;
-            
-            using m1 = cp::ds::montgomery_mod_int<998244353>;
-            using m2 = cp::ds::montgomery_mod_int<754974721>;
-            using m3 = cp::ds::montgomery_mod_int<469762049>;
-            
-            std::vector<m1> a1(sz), b1(sz);
-            std::vector<m2> a2(sz), b2(sz);
-            std::vector<m3> a3(sz), b3(sz);
-            
+            int h = len / 2;
+            int b1 = (n + h - 1) / h;
+            int b2 = (m + h - 1) / h;
+
+            std::vector as(b1, std::vector(len, value_type(0)));
+            std::vector bs(b2, std::vector(len, value_type(0)));
+
+            for (int i = 0; i < b1; ++i) {
+                int l = i * h;
+                int r = std::min(n, l + h);
+
+                for (int k = l; k < r; ++k) {
+                    as[i][k - l] = a[k];
+                }
+                ntt(as[i]);
+            }
+            for (int i = 0; i < b2; ++i) {
+                int l = i * h;
+                int r = std::min(m, l + h);
+
+                for (int k = l; k < r; ++k) {
+                    bs[i][k - l] = b[k];
+                }
+                ntt(bs[i]);
+            }
+
+            int b3 = b1 + b2 - 1;
+            std::vector cs(b3, std::vector(len, value_type(0)));
+            for (int i = 0; i < b1; ++i) {
+                for (int j = 0; j < b2; ++j) {
+                    auto& ai = as[i];
+                    auto& bj = bs[j];
+                    auto& cij = cs[i + j];
+
+                    for (int k = 0; k < len; ++k) {
+                        cij[k] += ai[k] * bj[k];
+                    }
+                }
+            }
+
+            std::vector<value_type> res(req, value_type(0));
+            for (int i = 0; i < b3; ++i) {
+                intt(cs[i]);
+                int offset = i * h;
+                int kmax = std::min(len, req - offset);
+
+                for (int k = 0; k < kmax; ++k) {
+                    res[offset + k] += cs[i][k];
+                }
+            }
+            return res;
+
+        } else if constexpr (is_modint_v<value_type> || std::is_integral_v<value_type>) {
+            using m1 = montgomery_mod_int<998244353>;
+            using m2 = montgomery_mod_int<754974721>;
+            using m3 = montgomery_mod_int<469762049>;
+
+            std::vector<m1> a1(siz), b1(siz);
+            std::vector<m2> a2(siz), b2(siz);
+            std::vector<m3> a3(siz), b3(siz);
+
+            auto extract = [](const auto& x) -> unsigned long long {
+                if constexpr (is_modint_v<value_type>) return x.val();
+                else return x;
+            };
+
             for (int i = 0; i < n; ++i) {
-                a1[i] = a[i];
-                a2[i] = a[i];
-                a3[i] = a[i];
+                auto v = extract(a[i]);
+                a1[i] = v; 
+                a2[i] = v; 
+                a3[i] = v;
             }
-
             for (int i = 0; i < m; ++i) {
-                b1[i] = b[i];
-                b2[i] = b[i];
-                b3[i] = b[i];
+                auto v = extract(b[i]);
+                b1[i] = v; 
+                b2[i] = v; 
+                b3[i] = v;
             }
-            
-            ntt<m1>(a1);
-            ntt<m1>(b1);
-            ntt<m2>(a2);
-            ntt<m2>(b2);
-            ntt<m3>(a3);
-            ntt<m3>(b3);
 
-            for(int i = 0; i < sz; ++i) {
-                a1[i] *= b1[i];
-                a2[i] *= b2[i];
+            ntt(a1); ntt(b1);
+            ntt(a2); ntt(b2);
+            ntt(a3); ntt(b3);
+
+            for (int i = 0; i < siz; ++i) {
+                a1[i] *= b1[i]; a2[i] *= b2[i];
                 a3[i] *= b3[i];
             }
+            intt(a1);
+            intt(a2);
+            intt(a3);
 
-            intt<m1>(a1);
-            intt<m2>(a2);
-            intt<m3>(a3);
-            
             std::vector<value_type> res(req);
 
             constexpr unsigned long long p1 = 998244353;
             constexpr unsigned long long p2 = 754974721;
-            constexpr unsigned long long p3 = 469762049;
 
             m2 i1 = m2(p1).inv();
             m3 i2 = m3(p1 * p2).inv();
-            
+
             for (int i = 0; i < req; ++i) {
                 unsigned long long x = a1[i].val();
                 unsigned long long y = ((a2[i] - static_cast<unsigned>(x % p2)) * i1).val();
-                m3 md1(x), md2(y);
-                unsigned long long z = ((a3[i] - md1 - md2 * m3(p1)) * i2).val();
-#ifdef __SIZEOF_INT128__
-                __int128 ans = x;
-                ans += (__int128)y * p1;
-                ans += (__int128)z * p1 * p2;
-                res[i] = static_cast<value_type>(ans);
-#else
-                unsigned long long ans = x + y * p1 + z * p1 * p2;
-                res[i] = static_cast<value_type>(ans);
-#endif
+                unsigned long long z = ((a3[i] - m3(x) - m3(y) * m3(p1)) * i2).val();
+                res[i] = static_cast<value_type>(x + (__int128) y * p1 + (__int128) z * p1 * p2);
             }
-
+            
             return res;
         } else {
-            return brute_mul<value_type>(a, b);
+            return brute_mul(a, b);
         }
     }
 };

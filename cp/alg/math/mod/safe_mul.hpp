@@ -3,41 +3,28 @@
 #ifndef CP_ALG_MOD_SAFE_MUL
 #define CP_ALG_MOD_SAFE_MUL
 namespace cp {
-
-namespace internal {
-
-constexpr unsigned long long safe_mul(unsigned long long a, unsigned long long b, unsigned long long mod, unsigned long long res) {
-    return b == 0 ? res : safe_mul(
-        a >= mod - a ? a + a - mod : a + a,
-        b >> 1,
-        mod, 
-        (b & 1) ? (res >= mod - a ? res + a - mod : res + a) : res
-    );
-}
-
-} // namespace internal
-
 namespace alg {
 namespace mod {
 
-constexpr unsigned safe_mul(unsigned a, unsigned b, unsigned mod) {
-    return static_cast<unsigned long long>(a) * b % mod;
-}
-
-constexpr unsigned safe_mul(int a, int b, unsigned mod) {
-    return static_cast<unsigned long long>(safe_mod(a, mod)) * safe_mod(b, mod) % mod;
-}
-
-constexpr unsigned long long safe_mul(unsigned long long a, unsigned long long b, unsigned long long mod) {
+template <typename Tp1, typename Tp2, typename Mod>
+constexpr auto safe_mul(Tp1 a, Tp2 b, Mod mod) {
+    using uint_t = ds::make_unsigned_t<Mod>;
+    uint_t ua = safe_mod(a, mod), ub = safe_mod(b, mod);
+    
+    if constexpr (sizeof(uint_t) <= 4) {
+        return static_cast<uint_t>(1ULL * ua * ub % mod);
+    } else {
 #ifdef __SIZEOF_INT128__
-    return static_cast<unsigned long long>(static_cast<__uint128_t>(a) * b % mod);
+        return static_cast<uint_t>((static_cast<unsigned __int128>(ua) * ub) % mod);
 #else
-    return internal::safe_mul(a, b, mod, 0);
+        uint_t res = 0;
+        for (; ub > 0; ub >>= 1) {
+            if (ub & 1) res = (res >= mod - ua) ? res - (mod - ua) : res + ua;
+            ua = (ua >= mod - ua) ? ua - (mod - ua) : ua + ua;
+        }
+        return res;
 #endif
-}
-
-constexpr unsigned long long safe_mul(long long a, long long b, unsigned long long mod) {
-    return safe_mul(static_cast<unsigned long long>(safe_mod(a, mod)), static_cast<unsigned long long>(safe_mod(b, mod)), mod);
+    }
 }
 
 } // namespace mod
