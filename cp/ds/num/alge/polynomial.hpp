@@ -654,80 +654,83 @@ private:
         int req = n + m - 1;
         int siz = std::bit_ceil(static_cast<unsigned int>(req));
 
-        if constexpr (is_modint_v<value_type> && (value_type::mod() == 998244353 || value_type::mod() == 167772161 || value_type::mod() == 469762049 || value_type::mod() == 754974721 || std::countr_zero(value_type::mod() - 1) >= 15)) {
-            int rank = __builtin_ctz(value_type::mod() - 1);
-            int len  = 1 << rank;
+        if constexpr (is_modint_v<value_type>) {
+            if constexpr (value_type::mod() == 998244353 || value_type::mod() == 167772161 || value_type::mod() == 469762049 || value_type::mod() == 754974721 || std::countr_zero(value_type::mod() - 1) >= 15) {
+                int rank = __builtin_ctz(value_type::mod() - 1);
+                int len  = 1 << rank;
 
-            if (req <= len) {
-                std::vector<value_type> f(siz), g(siz);
-                std::copy(a.begin(), a.end(), f.begin());
-                std::copy(b.begin(), b.end(), g.begin());
+                if (req <= len) {
+                    std::vector<value_type> f(siz), g(siz);
+                    std::copy(a.begin(), a.end(), f.begin());
+                    std::copy(b.begin(), b.end(), g.begin());
 
-                ntt(f); 
-                ntt(g);
+                    ntt(f); 
+                    ntt(g);
 
-                for (int i = 0; i < siz; ++i) {
-                    f[i] *= g[i];
+                    for (int i = 0; i < siz; ++i) {
+                        f[i] *= g[i];
+                    }
+                    intt(f); 
+                    f.resize(req);
+
+                    return f;
                 }
-                intt(f); 
-                f.resize(req);
 
-                return f;
-            }
+                int h = len / 2;
+                int b1 = (n + h - 1) / h;
+                int b2 = (m + h - 1) / h;
 
-            int h = len / 2;
-            int b1 = (n + h - 1) / h;
-            int b2 = (m + h - 1) / h;
+                std::vector as(b1, std::vector(len, value_type(0)));
+                std::vector bs(b2, std::vector(len, value_type(0)));
 
-            std::vector as(b1, std::vector(len, value_type(0)));
-            std::vector bs(b2, std::vector(len, value_type(0)));
+                for (int i = 0; i < b1; ++i) {
+                    int l = i * h;
+                    int r = std::min(n, l + h);
 
-            for (int i = 0; i < b1; ++i) {
-                int l = i * h;
-                int r = std::min(n, l + h);
-
-                for (int k = l; k < r; ++k) {
-                    as[i][k - l] = a[k];
+                    for (int k = l; k < r; ++k) {
+                        as[i][k - l] = a[k];
+                    }
+                    ntt(as[i]);
                 }
-                ntt(as[i]);
-            }
-            for (int i = 0; i < b2; ++i) {
-                int l = i * h;
-                int r = std::min(m, l + h);
+                for (int i = 0; i < b2; ++i) {
+                    int l = i * h;
+                    int r = std::min(m, l + h);
 
-                for (int k = l; k < r; ++k) {
-                    bs[i][k - l] = b[k];
+                    for (int k = l; k < r; ++k) {
+                        bs[i][k - l] = b[k];
+                    }
+                    ntt(bs[i]);
                 }
-                ntt(bs[i]);
-            }
 
-            int b3 = b1 + b2 - 1;
-            std::vector cs(b3, std::vector(len, value_type(0)));
-            for (int i = 0; i < b1; ++i) {
-                for (int j = 0; j < b2; ++j) {
-                    auto& ai = as[i];
-                    auto& bj = bs[j];
-                    auto& cij = cs[i + j];
+                int b3 = b1 + b2 - 1;
+                std::vector cs(b3, std::vector(len, value_type(0)));
+                for (int i = 0; i < b1; ++i) {
+                    for (int j = 0; j < b2; ++j) {
+                        auto& ai = as[i];
+                        auto& bj = bs[j];
+                        auto& cij = cs[i + j];
 
-                    for (int k = 0; k < len; ++k) {
-                        cij[k] += ai[k] * bj[k];
+                        for (int k = 0; k < len; ++k) {
+                            cij[k] += ai[k] * bj[k];
+                        }
                     }
                 }
-            }
 
-            std::vector<value_type> res(req, value_type(0));
-            for (int i = 0; i < b3; ++i) {
-                intt(cs[i]);
-                int offset = i * h;
-                int kmax = std::min(len, req - offset);
+                std::vector<value_type> res(req, value_type(0));
+                for (int i = 0; i < b3; ++i) {
+                    intt(cs[i]);
+                    int offset = i * h;
+                    int kmax = std::min(len, req - offset);
 
-                for (int k = 0; k < kmax; ++k) {
-                    res[offset + k] += cs[i][k];
+                    for (int k = 0; k < kmax; ++k) {
+                        res[offset + k] += cs[i][k];
+                    }
                 }
+                return res;
             }
-            return res;
+        }
 
-        } else if constexpr (is_modint_v<value_type> || std::is_integral_v<value_type>) {
+        if constexpr (is_modint_v<value_type> || std::is_integral_v<value_type>) {
             using m1 = montgomery_mod_int<998244353>;
             using m2 = montgomery_mod_int<754974721>;
             using m3 = montgomery_mod_int<469762049>;
