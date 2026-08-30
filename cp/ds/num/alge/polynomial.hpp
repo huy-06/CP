@@ -22,6 +22,10 @@ public:
     polynomial(std::vector<value_type>&& v)
         : f(std::move(v)) { trim(); }
 
+    template <typename InputIt>
+    polynomial(InputIt first, InputIt last)
+        : f(first, last) { trim(); }
+
     polynomial(const std::initializer_list<value_type>& v)
         : f(v) { trim(); }
 
@@ -109,6 +113,7 @@ public:
         return res;
     }
 
+    // tính e^p
     polynomial exp(int n) const {
         assert(empty() || f[0] == value_type(0));
 
@@ -148,6 +153,7 @@ public:
         return res;
     }
 
+    // Tính đa thức P^k lấy n phần tử đầu tiên
     polynomial pow(long long k, int n) const {
         if (empty() || n == 0) return polynomial();
         int sh = 0;

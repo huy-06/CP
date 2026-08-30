@@ -77,6 +77,11 @@ public:
         build();
     }
 
+    int get_root() {
+        if (!built) build();
+        return root;
+    }
+
     virtual void set_root(int root) {
         if (built && this->root == root) return;
         build(root);
