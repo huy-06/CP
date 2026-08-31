@@ -246,6 +246,24 @@ struct formatter<std::queue<Args...>> {
 };
 
 template <typename... Args>
+struct formatter<std::deque<Args...>> {
+    static void print(std::ostream& os, std::deque<Args...> q) {
+        os << style::color_green << "deque" << style::reset;
+        open_bracket(os, "(");
+        open_bracket(os, "[");
+        bool first = true;
+        for (const auto& x : q) {
+            if (!first) os << ", ";
+            first = false;
+            print_item(os, x);
+        }
+        close_bracket(os, "]");
+        close_bracket(os, ")");
+    }
+};
+
+
+template <typename... Args>
 struct formatter<std::priority_queue<Args...>> {
     static void print(std::ostream& os, std::priority_queue<Args...> pq) {
         using Tp = typename std::priority_queue<Args...>::value_type;

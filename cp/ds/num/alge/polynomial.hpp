@@ -70,6 +70,149 @@ public:
         return res;
     }
 
+    polynomial operator+() const {
+        return *this;
+    }
+
+    polynomial operator-() const {
+        polynomial res = *this;
+        for (auto& val : res.f) {
+            val = -val;
+        }
+        return res;
+    }
+
+    polynomial& operator+=(const polynomial& rhs) {
+        if (size() < rhs.size()) f.resize(rhs.size());
+        for (int i = 0; i < rhs.size(); ++i) {
+            f[i] += rhs.f[i];
+        }
+        trim();
+        return *this;
+    }
+
+    polynomial& operator-=(const polynomial& rhs) {
+        if (size() < rhs.size()) f.resize(rhs.size());
+        for (int i = 0; i < rhs.size(); ++i) {
+            f[i] -= rhs.f[i];
+        }
+        trim();
+        return *this;
+    }
+
+    polynomial& operator*=(const polynomial& rhs) {
+        if (f.empty() || rhs.empty()) {
+            f.clear();
+        } else {
+            f = conv(f, rhs.f);
+            trim();
+        }
+        return *this;
+    }
+
+    polynomial& operator/=(const polynomial& rhs) {
+        assert(!rhs.empty());
+        if (size() < rhs.size()) {
+            f.clear();
+            return *this;
+        }
+
+        int k = size() - rhs.size() + 1;
+        polynomial a(std::vector<value_type>(f.rbegin(), f.rbegin() + k));
+        polynomial b(std::vector<value_type>(rhs.f.rbegin(), rhs.f.rend()));
+
+        polynomial q = a * b.inv(k);
+        q.f.resize(k, value_type(0));
+        std::reverse(q.f.begin(), q.f.end());
+        q.trim();
+
+        f = std::move(q.f);
+        return *this;
+    }
+
+    polynomial& operator%=(const polynomial& rhs) {
+        if (size() < rhs.size()) return *this;
+        polynomial q = *this;
+        q /= rhs;
+        *this -= q * rhs;
+        f.resize(std::max(0, rhs.size() - 1));
+        trim();
+        return *this;
+    }
+
+    // Dịch phải toán học nhân hệ số
+    polynomial operator<<(int k) const {
+        if (k < 0) return *this >> (-k);
+        if (empty()) return *this;
+
+        std::vector<value_type> res(size() + k);
+        for (int i = 0; i < size(); ++i) {
+            res[i + k] = f[i];
+        }
+        return polynomial(res);
+    }
+
+    // Dịch trái nguyên thu gọn x 
+    polynomial operator>>(int k) const {
+        if (k < 0) return *this << (-k);
+        if (k >= size()) return polynomial();
+        return polynomial(std::vector<value_type>(f.begin() + k, f.end()));
+    }
+
+    friend polynomial operator+(polynomial lhs, const polynomial& rhs) {
+        return lhs += rhs;
+    }
+
+    friend polynomial operator-(polynomial lhs, const polynomial& rhs) {
+        return lhs -= rhs;
+    }
+
+    friend polynomial operator*(polynomial lhs, const polynomial& rhs) {
+        return lhs *= rhs;
+    }
+
+    friend polynomial operator/(polynomial lhs, const polynomial& rhs) {
+        return lhs /= rhs;
+    }
+
+    friend polynomial operator%(polynomial lhs, const polynomial& rhs) {
+        return lhs %= rhs;
+    }
+
+    friend bool operator==(const polynomial& lhs, const polynomial& rhs) {
+        return lhs.f == rhs.f;
+    }
+
+    friend bool operator!=(const polynomial& lhs, const polynomial& rhs) {
+        return lhs.f != rhs.f;
+    }
+
+    friend std::istream& operator>>(std::istream& is, polynomial& p) {
+        for (int i = 0; i < p.size(); ++i) is >> p.f[i];
+        p.trim();
+        return is;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const polynomial& p) {
+        if (p.empty()) return os << '0';
+
+        bool first = true;
+        for (int i = p.size() - 1; i >= 0; --i) {
+            if (p.f[i] == value_type(0)) {
+                continue;
+            }
+
+            if (!first) os << " + ";
+            os << p.f[i];
+            if (i > 0) os << 'x' << (i > 1 ? "^" + std::to_string(i) : "");
+
+            first = false;
+        }
+        if (first) os << '0';
+        
+        return os;
+    }
+
     polynomial integral() const {
         if (empty()) return polynomial();
 
@@ -275,148 +418,19 @@ public:
         
         return solve(solve, 1, 0, m - 1);
     }
-
-    polynomial operator+() const {
-        return *this;
-    }
-
-    polynomial operator-() const {
-        polynomial res = *this;
-        for (auto& val : res.f) {
-            val = -val;
-        }
-        return res;
-    }
-
-    polynomial& operator+=(const polynomial& rhs) {
-        if (size() < rhs.size()) f.resize(rhs.size());
-        for (int i = 0; i < rhs.size(); ++i) {
-            f[i] += rhs.f[i];
-        }
-        trim();
-        return *this;
-    }
-
-    polynomial& operator-=(const polynomial& rhs) {
-        if (size() < rhs.size()) f.resize(rhs.size());
-        for (int i = 0; i < rhs.size(); ++i) {
-            f[i] -= rhs.f[i];
-        }
-        trim();
-        return *this;
-    }
-
-    polynomial& operator*=(const polynomial& rhs) {
-        if (f.empty() || rhs.empty()) {
-            f.clear();
-        } else {
-            f = conv(f, rhs.f);
-            trim();
-        }
-        return *this;
-    }
-
-    polynomial& operator/=(const polynomial& rhs) {
-        assert(!rhs.empty());
-        if (size() < rhs.size()) {
-            f.clear();
-            return *this;
-        }
-
-        int k = size() - rhs.size() + 1;
-        polynomial a(std::vector<value_type>(f.rbegin(), f.rbegin() + k));
-        polynomial b(std::vector<value_type>(rhs.f.rbegin(), rhs.f.rend()));
-
-        polynomial q = a * b.inv(k);
-        q.f.resize(k, value_type(0));
-        std::reverse(q.f.begin(), q.f.end());
-        q.trim();
-
-        f = std::move(q.f);
-        return *this;
-    }
-
-    polynomial& operator%=(const polynomial& rhs) {
-        if (size() < rhs.size()) return *this;
-        polynomial q = *this;
-        q /= rhs;
-        *this -= q * rhs;
-        f.resize(std::max(0, rhs.size() - 1));
-        trim();
-        return *this;
-    }
-
-    // Dịch phải toán học nhân hệ số
-    polynomial operator<<(int k) const {
-        if (k < 0) return *this >> (-k);
-        if (empty()) return *this;
-
-        std::vector<value_type> res(size() + k);
-        for (int i = 0; i < size(); ++i) {
-            res[i + k] = f[i];
-        }
-        return polynomial(res);
-    }
-
-    // Dịch trái nguyên thu gọn x 
-    polynomial operator>>(int k) const {
-        if (k < 0) return *this << (-k);
-        if (k >= size()) return polynomial();
-        return polynomial(std::vector<value_type>(f.begin() + k, f.end()));
-    }
-
-    friend polynomial operator+(polynomial lhs, const polynomial& rhs) {
-        return lhs += rhs;
-    }
-
-    friend polynomial operator-(polynomial lhs, const polynomial& rhs) {
-        return lhs -= rhs;
-    }
-
-    friend polynomial operator*(polynomial lhs, const polynomial& rhs) {
-        return lhs *= rhs;
-    }
-
-    friend polynomial operator/(polynomial lhs, const polynomial& rhs) {
-        return lhs /= rhs;
-    }
-
-    friend polynomial operator%(polynomial lhs, const polynomial& rhs) {
-        return lhs %= rhs;
-    }
-
-    friend bool operator==(const polynomial& lhs, const polynomial& rhs) {
-        return lhs.f == rhs.f;
-    }
-
-    friend bool operator!=(const polynomial& lhs, const polynomial& rhs) {
-        return lhs.f != rhs.f;
-    }
-
-    friend std::istream& operator>>(std::istream& is, polynomial& p) {
-        for (int i = 0; i < p.size(); ++i) is >> p.f[i];
-        p.trim();
-        return is;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const polynomial& p) {
-        if (p.empty()) return os << '0';
-
-        bool first = true;
-        for (int i = p.size() - 1; i >= 0; --i) {
-            if (p.f[i] == value_type(0)) {
-                continue;
-            }
-
-            if (!first) os << " + ";
-            os << p.f[i];
-            if (i > 0) os << 'x' << (i > 1 ? "^" + std::to_string(i) : "");
-
-            first = false;
-        }
-        if (first) os << '0';
+    
+    // Tính đa thức sinh Số Stirling loại 1 không dấu: P(x) = x(x+1)...(x+n-1)
+    static polynomial stirling_first(int n) {
+        if (n == 0) return polynomial({value_type(1)});
+        if (n == 1) return polynomial({value_type(0), value_type(1)});
         
-        return os;
+        if (n % 2 != 0) {
+            return stirling_first(n - 1) * polynomial({value_type(n - 1), value_type(1)});
+        }
+        
+        int m = n / 2;
+        polynomial p = stirling_first(m);
+        return p * p.shift(value_type(m));
     }
 
 private:
