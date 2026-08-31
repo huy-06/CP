@@ -6,14 +6,17 @@ namespace cp {
 namespace alg {
 namespace mod {
 
-template<typename Tp, std::integral Int>
-constexpr Tp pow_mod(Tp base, Int exp, Tp mod) {
-    Tp res = 1 % mod;
-    base = safe_mod(base, mod);
+template <typename Tp, std::integral Int, typename Mod>
+constexpr Mod pow_mod(Tp base, Int exp, Mod mod) {
+    Mod res = safe_mod(1, mod);
+    Mod b   = safe_mod(base, mod);
+
     for (; exp > 0; exp >>= 1) {
-        if (exp & 1) res = static_cast<Tp>(safe_mul(res, base, mod));
-        base = static_cast<Tp>(safe_mul(base, base, mod));
+        if (exp & 1) 
+            res = safe_mul(res, b, mod);
+        b = safe_mul(b, b, mod);
     }
+
     return res;
 }
 

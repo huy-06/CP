@@ -1,5 +1,5 @@
 #include <queue>
-#include "../edge/flow_cost.hpp"
+#include "../edge/mcf_edge.hpp"
 #include "../graph/graph.hpp"
 
 #ifndef CP_DS_FLOW_MIN_COST_FLOW
@@ -10,9 +10,9 @@ namespace ds {
 template <typename Edge>
 class min_cost_flow : public graph<Edge> {
 public:
-    using edge_type   = Edge;
-    using value_type1 = typename edge_type::value_type1; // Cap / Flow type
-    using value_type2 = typename edge_type::value_type2; // Cost type
+    using edge_type = Edge;
+    using cap_type  = typename edge_type::cap_type;
+    using cost_type = typename edge_type::cost_type;
 
     using graph<edge_type>::init;
     using graph<edge_type>::num_edges;
@@ -22,13 +22,20 @@ public:
         init(n, m);
     }
 
-    void add_edge(edge_type e) override {
+    void add_edge(const edge_type& e) override {
         edge_type rev_e = e;
         std::swap(rev_e.from, rev_e.to);
         rev_e.cap  = 0;
         rev_e.cost = -rev_e.cost;
         graph<edge_type>::add_edge(e);
         graph<edge_type>::add_edge(rev_e);
+    }
+
+    void add_unedge(const edge_type& e) override {
+        edge_type rev_e = e;
+        std::swap(rev_e.from, rev_e.to);
+        add_edge(e);
+        add_edge(rev_e);
     }
 
     void build() override {
@@ -81,26 +88,26 @@ public:
         return res;
     }
 
-    std::pair<value_type1, value_type2> flow(int s, int t, value_type1 maxf = edge_type::inf1) {
+    std::pair<cap_type, cost_type> flow(int s, int t, cap_type limit = edge_type::inf_cap) {
         assert(0 <= s && s < num_vertices());
         assert(0 <= t && t < num_vertices());
         
         build();
         
-        value_type1 flow = 0;
-        value_type2 cost = 0;
+        cap_type  flow = 0;
+        cost_type cost = 0;
         
-        std::vector<value_type2> pot(n, edge_type::inf2);
-        std::vector<value_type2> dis(n);
-        std::vector<int>         pre_v(n, -1);
-        std::vector<int>         pre_e(n, -1);
+        std::vector<cost_type> pot(n, edge_type::inf_cost);
+        std::vector<cost_type> dis(n);
+        std::vector<int>       pv(n, -1);
+        std::vector<int>       pe(n, -1);
         
         pot[s] = 0;
         for (int k = 0; k < n - 1; ++k) {
             bool changed = false;
             for (const auto& e : edge_list) {
-                if (e.cap > e.flow && pot[e.from] < edge_type::inf2) {
-                    value_type2 nd = pot[e.from] + e.cost;
+                if (e.cap > e.flow && pot[e.from] < edge_type::inf_cost) {
+                    cost_type nd = pot[e.from] + e.cost;
                     if (pot[e.to] > nd) {
                         pot[e.to] = nd;
                         changed   = true;
@@ -109,18 +116,20 @@ public:
             }
             if (!changed) break;
         }
-
-        using pii = std::pair<value_type2, int>;
         
-        while (flow < maxf) {
-            std::fill(dis.begin(), dis.end(), edge_type::inf2);
-            std::priority_queue<pii, std::vector<pii>, std::greater<pii>> pq;
+        while (flow < limit) {
+            std::fill(dis.begin(), dis.end(), edge_type::inf_cost);
+            std::priority_queue<
+                std::pair<cost_type, int>, 
+                std::vector<std::pair<cost_type, int>>, 
+                std::greater<std::pair<cost_type, int>>
+            > pq;
             
             dis[s] = 0;
             pq.emplace(0, s);
             
             while (!pq.empty()) {
-                value_type2 d; int u;
+                cost_type d; int u;
                 std::tie(d, u) = pq.top();
                 pq.pop();
                 
@@ -131,37 +140,37 @@ public:
                     
                     if (e.cap > e.flow) {
                         int v = e.to;
-                        value_type2 nd = d + e.cost + pot[u] - pot[v];
+                        cost_type nd = d + e.cost + pot[u] - pot[v];
                         if (dis[v] > nd) {
-                            dis[v]   = nd;
-                            pre_v[v] = u;
-                            pre_e[v] = i;
+                            dis[v] = nd;
+                            pv[v]  = u;
+                            pe[v]  = i;
                             pq.emplace(nd, v);
                         }
                     }
                 }
             }
             
-            if (dis[t] == edge_type::inf2) break;
+            if (dis[t] == edge_type::inf_cost) break;
             
             for (int v = 0; v < n; ++v) {
-                if (dis[v] < edge_type::inf2) pot[v] += dis[v];
+                if (dis[v] < edge_type::inf_cost) pot[v] += dis[v];
             }
             
-            value_type1 addf = maxf - flow;
-            for (int v = t; v != s; v = pre_v[v]) {
-                const auto& e = edge_list[pre_e[v]];
-                addf = std::min(addf, e.cap - e.flow);
+            cap_type delta = limit - flow;
+            for (int v = t; v != s; v = pv[v]) {
+                const auto& e = edge_list[pe[v]];
+                delta = std::min(delta, e.cap - e.flow);
             }
             
-            for (int v = t; v != s; v = pre_v[v]) {
-                int id = pre_e[v];
-                edge_list[id].flow                += addf;
-                edge_list[edge_list[id].rev].flow -= addf;
+            for (int v = t; v != s; v = pv[v]) {
+                int id = pe[v];
+                edge_list[id].flow                += delta;
+                edge_list[edge_list[id].rev].flow -= delta;
             }
             
-            flow += addf;
-            cost += addf * pot[t];
+            flow += delta;
+            cost += delta * pot[t];
         }
         
         return { flow, cost };

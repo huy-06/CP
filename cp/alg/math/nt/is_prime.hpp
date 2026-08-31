@@ -12,7 +12,7 @@ constexpr bool is_prime(Tp n) {
         if (n < 2) return false;
     }
     
-    using uint_t = mod::ds::make_unsigned_t<Tp>;
+    using uint_t = ds::make_unsigned_t<Tp>;
     uint_t un = static_cast<uint_t>(n);
     
     if (un < 2) 

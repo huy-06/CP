@@ -1,5 +1,5 @@
 #include <queue>
-#include "../edge/flow.hpp"
+#include "../edge/mf_edge.hpp"
 #include "../graph/graph.hpp"
 
 #ifndef CP_DS_FLOW_MAX_FLOW
@@ -123,7 +123,7 @@ public:
         while (bfs(s, t)) {
             std::copy(head.begin(), head.begin() + n, ptr.begin());
             while (true) {
-                value_type pushed = dfs(s, t, edge_type::inf);
+                value_type pushed = dfs(s, t, edge_type::inf_cap);
                 if (pushed == 0) 
                     break;
                 ans += pushed;

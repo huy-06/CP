@@ -1,4 +1,5 @@
 #include "pow_mod.hpp"
+#include "../../../ds/hash/hash_map.hpp" 
 
 #ifndef CP_ALG_MOD_LOG
 #define CP_ALG_MOD_LOG
@@ -8,8 +9,8 @@ namespace mod {
 
 template <typename Tp>
 Tp log_discrete(Tp a, Tp b, Tp mod) {
-    safe_mod(a);
-    safe_mod(b);
+    a = safe_mod(a, mod);
+    b = safe_mod(b, mod);
     if (a == 0) return b == 0 ? 1 : -1;
     Tp k = 1, add = 0, g;
     while ((g = std::gcd(a, mod)) > 1) {
@@ -20,7 +21,7 @@ Tp log_discrete(Tp a, Tp b, Tp mod) {
     }
     Tp n = std::sqrt(mod) + 1;
     Tp an = pow_mod(a, n, mod);
-    std::unordered_map<Tp, Tp> vals;
+    ds::hash_map<Tp, Tp> vals;
     for (Tp q = 0, cur = b; q <= n; ++q) {
         vals[cur] = q;
         cur = safe_mul(cur, a, mod);

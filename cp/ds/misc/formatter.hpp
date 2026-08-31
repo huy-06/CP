@@ -108,9 +108,9 @@ struct formatter<std::vector<Args...>> {
     }
 };
 
-template <typename... Args>
-struct formatter<std::array<Args...>> {
-    static void print(std::ostream& os, const std::array<Args...>& v) {
+template <typename T, std::size_t N>
+struct formatter<std::array<T, N>> {
+    static void print(std::ostream& os, const std::array<T, N>& v) {
         open_bracket(os, "[");
         bool first = true;
         for (const auto& x : v) {
