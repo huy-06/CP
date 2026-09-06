@@ -1,0 +1,16 @@
+{
+    "tasks": [
+        {
+            "label": "Run make_file",
+            "type": "shell",
+            "command": "echo \"${file}\" | ./cp/init/make_file",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared"
+            }
+        }
+    ],
+    "version": "2.0.0",
+    
+}
