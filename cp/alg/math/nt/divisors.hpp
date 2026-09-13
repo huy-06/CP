@@ -8,7 +8,7 @@ namespace alg {
 
 template <typename Tp>
 cp_constexpr std::vector<Tp> divisors(Tp n) {
-    auto factors = factorize(x);
+    auto factors = factorize(n);
     std::vector<Tp> divisors;
     
     std::function<void(int, Tp)> dfs = [&](int idx, Tp val) -> void {

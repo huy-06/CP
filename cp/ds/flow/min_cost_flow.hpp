@@ -151,7 +151,9 @@ public:
                 }
             }
             
-            if (dis[t] == edge_type::inf_cost) break;
+            if (dis[t] == edge_type::inf_cost) {
+                break;
+            }
             
             for (int v = 0; v < n; ++v) {
                 if (dis[v] < edge_type::inf_cost) pot[v] += dis[v];

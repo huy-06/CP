@@ -162,6 +162,16 @@ std::vector<std::string> tokenize(const std::string& text) {
 bool is_equal_token(const std::string& actual, const std::string& expected, long double eps = float_epsilon) {
     if (actual == expected) return true;
 
+    auto has_float_chars = [](const std::string& s) {
+        return s.find('.') != std::string::npos || 
+               s.find('e') != std::string::npos || 
+               s.find('E') != std::string::npos;
+    };
+
+    if (!has_float_chars(actual) && !has_float_chars(expected)) {
+        return false;
+    }
+
     try {
         std::size_t pos_act, pos_exp;
         long double val_act = std::stold(actual, &pos_act);
@@ -175,7 +185,6 @@ bool is_equal_token(const std::string& actual, const std::string& expected, long
     
     return false;
 }
-
 bool check_token_match(const std::string& actual, const std::string& expected) {
     std::vector<std::string> actual_tokens = tokenize(actual);
     std::vector<std::string> expected_tokens = tokenize(expected);

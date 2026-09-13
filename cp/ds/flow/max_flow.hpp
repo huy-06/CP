@@ -11,7 +11,7 @@ template <typename Edge>
 class max_flow : public graph<Edge> {
 public:
     using edge_type       = Edge;
-    using value_type      = typename edge_type::value_type;
+    using cap_type        = typename edge_type::cap_type;
     using neighbors       = typename graph<edge_type>::neighbors;
     using const_neighbors = typename graph<edge_type>::const_neighbors;
 
@@ -110,7 +110,7 @@ public:
         return res;
     }
 
-    value_type flow(int s, int t) {
+    cap_type flow(int s, int t) {
         assert(0 <= s && s < num_vertices());
         assert(0 <= t && t < num_vertices());
         
@@ -119,11 +119,11 @@ public:
         ptr.resize(n);
         lvl.resize(n);
         
-        value_type ans = 0;
+        cap_type ans = 0;
         while (bfs(s, t)) {
             std::copy(head.begin(), head.begin() + n, ptr.begin());
             while (true) {
-                value_type pushed = dfs(s, t, edge_type::inf_cap);
+                cap_type pushed = dfs(s, t, edge_type::inf_cap);
                 if (pushed == 0) 
                     break;
                 ans += pushed;
@@ -195,7 +195,7 @@ private:
         return false;
     }
 
-    value_type dfs(int u, int t, value_type pushed) {
+    cap_type dfs(int u, int t, cap_type pushed) {
         if (pushed == 0 || u == t) 
             return pushed;
         
@@ -206,11 +206,11 @@ private:
             if (lvl[v] != lvl[u] + 1) 
                 continue;
             
-            value_type rem = e.cap - e.flow;
+            cap_type rem = e.cap - e.flow;
             if (rem <= 0) 
                 continue;
             
-            value_type tr = dfs(v, t, std::min(pushed, rem));
+            cap_type tr = dfs(v, t, std::min(pushed, rem));
             if (tr > 0) {
                 e.flow                     += tr;
                 edge_list[rev_idx[i]].flow -= tr;
