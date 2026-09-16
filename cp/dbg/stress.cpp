@@ -17,7 +17,7 @@
 #include "../cst/style.hpp"
 #include "../ds/ext/random.hpp"
 
-// g++ -std=c++23 -O2 check2.cpp -o check2 && ./check2
+// g++ -std=c++23 -O2 stress.cpp -o stress && ./stress
 
 std::ofstream fout;
 auto ran = cp::ds::random;
