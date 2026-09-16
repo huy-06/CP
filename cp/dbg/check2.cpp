@@ -2,29 +2,66 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <string>
+#include <regex>
+#include <chrono>
+#include <filesystem>
+#include <cmath>
 #include <iomanip>
 #include <thread>
-#include <chrono>
-#include <windows.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <signal.h>
 #include "../cst/style.hpp"
-#include "../ds/neo/random.hpp"
+#include "../ds/ext/random.hpp"
 
-// cd "e:\Code\CP\Tasks\CPP\cp\dbg\" ; if ($?) { g++ -std=c++23 -O2 check2.cpp -o check2 } ; if ($?) { .\check2 }
+// g++ -std=c++23 -O2 check2.cpp -o check2 && ./check2
 
 std::ofstream fout;
 auto ran = cp::ds::random;
 
 void generate_test_case() {
-    fout << ran.nint(1, 1E9) << ' ' << ran.nint(1, 1E9) << '\n';
+    int n = ran.nint(2, 10);
+    fout << n << '\n';
+
+    for (int i = 0; i < n; ++i) {
+        fout << ran.nint(1, 1e9) << ' ';
+    }
+    fout << '\n';
+
+    int q = ran.nint(1, 10);
+    fout << q << '\n';
+
+    while (q--) {
+        int op = ran.nint(1, 2);
+        fout << op << ' ';
+        if (op == 1) {
+            int p = ran.nint(1, n);
+            int v = ran.nint(1, 1e9);
+            fout << p << ' ' << v << '\n';
+        } else {
+            int l = ran.nint(1, n - 1);
+            int r = ran.nint(l + 1, n);
+            fout << l << ' ' << r << '\n';
+        }
+    }
 }
 
-const std::string path_source_1 = R"(E:\Code\CP\Tasks\CPP\a.cpp)";
-const std::string path_source_2 = R"(E:\Code\CP\Tasks\CPP\b.cpp)";
-// const std::string path_source_2 = R"(E:\Code\CP\Tasks\Python\a.py)";
+const std::string path_source_1 = "a.cpp";
+const std::string path_source_2 = "b.cpp";
+
 const std::string input_file = "test_input.txt";
-const std::string debug_file = "debug.txt";
-const int total_tests = 100;
-const double time_limit = 5.0;
+const std::string out_file_1 = "test_out_1.txt";
+const std::string out_file_2 = "test_out_2.txt";
+
+constexpr int total_tests = 100;
+constexpr double time_limit = 5.0;
+constexpr long double float_epsilon = 1e-6;
+
+constexpr size_t max_preview_lines = 5;
+constexpr size_t max_preview_width = 80;
 
 namespace style = cp::cst::style;
 
@@ -35,6 +72,177 @@ struct program_info {
     bool is_python;
 };
 
+std::vector<std::filesystem::path> files_to_clean;
+
+void safe_remove(const std::filesystem::path &filepath) {
+    if (filepath.empty()) return;
+    std::error_code ec;
+    if (!std::filesystem::exists(filepath, ec)) return;
+
+    std::filesystem::path temp_path = filepath.string() + ".todel." + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    
+    std::filesystem::rename(filepath, temp_path, ec);
+    std::filesystem::path target = ec ? filepath : temp_path;
+
+    for (int i = 0; i < 20; ++i) {
+        if (::unlink(target.c_str()) == 0) return;
+        if (std::filesystem::remove(target, ec)) return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    std::string cmd = "rm -f \"" + target.string() + "\" 2>/dev/null";
+    [[maybe_unused]] int r = system(cmd.c_str());
+}
+
+void clean_all_temporary_files() {
+    for (const auto &f : files_to_clean) {
+        safe_remove(f);
+    }
+    files_to_clean.clear();
+}
+
+void signal_handler(int signum) {
+    clean_all_temporary_files();
+    _exit(128 + signum);
+}
+
+std::string strip_ansi(const std::string &text) {
+    static const std::regex ansi_regex("\x1B\\[[0-9;]*[a-zA-Z]");
+    return std::regex_replace(text, ansi_regex, "");
+}
+
+std::vector<std::string> tokenize(const std::string &text) {
+    std::vector<std::string> tokens;
+    std::string clean_text = strip_ansi(text);
+    std::stringstream ss(clean_text);
+    std::string word;
+    while (ss >> word) {
+        tokens.push_back(word);
+    }
+    return tokens;
+}
+
+bool is_equal_token(const std::string &actual, const std::string &expected, long double eps = float_epsilon) {
+    if (actual == expected) return true;
+
+    auto has_float_chars = [](const std::string &s) {
+        return s.find('.') != std::string::npos || 
+               s.find('e') != std::string::npos || 
+               s.find('E') != std::string::npos;
+    };
+
+    if (!has_float_chars(actual) && !has_float_chars(expected)) {
+        return false;
+    }
+
+    try {
+        std::size_t pos_act, pos_exp;
+        long double val_act = std::stold(actual, &pos_act);
+        long double val_exp = std::stold(expected, &pos_exp);
+
+        if (pos_act == actual.length() && pos_exp == expected.length()) {
+            long double diff = std::abs(val_act - val_exp);
+            return diff <= eps * std::max(1.0L, std::abs(val_exp));
+        }
+    } catch (...) {}
+    
+    return false;
+}
+
+bool check_token_match(const std::string &actual, const std::string &expected) {
+    std::vector<std::string> tokens_act = tokenize(actual);
+    std::vector<std::string> tokens_exp = tokenize(expected);
+    
+    if (tokens_act.size() != tokens_exp.size()) return false;
+    
+    for (std::size_t i = 0; i < tokens_act.size(); ++i) {
+        if (!is_equal_token(tokens_act[i], tokens_exp[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void write_file_content(const std::string &path, const std::string &content) {
+    std::ofstream f(path);
+    if (f) {
+        f << content;
+    }
+}
+
+void print_input_preview(const std::string &path) {
+    std::ifstream fin(path);
+    if (!fin) return;
+
+    std::vector<std::string> lines;
+    std::string line;
+    int total_lines = 0;
+
+    while (std::getline(fin, line)) {
+        total_lines++;
+        if ((int)lines.size() < max_preview_lines) {
+            if (line.length() > max_preview_width) {
+                lines.push_back(line.substr(0, max_preview_width) + "...");
+            } else {
+                lines.push_back(line);
+            }
+        }
+    }
+
+    std::cout << style::color_black << "input preview (" 
+              << std::min<size_t>(total_lines, max_preview_lines) << "/" << total_lines << " lines):" 
+              << style::reset << "\n";
+
+    for (const auto &l : lines) {
+        std::cout << style::color_white << l << style::reset << "\n";
+    }
+
+    if (total_lines > max_preview_lines) {
+        std::cout << style::color_black << "... [truncated remaining " 
+                  << (total_lines - max_preview_lines) << " lines]" 
+                  << style::reset << "\n";
+    }
+}
+
+void print_mismatch_context(const std::string &out_act, const std::string &out_exp, 
+                            const std::string &src_act, const std::string &src_exp) {
+    auto tokens_act = tokenize(out_act);
+    auto tokens_exp = tokenize(out_exp);
+
+    size_t idx = 0;
+    while (idx < tokens_act.size() && idx < tokens_exp.size() && is_equal_token(tokens_act[idx], tokens_exp[idx])) {
+        idx++;
+    }
+
+    std::cout << "\n" << style::color_black << "first mismatch at token #" << (idx + 1) << ":" << style::reset << "\n";
+
+    auto build_snippet = [](const std::vector<std::string> &tokens, size_t target_idx, const std::string &color_hl) {
+        std::string s = "";
+        if (tokens.empty()) return std::string("(empty output)");
+        
+        int start = std::max(0, (int)target_idx - 3);
+        int end = std::min((int)tokens.size() - 1, (int)target_idx + 3);
+
+        if (start > 0) s += "... ";
+        for (int i = start; i <= end; ++i) {
+            if ((size_t)i == target_idx) {
+                s += color_hl + "[" + tokens[i] + "]" + std::string(style::reset) + " ";
+            } else {
+                s += std::string(style::color_white) + tokens[i] + std::string(style::reset) + " ";
+            }
+        }
+        if (target_idx >= tokens.size()) {
+            s += color_hl + "[end of output]" + std::string(style::reset) + " ";
+        }
+        if (end < (int)tokens.size() - 1) s += "...";
+        return s;
+    };
+
+    std::cout << style::color_black << "expected (" << src_exp << "): " << style::reset 
+              << build_snippet(tokens_exp, idx, style::color_yellow) << "\n";
+    std::cout << style::color_black << "actual   (" << src_act << "): " << style::reset 
+              << build_snippet(tokens_act, idx, style::color_red) << "\n";
+}
 
 std::string get_extension(const std::string &filename) {
     size_t pos = filename.find_last_of('.');
@@ -44,55 +252,31 @@ std::string get_extension(const std::string &filename) {
     return "";
 }
 
-std::vector<std::string> tokenize(const std::string &s) {
-    std::vector<std::string> tokens;
-    std::istringstream iss(s);
-    std::string token;
-    while (iss >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
-
-std::string read_file_content(const std::string &path) {
-    std::ifstream fin(path);
-    if (!fin) return "";
-    std::string content, line;
-    while (getline(fin, line)) {
-        content += line + "\n";
-    }
-    return content;
-}
-
-void log_debug_file(const std::string &inp_file, const std::string &out1, const std::string &out2) {
-    std::ofstream debug(debug_file);
-    if (debug) {
-        debug << "Input:\n" << read_file_content(inp_file) << "\n";
-        debug << "Output 1 (" << path_source_1 << "):\n" << out1 << "\n";
-        debug << "Output 2 (" << path_source_2 << "):\n" << out2 << "\n";
-    }
-}
-
 bool setup_program(const std::string &source, program_info &info) {
     info.source_path = source;
     info.extension = get_extension(source);
     
     if (info.extension == "cpp") {
         info.is_python = false;
-        info.exec_path = source.substr(0, source.find_last_of('.')) + ".exe";
+        info.exec_path = source.substr(0, source.find_last_of('.'));
+        if (info.exec_path.find('/') == std::string::npos) {
+            info.exec_path = "./" + info.exec_path;
+        }
         
-        std::string cmd = "g++ -std=c++23 -O2 " + source + " -o " + info.exec_path;
-        std::cout << "compiling: " << source << " ..." << std::endl;
+        files_to_clean.push_back(info.exec_path);
+        
+        std::string cmd = "g++ -std=c++23 -O2 \"" + source + "\" -o \"" + info.exec_path + "\"";
+        std::cout << style::color_white << "compiling: " << style::color_yellow << source << style::color_white << " ..." << style::reset << std::endl;
         
         if (system(cmd.c_str()) != 0) {
-            std::cerr << style::color_red << "error: failed to compile " << source << style::reset << std::endl;
+            std::cerr << style::color_red << "compile failed: " << source << style::reset << std::endl;
             return false;
         }
         return true;
     } else if (info.extension == "py") {
         info.is_python = true;
         info.exec_path = source;
-        std::cout << "python script detected: " << source << std::endl;
+        std::cout << style::color_white << "python script detected: " << style::color_yellow << source << style::reset << std::endl;
         return true;
     }
     
@@ -101,80 +285,91 @@ bool setup_program(const std::string &source, program_info &info) {
 }
 
 bool execute_process(const program_info &prog, const std::string &input_path, double timeout_sec, std::string &output_str, double &elapsed_time) {
-    std::string cmd_line = prog.is_python ? ("python " + prog.exec_path) : prog.exec_path;
-
-    HANDLE h_read, h_write;
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-
-    if (!CreatePipe(&h_read, &h_write, &sa, 0)) return false;
-    SetHandleInformation(h_read, HANDLE_FLAG_INHERIT, 0);
-
-    HANDLE h_input_file = CreateFileA(input_path.c_str(), GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (h_input_file == INVALID_HANDLE_VALUE) {
-        CloseHandle(h_read);
-        CloseHandle(h_write);
+    int pipe_fd[2];
+    if (pipe(pipe_fd) == -1) {
         return false;
     }
 
-    STARTUPINFOA startup_info;
-    ZeroMemory(&startup_info, sizeof(startup_info));
-    startup_info.cb = sizeof(startup_info);
-    startup_info.hStdOutput = h_write;
-    startup_info.hStdError = h_write;
-    startup_info.hStdInput = h_input_file;
-    startup_info.dwFlags |= STARTF_USESTDHANDLES;
-
-    PROCESS_INFORMATION proc_info;
-    ZeroMemory(&proc_info, sizeof(proc_info));
-
-    BOOL success = CreateProcessA(NULL, const_cast<LPSTR>(cmd_line.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &startup_info, &proc_info);
-
-    if (!success) {
-        CloseHandle(h_input_file);
-        CloseHandle(h_read);
-        CloseHandle(h_write);
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
         return false;
     }
 
-    CloseHandle(h_write);
-    CloseHandle(h_input_file);
+    if (pid == 0) {
+        int in_fd = open(input_path.c_str(), O_RDONLY);
+        if (in_fd != -1) {
+            dup2(in_fd, STDIN_FILENO);
+            close(in_fd);
+        }
+
+        dup2(pipe_fd[1], STDOUT_FILENO);
+        dup2(pipe_fd[1], STDERR_FILENO);
+
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
+
+        if (prog.is_python) {
+            execlp("python3", "python3", prog.exec_path.c_str(), nullptr);
+        } else {
+            execl(prog.exec_path.c_str(), prog.exec_path.c_str(), nullptr);
+        }
+        _exit(127);
+    }
+
+    close(pipe_fd[1]);
+    output_str.clear();
 
     std::thread reader([&]() {
         const int buf_size = 4096;
         char buffer[buf_size];
-        DWORD bytes_read;
-        while (ReadFile(h_read, buffer, buf_size, &bytes_read, NULL) && bytes_read != 0) {
+        ssize_t bytes_read;
+        while ((bytes_read = read(pipe_fd[0], buffer, buf_size)) > 0) {
             output_str.append(buffer, bytes_read);
         }
     });
 
     auto start = std::chrono::steady_clock::now();
-    DWORD wait_result = WaitForSingleObject(proc_info.hProcess, static_cast<DWORD>(timeout_sec * 1000));
-    
-    if (wait_result == WAIT_TIMEOUT) {
-        TerminateProcess(proc_info.hProcess, 1);
-        reader.join();
-        CloseHandle(proc_info.hProcess);
-        CloseHandle(proc_info.hThread);
-        CloseHandle(h_read);
-        elapsed_time = timeout_sec; 
-        return false; 
+    bool timed_out = false;
+    int status = 0;
+
+    while (true) {
+        pid_t res = waitpid(pid, &status, WNOHANG);
+        if (res == pid) {
+            break;
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        elapsed_time = std::chrono::duration<double>(now - start).count();
+        if (elapsed_time >= timeout_sec) {
+            timed_out = true;
+            kill(pid, SIGKILL);
+            waitpid(pid, &status, 0);
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     auto end = std::chrono::steady_clock::now();
-    elapsed_time = std::chrono::duration<double>(end - start).count();
+    if (timed_out) {
+        elapsed_time = timeout_sec;
+    } else {
+        elapsed_time = std::chrono::duration<double>(end - start).count();
+    }
 
     reader.join();
-    CloseHandle(proc_info.hProcess);
-    CloseHandle(proc_info.hThread);
-    CloseHandle(h_read);
-    return true;
+    close(pipe_fd[0]);
+
+    return !timed_out;
 }
 
 int main() {
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+    std::atexit(clean_all_temporary_files);
+
     program_info prog1, prog2;
     if (!setup_program(path_source_1, prog1) || !setup_program(path_source_2, prog2)) {
         return 1;
@@ -186,7 +381,7 @@ int main() {
     std::cout << std::fixed << std::setprecision(3) << std::endl;
 
     for (int t = 1; t <= total_tests; ++t) {
-        std::cout << "running test case " << t << "..." << std::endl;
+        std::cout << style::color_white << "test " << style::color_blue << t << style::color_white << ": " << style::reset << std::flush;
 
         fout.open(input_file, std::ios::out);
         generate_test_case();
@@ -198,47 +393,59 @@ int main() {
         bool ok_2 = execute_process(prog2, input_file, time_limit, out_2, time_2);
 
         if (!ok_1) {
-            std::cout << "test " << t << ": " << style::color_yellow << prog1.source_path << style::reset << style::color_red << " TLE!" << style::reset << std::endl;
-            log_debug_file(input_file, out_1, "");
+            std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << prog1.source_path << style::color_white << "]" << style::reset << "\n\n";
+            print_input_preview(input_file);
+            write_file_content(out_file_1, out_1);
+            write_file_content(out_file_2, out_2);
+            std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
+            std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
+            std::cout << style::color_black << "  output 1: " << style::color_white << out_file_1 << " (" << prog1.source_path << ")" << style::reset << "\n";
+            std::cout << style::color_black << "  output 2: " << style::color_white << out_file_2 << " (" << prog2.source_path << ")" << style::reset << "\n";
             return 1;
         }
         if (!ok_2) {
-            std::cout << "test " << t << ": " << style::color_yellow << prog2.source_path << style::reset << style::color_red << " TLE!" << style::reset << std::endl;
-            log_debug_file(input_file, out_1, out_2);
+            std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << prog2.source_path << style::color_white << "]" << style::reset << "\n\n";
+            print_input_preview(input_file);
+            write_file_content(out_file_1, out_1);
+            write_file_content(out_file_2, out_2);
+            std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
+            std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
+            std::cout << style::color_black << "  output 1: " << style::color_white << out_file_1 << " (" << prog1.source_path << ")" << style::reset << "\n";
+            std::cout << style::color_black << "  output 2: " << style::color_white << out_file_2 << " (" << prog2.source_path << ")" << style::reset << "\n";
             return 1;
         }
 
-        auto tokens_1 = tokenize(out_1);
-        auto tokens_2 = tokenize(out_2);
+        if (check_token_match(out_2, out_1)) {
+            std::cout << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << time_1 << "s" << style::color_white << " vs " << style::color_yellow << time_2 << "s" << style::color_white << "]" << style::reset << "\n";
+        } else {
+            std::cout << style::color_red << "wa" << style::reset << "\n\n";
+            
+            print_input_preview(input_file);
+            print_mismatch_context(out_2, out_1, prog2.source_path, prog1.source_path);
 
-        if (tokens_1 != tokens_2) {
-            std::cout << "test " << t << ": " << style::color_red << "FAILED!" << style::reset << std::endl;
+            write_file_content(out_file_1, out_1);
+            write_file_content(out_file_2, out_2);
+
+            std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
+            std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
+            std::cout << style::color_black << "  output 1: " << style::color_white << out_file_1 << " (" << prog1.source_path << ")" << style::reset << "\n";
+            std::cout << style::color_black << "  output 2: " << style::color_white << out_file_2 << " (" << prog2.source_path << ")" << style::reset << "\n";
+            std::cout << style::color_black << "tip: run \"code --diff " << out_file_1 << " " << out_file_2 << "\" to view diff in vscode" << style::reset << "\n";
             
-            size_t idx = 0;
-            while (idx < tokens_1.size() && idx < tokens_2.size() && tokens_1[idx] == tokens_2[idx]) idx++;
-            
-            std::cout << style::color_yellow << "source 1 got: " << style::reset << (idx < tokens_1.size() ? tokens_1[idx] : "end") << std::endl;
-            std::cout << style::color_yellow << "source 2 got: " << style::reset << (idx < tokens_2.size() ? tokens_2[idx] : "end") << std::endl;
-            
-            log_debug_file(input_file, out_1, out_2);
             return 1;
         }
 
         sum_time_1 += time_1; max_time_1 = std::max(max_time_1, time_1);
         sum_time_2 += time_2; max_time_2 = std::max(max_time_2, time_2);
-
-        std::cout << "test " << t << ": " << style::color_green << "PASSED!" << style::reset << std::endl;
-        std::cout << "time: " << time_1 << "s vs " << time_2 << "s" << std::endl << std::endl;
     }
 
-    std::cout << "all test cases " << style::color_green << "PASSED!" << style::reset << std::endl;
-    std::cout << style::style_bold << "congratulations!" << style::reset << std::endl;
+    std::cout << "\n" << style::color_green << "all " << total_tests << " tests passed!" << style::reset << "\n";
     
-    std::cout << style::color_yellow << "summary " << prog1.source_path << ":" << style::reset 
-         << " avg " << (sum_time_1 / total_tests) << "s, max " << max_time_1 << "s" << std::endl;
-         
-    std::cout << style::color_yellow << "summary " << prog2.source_path << ":" << style::reset 
-         << " avg " << (sum_time_2 / total_tests) << "s, max " << max_time_2 << "s" << std::endl;
+    std::cout << style::color_black << "summary " << style::color_yellow << prog1.source_path << style::color_white << ": avg " << style::color_yellow << (sum_time_1 / total_tests) << "s" << style::color_white << ", max " << style::color_yellow << max_time_1 << "s" << style::reset << "\n";
+    std::cout << style::color_black << "summary " << style::color_yellow << prog2.source_path << style::color_white << ": avg " << style::color_yellow << (sum_time_2 / total_tests) << "s" << style::color_white << ", max " << style::color_yellow << max_time_2 << "s" << style::reset << "\n";
 
+    safe_remove(input_file);
+    safe_remove(out_file_1);
+    safe_remove(out_file_2);
     return 0;
 }

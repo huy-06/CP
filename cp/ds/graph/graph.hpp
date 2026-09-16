@@ -1,6 +1,7 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <filesystem>
 #include "../edge/edge.hpp"
 
 #ifndef CP_DS_GRAPH
@@ -212,7 +213,8 @@ public:
         for (auto e : edge_list) {
             ss << e << '\n';
         }
-        std::ofstream out("cp/tools/test_input.txt");
+        std::string input_path = "cp/tools/test_input.txt";
+        std::ofstream out(input_path);
         out << n << ' ' << edge_list.size() << '\n';
         std::string s;
         while (std::getline(ss, s)) {
@@ -227,6 +229,7 @@ public:
         }
         out.close();
         int ret = system("python cp/tools/draw_graph.py");
+        std::filesystem::remove(input_path); 
         if (ret != 0) {
             std::cerr << "Failed to run draw_graph.py (return code " << ret << ")\n";
             return;

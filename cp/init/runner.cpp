@@ -105,11 +105,11 @@ void signal_handler(int signum) {
     _exit(128 + signum);
 }
 
-struct AutoDeleteFile {
+struct auto_delete_file {
     std::filesystem::path target;
-    AutoDeleteFile() = default;
-    explicit AutoDeleteFile(std::filesystem::path p) : target(std::move(p)) {}
-    ~AutoDeleteFile() {
+    auto_delete_file() = default;
+    explicit auto_delete_file(std::filesystem::path p) : target(std::move(p)) {}
+    ~auto_delete_file() {
         if (!target.empty()) {
             safe_remove(target);
         }
@@ -121,18 +121,12 @@ std::filesystem::path resolve_make_file_path(const std::filesystem::path& src_di
     
     std::filesystem::path self_dir = get_runner_dir();
     candidates.push_back(self_dir / "make_file");
-    candidates.push_back(self_dir / "make_file.exe");
     
     candidates.push_back("/home/huynguyen/mnt/cpp/cp/init/make_file");
-    candidates.push_back("/home/huynguyen/mnt/cpp/cp/init/make_file.exe");
     
     if (!src_dir.empty()) {
         candidates.push_back(src_dir / "make_file");
-        candidates.push_back(src_dir / "make_file.exe");
     }
-    
-    candidates.push_back("/mnt/e/Code/CP/Tasks/CPP/cp/init/make_file");
-    candidates.push_back("/mnt/e/Code/CP/Tasks/CPP/cp/init/make_file.exe");
 
     for (const auto& p : candidates) {
         std::error_code ec;
@@ -472,7 +466,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::path exe_file = dir_path / src_file.stem();
     
     g_file_to_clean = exe_file;
-    AutoDeleteFile file_cleaner(exe_file);
+    auto_delete_file file_cleaner(exe_file);
 
     std::ifstream f(src_file);
     if (!f) {
