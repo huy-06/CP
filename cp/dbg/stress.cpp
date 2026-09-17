@@ -72,6 +72,17 @@ struct program_info {
     bool is_python;
 };
 
+struct process_result {
+    bool timed_out = false;
+    int exit_code = 0;
+    std::string output;
+    double elapsed_time = 0.0;
+
+    bool is_rte() const {
+        return !timed_out && exit_code != 0;
+    }
+};
+
 std::vector<std::filesystem::path> files_to_clean;
 
 void safe_remove(const std::filesystem::path &filepath) {
@@ -284,17 +295,20 @@ bool setup_program(const std::string &source, program_info &info) {
     return false;
 }
 
-bool execute_process(const program_info &prog, const std::string &input_path, double timeout_sec, std::string &output_str, double &elapsed_time) {
+process_result execute_process(const program_info &prog, const std::string &input_path, double timeout_sec) {
+    process_result res;
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1) {
-        return false;
+        res.exit_code = -1;
+        return res;
     }
 
     pid_t pid = fork();
     if (pid < 0) {
         close(pipe_fd[0]);
         close(pipe_fd[1]);
-        return false;
+        res.exit_code = -1;
+        return res;
     }
 
     if (pid == 0) {
@@ -319,33 +333,38 @@ bool execute_process(const program_info &prog, const std::string &input_path, do
     }
 
     close(pipe_fd[1]);
-    output_str.clear();
+    res.output.clear();
 
     std::thread reader([&]() {
         const int buf_size = 4096;
         char buffer[buf_size];
         ssize_t bytes_read;
         while ((bytes_read = read(pipe_fd[0], buffer, buf_size)) > 0) {
-            output_str.append(buffer, bytes_read);
+            res.output.append(buffer, bytes_read);
         }
     });
 
     auto start = std::chrono::steady_clock::now();
-    bool timed_out = false;
     int status = 0;
 
     while (true) {
-        pid_t res = waitpid(pid, &status, WNOHANG);
-        if (res == pid) {
+        pid_t wait_res = waitpid(pid, &status, WNOHANG);
+        if (wait_res == pid) {
+            if (WIFEXITED(status)) {
+                res.exit_code = WEXITSTATUS(status);
+            } else if (WIFSIGNALED(status)) {
+                res.exit_code = 128 + WTERMSIG(status);
+            }
             break;
         }
 
         auto now = std::chrono::steady_clock::now();
-        elapsed_time = std::chrono::duration<double>(now - start).count();
-        if (elapsed_time >= timeout_sec) {
-            timed_out = true;
+        res.elapsed_time = std::chrono::duration<double>(now - start).count();
+        if (res.elapsed_time >= timeout_sec) {
+            res.timed_out = true;
             kill(pid, SIGKILL);
             waitpid(pid, &status, 0);
+            res.exit_code = 128 + SIGKILL;
             break;
         }
 
@@ -353,16 +372,16 @@ bool execute_process(const program_info &prog, const std::string &input_path, do
     }
 
     auto end = std::chrono::steady_clock::now();
-    if (timed_out) {
-        elapsed_time = timeout_sec;
+    if (res.timed_out) {
+        res.elapsed_time = timeout_sec;
     } else {
-        elapsed_time = std::chrono::duration<double>(end - start).count();
+        res.elapsed_time = std::chrono::duration<double>(end - start).count();
     }
 
     reader.join();
     close(pipe_fd[0]);
 
-    return !timed_out;
+    return res;
 }
 
 int main() {
@@ -387,44 +406,50 @@ int main() {
         generate_test_case();
         fout.close();
 
-        std::string out_1, out_2;
-        double time_1, time_2;
-        bool ok_1 = execute_process(prog1, input_file, time_limit, out_1, time_1);
-        bool ok_2 = execute_process(prog2, input_file, time_limit, out_2, time_2);
+        process_result res_1 = execute_process(prog1, input_file, time_limit);
+        process_result res_2 = execute_process(prog2, input_file, time_limit);
 
-        if (!ok_1) {
-            std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << prog1.source_path << style::color_white << "]" << style::reset << "\n\n";
+        auto report_failure = [&](const std::string &verdict, const program_info &prog, double elapsed) {
+            std::cout << style::color_red << verdict << " " << style::color_white << "[" << style::color_yellow << prog.source_path 
+                      << style::color_white << " (" << style::color_yellow << elapsed << "s" << style::color_white << ")]" << style::reset << "\n\n";
             print_input_preview(input_file);
-            write_file_content(out_file_1, out_1);
-            write_file_content(out_file_2, out_2);
+            write_file_content(out_file_1, res_1.output);
+            write_file_content(out_file_2, res_2.output);
             std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
             std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
             std::cout << style::color_black << "  output 1: " << style::color_white << out_file_1 << " (" << prog1.source_path << ")" << style::reset << "\n";
             std::cout << style::color_black << "  output 2: " << style::color_white << out_file_2 << " (" << prog2.source_path << ")" << style::reset << "\n";
+        };
+
+        if (res_1.timed_out) {
+            report_failure("tle", prog1, res_1.elapsed_time);
             return 1;
         }
-        if (!ok_2) {
-            std::cout << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << prog2.source_path << style::color_white << "]" << style::reset << "\n\n";
-            print_input_preview(input_file);
-            write_file_content(out_file_1, out_1);
-            write_file_content(out_file_2, out_2);
-            std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
-            std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
-            std::cout << style::color_black << "  output 1: " << style::color_white << out_file_1 << " (" << prog1.source_path << ")" << style::reset << "\n";
-            std::cout << style::color_black << "  output 2: " << style::color_white << out_file_2 << " (" << prog2.source_path << ")" << style::reset << "\n";
+        if (res_2.timed_out) {
+            report_failure("tle", prog2, res_2.elapsed_time);
             return 1;
         }
 
-        if (check_token_match(out_2, out_1)) {
-            std::cout << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << time_1 << "s" << style::color_white << " vs " << style::color_yellow << time_2 << "s" << style::color_white << "]" << style::reset << "\n";
+        if (res_1.is_rte()) {
+            report_failure("rte", prog1, res_1.elapsed_time);
+            return 1;
+        }
+        if (res_2.is_rte()) {
+            report_failure("rte", prog2, res_2.elapsed_time);
+            return 1;
+        }
+
+        if (check_token_match(res_2.output, res_1.output)) {
+            std::cout << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << res_1.elapsed_time << "s" 
+                      << style::color_white << " vs " << style::color_yellow << res_2.elapsed_time << "s" << style::color_white << "]" << style::reset << "\n";
         } else {
             std::cout << style::color_red << "wa" << style::reset << "\n\n";
             
             print_input_preview(input_file);
-            print_mismatch_context(out_2, out_1, prog2.source_path, prog1.source_path);
+            print_mismatch_context(res_2.output, res_1.output, prog2.source_path, prog1.source_path);
 
-            write_file_content(out_file_1, out_1);
-            write_file_content(out_file_2, out_2);
+            write_file_content(out_file_1, res_1.output);
+            write_file_content(out_file_2, res_2.output);
 
             std::cout << "\n" << style::color_black << "details saved to:" << style::reset << "\n";
             std::cout << style::color_black << "  input:    " << style::color_white << input_file << style::reset << "\n";
@@ -435,8 +460,8 @@ int main() {
             return 1;
         }
 
-        sum_time_1 += time_1; max_time_1 = std::max(max_time_1, time_1);
-        sum_time_2 += time_2; max_time_2 = std::max(max_time_2, time_2);
+        sum_time_1 += res_1.elapsed_time; max_time_1 = std::max(max_time_1, res_1.elapsed_time);
+        sum_time_2 += res_2.elapsed_time; max_time_2 = std::max(max_time_2, res_2.elapsed_time);
     }
 
     std::cout << "\n" << style::color_green << "all " << total_tests << " tests passed!" << style::reset << "\n";
