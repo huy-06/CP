@@ -131,8 +131,8 @@ public:
     virtual void add_unedge(const edge_type& e) {
         edge_type rev_e = e;
         std::swap(rev_e.from, rev_e.to);
-        add_edge(e);
-        add_edge(rev_e);
+        graph::add_edge(e);
+        graph::add_edge(rev_e);
     }
 
     void read_edges(int m, int off = 1, std::istream& is = std::cin) {

@@ -21,7 +21,7 @@ public:
     }
 
     void init(int n, int root = 0) {
-        graph<edge_type>::init(n, n - 1);
+        graph<edge_type>::init(n, std::max(0, n - 1));
         this->root = root;
         par.assign(n, -1);
         dep.assign(n, 0);

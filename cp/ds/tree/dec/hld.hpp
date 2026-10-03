@@ -11,16 +11,16 @@ public:
     using edge_type = Edge;
     using tree<edge_type>::num_vertices;
 
-    hld(int n = 0, int root = 0) {
+    hld(int n = 0, int root = 0) : tree<Edge>(n, root) {
         init(n, root);
     }
 
-    hld(const graph<edge_type>& g, int root = 0) {
+    hld(const graph<edge_type>& g, int root = 0) : tree<Edge>(g, root) {
         init(g, root);
     }
 
-    hld(const tree<edge_type>& tree, int root = 0) {
-        init(tree, root);
+    hld(const tree<edge_type>& tr, int root = 0) : tree<Edge>(tr, root) {
+        init(tr, root);
     }
 
     void init(int n, int root = 0) {
