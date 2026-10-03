@@ -34,6 +34,7 @@ struct test_case {
     bool has_expected;
     std::string input;
     std::string expected_out;
+    bool is_skipped = false;
 };
 
 std::string trim(const std::string& str) {
@@ -179,6 +180,7 @@ bool is_equal_token(const std::string& actual, const std::string& expected, long
     
     return false;
 }
+
 bool check_token_match(const std::string& actual, const std::string& expected) {
     std::vector<std::string> actual_tokens = tokenize(actual);
     std::vector<std::string> expected_tokens = tokenize(expected);
@@ -423,26 +425,58 @@ std::vector<test_case> parse_test_cases(const std::string& source) {
     std::size_t pos = 0;
     
     while (true) {
-        std::size_t in_pos = source.find("[IN]", pos);
-        if (in_pos == std::string::npos) break;
+        std::size_t norm_in = source.find("[IN]", pos);
+        std::size_t skip_in = source.find("[-IN]", pos);
         
-        std::size_t next_in = source.find("[IN]", in_pos + 4);
-        std::size_t out_pos = source.find("[OUT]", in_pos + 4);
-        std::size_t end_block = source.find("*/", in_pos + 4);
+        if (norm_in == std::string::npos && skip_in == std::string::npos) break;
+        
+        bool is_skipped = false;
+        std::size_t in_pos = 0;
+        std::size_t in_tag_len = 0;
+
+        if (norm_in != std::string::npos && (skip_in == std::string::npos || norm_in < skip_in)) {
+            in_pos = norm_in;
+            in_tag_len = 4;
+            is_skipped = false;
+        } else {
+            in_pos = skip_in;
+            in_tag_len = 5;
+            is_skipped = true;
+        }
+
+        std::size_t next_norm_in = source.find("[IN]", in_pos + in_tag_len);
+        std::size_t next_skip_in = source.find("[-IN]", in_pos + in_tag_len);
+        std::size_t end_block = source.find("*/", in_pos + in_tag_len);
         
         std::size_t end_pos = source.length();
-        if (next_in != std::string::npos) end_pos = std::min(end_pos, next_in);
+        if (next_norm_in != std::string::npos) end_pos = std::min(end_pos, next_norm_in);
+        if (next_skip_in != std::string::npos) end_pos = std::min(end_pos, next_skip_in);
         if (end_block != std::string::npos) end_pos = std::min(end_pos, end_block);
         
+        std::size_t norm_out = source.find("[OUT]", in_pos + in_tag_len);
+        std::size_t skip_out = source.find("[-OUT]", in_pos + in_tag_len);
+
+        std::size_t out_pos = std::string::npos;
+        std::size_t out_tag_len = 0;
+
+        if (norm_out != std::string::npos && (skip_out == std::string::npos || norm_out < skip_out)) {
+            out_pos = norm_out;
+            out_tag_len = 5;
+        } else if (skip_out != std::string::npos) {
+            out_pos = skip_out;
+            out_tag_len = 6;
+        }
+
         test_case tc;
-        
+        tc.is_skipped = is_skipped;
+
         if (out_pos != std::string::npos && out_pos < end_pos) {
             tc.has_expected = true;
-            tc.input = trim(source.substr(in_pos + 4, out_pos - (in_pos + 4)));
-            tc.expected_out = trim(source.substr(out_pos + 5, end_pos - (out_pos + 5)));
+            tc.input = trim(source.substr(in_pos + in_tag_len, out_pos - (in_pos + in_tag_len)));
+            tc.expected_out = trim(source.substr(out_pos + out_tag_len, end_pos - (out_pos + out_tag_len)));
         } else {
             tc.has_expected = false;
-            tc.input = trim(source.substr(in_pos + 4, end_pos - (in_pos + 4)));
+            tc.input = trim(source.substr(in_pos + in_tag_len, end_pos - (in_pos + in_tag_len)));
         }
         
         cases.push_back(tc);
@@ -561,10 +595,19 @@ int main(int argc, char* argv[]) {
     }
     
     bool passed_all = true;
+    int executed_count = 0;
     std::cout << std::fixed << std::setprecision(3);
     
     for (std::size_t i = 0; i < test_cases.size(); ++i) {
         const auto& test = test_cases[i];
+
+        if (test.is_skipped) {
+            std::cout << style::color_white << "test " << style::color_blue << (i + 1) << style::color_white << ": "
+                      << style::color_yellow << "skipped" << style::reset << "\n";
+            continue;
+        }
+
+        executed_count++;
         std::cout << style::color_white << "test " << style::color_blue << (i + 1) << style::color_white << ": " << style::reset;
         
         run_result res = run_with_timeout(exe_file.string(), test.input, time_limit);
@@ -639,7 +682,9 @@ int main(int argc, char* argv[]) {
     }
     
     if (current_mode == run_mode::evaluate) {
-        if (passed_all) {
+        if (executed_count == 0) {
+            std::cout << style::color_yellow << "all tests skipped!" << style::reset << "\n";
+        } else if (passed_all) {
             std::cout << style::color_green << "all tests passed!" << style::reset << "\n";
         } else {
             std::cout << style::color_red << "some tests failed!" << style::reset << "\n";
