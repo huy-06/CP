@@ -1,6 +1,6 @@
 #include <queue>
 #include "../../../ds/edge/weight.hpp"
-#include "../../../ds/tree/dsu.hpp"
+#include "../../../ds/tree/dsu/dsu.hpp"
 #include "../../../ds/graph/graph.hpp"
 
 #ifndef CP_ALG_GRAPH_MST

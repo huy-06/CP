@@ -23,17 +23,22 @@ std::ofstream fout;
 auto ran = cp::ds::random;
 
 void generate_test_case() {
-    fout << ran.nint(1, 1E18);
+    int n = ran.nint(1, 10);
+    fout << n << '\n';
+    for (int i = 0; i < n; ++i) {
+        fout << ran.nint(-1E9, 1E9) << ' ';
+    }
+    fout << '\n';
 }
 
 const std::string path_source_1 = "a.cpp";
-const std::string path_source_2 = "a.cpp";
+const std::string path_source_2 = "b.cpp";
 
 const std::string input_file = "test_input.txt";
 const std::string out_file_1 = "test_out_1.txt";
 const std::string out_file_2 = "test_out_2.txt";
 
-constexpr int total_tests = 10000;
+constexpr int total_tests = 100;
 constexpr double time_limit = 5.0;
 constexpr long double float_epsilon = 1e-6;
 
