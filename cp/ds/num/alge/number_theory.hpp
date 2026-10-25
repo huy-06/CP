@@ -1,4 +1,4 @@
-#include "../../alg/math/nt/factorize.hpp"
+#include "../../../alg/math/nt/factorize.hpp"
 
 #ifndef CP_DS_NUMBER_THEORY
 #define CP_DS_NUMBER_THEORY
@@ -9,7 +9,7 @@ class number_theory {
 public:
     number_theory(int limit = 10000000) : n(limit) {
         spf.resize(n + 1);
-        iota(spf.begin(), spf.end(), 0); 
+        std::iota(spf.begin(), spf.end(), 0); 
         
         for (int i = 2; i <= n; i++) {
             if (spf[i] == i) 
@@ -22,15 +22,19 @@ public:
         }
     }
 
-    bool is_prime(long long x) {
+    template <typename Tp>
+    bool is_prime(Tp x) {
+        if (x <= 1) 
+            return false;
         if (x <= n) 
-            return x > 1 && spf[x] == x;
+            return spf[x] == x;
         return alg::is_prime(x);
     }
 
-    std::vector<std::pair<long long, int>> factorize(long long x) {
+    template <typename Tp>
+    std::vector<std::pair<Tp, int>> factorize(Tp x) {
         if (x <= n) {
-            std::vector<std::pair<long long, int>> factors;
+            std::vector<std::pair<Tp, int>> factors;
             while (x > 1) {
                 int p = spf[x];
                 int cnt = 0;
@@ -38,7 +42,7 @@ public:
                     ++cnt;
                     x /= p;
                 }
-                factors.push_back({p, cnt});
+                factors.push_back({static_cast<Tp>(p), cnt});
             }
             return factors;
         } 
@@ -46,31 +50,34 @@ public:
         return alg::factorize(x);
     }
 
-    long long phi(long long x) {
+    template <typename Tp>
+    Tp phi(Tp x) {
         auto factors = factorize(x);
-        long long res = x;
+        Tp res = x;
         for (auto& f : factors) {
             res -= res / f.first;
         }
         return res;
     }
 
-    long long count_divisors(long long x) {
+    template <typename Tp>
+    Tp count_divisors(Tp x) {
         auto factors = factorize(x);
-        long long cnt = 1;
+        Tp cnt = 1;
         for (auto& f : factors) {
             cnt *= (f.second + 1);
         }
         return cnt;
     }
 
-    long long sum_divisors(long long x) {
+    template <typename Tp>
+    Tp sum_divisors(Tp x) {
         auto factors = factorize(x);
-        long long sum_total = 1;
+        Tp sum_total = 1;
         for (auto& f : factors) {
-            long long p = f.first;
-            long long sum = 1;
-            long long p_pow = 1;
+            Tp p = f.first;
+            Tp sum = 1;
+            Tp p_pow = 1;
             for (int i = 1; i <= f.second; ++i) {
                 p_pow *= p;
                 sum += p_pow;
@@ -80,26 +87,24 @@ public:
         return sum_total;
     }
 
-    std::vector<long long> get_divisors(long long x) {
+    template <typename Tp>
+    std::vector<Tp> get_divisors(Tp x) {
         auto factors = factorize(x);
-        std::vector<long long> divisors;
+        std::vector<Tp> divisors = {1};
         
-        std::function<void(int, long long)> dfs = [&](int idx, long long val) -> void {
-            if (idx == (int) factors.size()) {
-                divisors.push_back(val);
-                return;
+        for (const auto& f : factors) {
+            int sz = divisors.size();
+            Tp p = f.first;
+            Tp p_pow = 1;
+            for (int i = 1; i <= f.second; ++i) {
+                p_pow *= p;
+                for (int j = 0; j < sz; ++j) {
+                    divisors.push_back(divisors[j] * p_pow);
+                }
             }
-            long long p = factors[idx].first;
-            long long p_pow = 1;
-            for (int i = 0; i <= factors[idx].second; ++i) {
-                dfs(idx + 1, val * p_pow);
-                if (i < factors[idx].second) 
-                    p_pow *= p;
-            }
-        };
+        }
     
-        dfs(0, 1);
-        sort(divisors.begin(), divisors.end());
+        std::sort(divisors.begin(), divisors.end());
         return divisors;
     }
     

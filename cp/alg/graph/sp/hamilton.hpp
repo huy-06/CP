@@ -3,21 +3,21 @@
 
 #ifndef CP_ALG_GRAPH_SHORTEST_HAMILTON
 #define CP_ALG_GRAPH_SHORTEST_HAMILTON
+
 namespace cp {
 namespace alg {
 
 template<typename Edge>
-std::pair<typename Edge::value_type, 
-          std::vector<int>> hamilton(const ds::graph<Edge>& g, int src) {
+std::pair<typename Edge::value_type, std::vector<int>> hamilton(const ds::graph<Edge>& g, int src) {
     using Tp = typename Edge::value_type;
     int n = g.num_vertices();
-    
+
     if (src < 0 || src >= n) return { Edge::inf, {} };
     if (n == 0) return { 0, {} };
     if (n == 1) return { 0, {src} };
 
     int full = (1 << n);
-    
+
     std::vector<std::vector<Tp>>  dis(full, std::vector<Tp>(n, Edge::inf));
     std::vector<std::vector<int>> par(full, std::vector<int>(n, -1));
 
@@ -25,20 +25,14 @@ std::pair<typename Edge::value_type,
 
     for (int mask = 1; mask < full; ++mask) {
         for (int u = 0; u < n; ++u) {
-            if (!(mask & (1 << u)) || dis[mask][u] == Edge::inf) {
-                continue;
-            }
+            if (!(mask & (1 << u)) || dis[mask][u] == Edge::inf) continue;
 
             for (const auto& e : g.adj(u)) {
                 int v = e.to;
-                Tp  w = e.weight;
-                
-                if (mask & (1 << v)) {
-                    continue;
-                }
+                if (mask & (1 << v)) continue;
 
                 int nmask = mask | (1 << v);
-                Tp  nd    = dis[mask][u] + w;
+                Tp  nd    = dis[mask][u] + e.weight;
 
                 if (dis[nmask][v] > nd) {
                     dis[nmask][v] = nd;
@@ -74,12 +68,12 @@ std::pair<typename Edge::value_type,
         curr_mask ^= (1 << curr);
         curr = p;
     }
-    
+
     std::reverse(path.begin(), path.end());
-    
     return { best, path };
 }
 
 } // namespace alg
 } // namespace cp
-#endif
+
+#endif // CP_ALG_GRAPH_SHORTEST_HAMILTON

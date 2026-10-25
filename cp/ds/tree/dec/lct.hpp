@@ -1,8 +1,11 @@
 #include <vector>
 #include <array>
+#include <algorithm>
+#include <cassert>
 
 #ifndef CP_DS_LINK_CUT_TREE
 #define CP_DS_LINK_CUT_TREE
+
 namespace cp {
 namespace ds {
 
@@ -11,16 +14,7 @@ class link_cut_tree {
 public:
     using value_type = Tp;
 
-    std::vector<std::array<int, 2>> chi;
-    std::vector<int> par;
-    std::vector<int> rev;
-
-    std::vector<int> siz;
-    std::vector<value_type> val;
-    std::vector<value_type> sum;
-    std::vector<value_type> add;
-
-    link_cut_tree(int n = 0) {
+    explicit link_cut_tree(int n = 0) {
         init(n);
     }
 
@@ -29,21 +23,20 @@ public:
         chi.assign(n, {-1, -1});
         par.assign(n, -1);
         rev.assign(n, 0);
-        val.assign(n, 0);
-        sum.assign(n, 0);
-        add.assign(n, 0);
+        val.assign(n, value_type{});
+        sum.assign(n, value_type{});
+        add.assign(n, value_type{});
         siz.assign(n, 1);
+        stk.reserve(n);
     }
 
-    // Kiểm tra xem x có phải là root của auxiliary tree không
-    inline bool is_root(int x) {
+    [[nodiscard]] bool is_root(int x) const noexcept {
         int p = par[x];
         if (p == -1) return true;
-        return !(chi[p][0] == x || chi[p][1] == x);
+        return chi[p][0] != x && chi[p][1] != x;
     }
 
-    // Cập nhật thông tin nút x từ con
-    inline void pull(int x) {
+    void pull(int x) noexcept {
         siz[x] = 1;
         sum[x] = val[x];
         for (int d = 0; d < 2; ++d) {
@@ -55,61 +48,38 @@ public:
         }
     }
 
-    // Áp lazy add lên nút x
-    inline void apply_add(int x, int v) {
+    void apply_add(int x, const value_type& v) noexcept {
         if (x == -1) return;
         add[x] += v;
         val[x] += v;
         sum[x] += v * siz[x];
     }
 
-    // Áp reverse lên nút x (đánh dấu đảo)
-    inline void apply_rev(int x) {
+    void apply_rev(int x) noexcept {
         if (x == -1) return;
         rev[x] ^= 1;
         std::swap(chi[x][0], chi[x][1]);
     }
 
-    // Đẩy lazy từ x xuống con
-    inline void push(int x) {
+    void push(int x) noexcept {
         if (x == -1) return;
         if (rev[x]) {
             if (chi[x][0] != -1) apply_rev(chi[x][0]);
             if (chi[x][1] != -1) apply_rev(chi[x][1]);
             rev[x] = 0;
         }
-        if (add[x] != 0) {
-            int v = add[x];
+        if (add[x] != value_type{}) {
+            value_type v = add[x];
             if (chi[x][0] != -1) apply_add(chi[x][0], v);
             if (chi[x][1] != -1) apply_add(chi[x][1], v);
-            add[x] = 0;
+            add[x] = value_type{};
         }
     }
 
-    /*
-     Xoay tại x
-
-         z
-         |
-         y
-        / \
-        a   x   <-- x đang là con phải (dx = 1)
-       / \
-      b   c <-- b là con trái của x (chi[x][dx^1] hay chi[x][0])
-
-         z
-         |
-         x   <-- x lên làm cha y
-        / \
-       y   c
-      / \
-     a   b   <-- b bị đẩy sang làm con phải của y
-    */
-
-    void rotate(int x) {
+    void rotate(int x) noexcept {
         int y = par[x];
         int z = par[y];
-        int dx = (chi[y][1] == x); // là node bên phải
+        int dx = (chi[y][1] == x);
         int b = chi[x][dx ^ 1];
 
         if (!is_root(y)) {
@@ -128,9 +98,7 @@ public:
         pull(x);
     }
 
-    // Đẩy các cờ từ gốc của aux-tree tới x
     void push_path(int x) {
-        static std::vector<int> stk;
         stk.clear();
         int u = x;
         stk.push_back(u);
@@ -138,10 +106,11 @@ public:
             u = par[u];
             stk.push_back(u);
         }
-        for (int i = int(stk.size()) - 1; i >= 0; --i) push(stk[i]);
+        for (int i = static_cast<int>(stk.size()) - 1; i >= 0; --i) {
+            push(stk[i]);
+        }
     }
 
-    // Splay x lên đỉnh auxiliary tree
     void splay(int x) {
         push_path(x);
         while (!is_root(x)) {
@@ -155,7 +124,6 @@ public:
         }
     }
 
-    // Access: đưa x lên đỉnh đường preferred; trả về last
     int access(int x) {
         int last = -1;
         for (int v = x; v != -1; v = par[v]) {
@@ -167,14 +135,12 @@ public:
         return last;
     }
 
-    // Đặt x làm root của tree chứa nó
     void make_root(int x) {
         access(x);
         splay(x);
         apply_rev(x);
     }
 
-    // Tìm root thực sự của tree chứa x
     int find_root(int x) {
         access(x);
         splay(x);
@@ -187,21 +153,18 @@ public:
         return x;
     }
 
-    // Kiểm tra 2 đỉnh cùng cây không
     bool connected(int x, int y) {
         if (x == y) return true;
         return find_root(x) == find_root(y);
     }
 
-    // Nối u - v (chỉ gọi khi chưa kết nối)
     bool link(int u, int v) {
         make_root(u);
-        if (find_root(v) == u) return false; // đã cùng cây
+        if (find_root(v) == u) return false;
         par[u] = v;
         return true;
     }
 
-    // Cắt u - v (nếu có cạnh)
     bool cut(int u, int v) {
         make_root(u);
         access(v);
@@ -224,14 +187,12 @@ public:
         return false;
     }
 
-    // LCA động (nếu khác cây có thể trả về -1)
     int lca(int u, int v) {
         if (!connected(u, v)) return -1;
         access(u);
         return access(v);
     }
 
-    // Đặt giá trị nguyên tại 1 node
     void set_value(int x, const value_type& v) {
         access(x);
         splay(x);
@@ -239,7 +200,6 @@ public:
         pull(x);
     }
 
-    // Cộng delta cho toàn bộ node trên đường u..v
     void add_path(int u, int v, const value_type& delta) {
         make_root(u);
         access(v);
@@ -247,7 +207,6 @@ public:
         apply_add(v, delta);
     }
 
-    // Tổng giá trị trên đường u..v
     value_type query_path_sum(int u, int v) {
         make_root(u);
         access(v);
@@ -255,11 +214,23 @@ public:
         return sum[v];
     }
 
+    [[nodiscard]] int size() const noexcept {
+        return n;
+    }
+
 private:
-    int n;
+    int n = 0;
+    std::vector<std::array<int, 2>> chi;
+    std::vector<int> par;
+    std::vector<int> rev;
+    std::vector<int> siz;
+    std::vector<value_type> val;
+    std::vector<value_type> sum;
+    std::vector<value_type> add;
+    std::vector<int> stk;
 };
 
 } // namespace ds
 } // namespace cp
 
-#endif
+#endif // CP_DS_LINK_CUT_TREE

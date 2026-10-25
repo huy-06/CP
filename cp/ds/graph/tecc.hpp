@@ -2,6 +2,7 @@
 
 #ifndef CP_DS_GRAPH_TECC
 #define CP_DS_GRAPH_TECC
+
 namespace cp {
 namespace ds {
 
@@ -11,14 +12,13 @@ public:
     using edge_type = Edge;
     using graph<edge_type>::adj;
     using graph<edge_type>::num_edges;
+    using graph<edge_type>::num_vertices;
     using graph<edge_type>::edge_list;
-
     using graph<edge_type>::graph;
     using graph<edge_type>::init;
 
     void build() override {
         if (built) return;
-        
         graph<edge_type>::build();
 
         cid.assign(n, -1);
@@ -29,42 +29,52 @@ public:
         stk.reserve(n);
         int timer = 0;
 
-        auto dfs = [&](auto const& self, int u, int p) -> void {
-            in[u] = low[u] = timer++;
-            stk.push_back(u);
+        std::vector<std::tuple<int, int, int, bool>> frames;
+        frames.reserve(n);
 
-            bool skipped_p = false;
-            
-            for (const auto& e : adj(u)) {
-                int v = e.to;
-                
-                if (v == p && !skipped_p) {
-                    skipped_p = true;
-                    continue;
-                }
+        for (int src = 0; src < n; ++src) {
+            if (in[src] != -1) continue;
 
-                if (in[v] == -1) {
-                    self(self, v, u);
-                    low[u] = std::min(low[u], low[v]);
+            frames.push_back({src, -1, 0, false});
+            in[src] = low[src] = timer++;
+            stk.push_back(src);
+
+            while (!frames.empty()) {
+                auto& [u, p, i, skip_p] = frames.back();
+                auto nbrs = adj(u);
+
+                if (i < static_cast<int>(nbrs.size())) {
+                    int v = nbrs[i].to;
+                    ++i;
+
+                    if (v == p && !skip_p) {
+                        skip_p = true;
+                        continue;
+                    }
+
+                    if (in[v] == -1) {
+                        in[v] = low[v] = timer++;
+                        stk.push_back(v);
+                        frames.push_back({v, u, 0, false});
+                    } else {
+                        low[u] = std::min(low[u], in[v]);
+                    }
                 } else {
-                    low[u] = std::min(low[u], in[v]);
+                    if (low[u] == in[u]) {
+                        while (true) {
+                            int v = stk.back();
+                            stk.pop_back();
+                            cid[v] = cnt;
+                            if (v == u) break;
+                        }
+                        ++cnt;
+                    }
+                    frames.pop_back();
+                    if (!frames.empty()) {
+                        int par = frames.back().u;
+                        low[par] = std::min(low[par], low[u]);
+                    }
                 }
-            }
-
-            if (low[u] == in[u]) {
-                while (true) {
-                    int v = stk.back();
-                    stk.pop_back();
-                    cid[v] = cnt;
-                    if (v == u) break;
-                }
-                ++cnt;
-            }
-        };
-
-        for (int i = 0; i < n; ++i) {
-            if (in[i] == -1) {
-                dfs(dfs, i, -1);
             }
         }
 
@@ -99,6 +109,16 @@ public:
         return { cnt, cid };
     }
 
+    [[nodiscard]] int num_components() {
+        if (!built) build();
+        return cnt;
+    }
+
+    [[nodiscard]] int operator[](int u) {
+        if (!built) build();
+        return cid[u];
+    }
+
     graph<edge_type> compress() {
         if (!built) build();
 
@@ -131,12 +151,13 @@ private:
     using graph<edge_type>::n;
     using graph<edge_type>::built;
 
-    int cnt;
-    std::vector<int>  cid;
+    int cnt = 0;
+    std::vector<int> cid;
     std::vector<bool> mrk;
     std::vector<edge_type> brs;
 };
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_GRAPH_TECC

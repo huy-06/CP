@@ -3,7 +3,6 @@
 #include <random>
 #include <chrono>
 #include "is_prime.hpp"
-#include "../../../init/constexpr.hpp"
 
 #ifndef CP_ALG_MATH_NUM_PRIME
 #define CP_ALG_MATH_NUM_PRIME
@@ -12,7 +11,7 @@ namespace cp {
 namespace internal {
 
 template <typename Tp>
-cp_constexpr Tp prho_f(Tp x, Tp c, Tp n) {
+constexpr Tp prho_f(Tp x, Tp c, Tp n) {
     using unsigned_type = typename std::make_unsigned<Tp>::type;
     Tp res = static_cast<Tp>(alg::mod::safe_mul(
         static_cast<unsigned_type>(x), 
@@ -27,7 +26,7 @@ constexpr unsigned long long lcg_next(unsigned long long state) {
 }
 
 template <typename Tp>
-cp_constexpr Tp pollard_rho(Tp n) {
+constexpr Tp pollard_rho(Tp n) {
     if (n % 2 == 0) return 2;
     if (alg::is_prime(n)) return n;
 
@@ -59,7 +58,7 @@ cp_constexpr Tp pollard_rho(Tp n) {
 }
 
 template <typename Tp>
-cp_constexpr void recursive_factorize(Tp n, std::vector<Tp>& factors) {
+constexpr void recursive_factorize(Tp n, std::vector<Tp>& factors) {
     if (n <= 1) return;
     if (alg::is_prime(n)) {
         factors.push_back(n);
@@ -75,7 +74,7 @@ cp_constexpr void recursive_factorize(Tp n, std::vector<Tp>& factors) {
 namespace alg {
 
 template <typename Tp>
-cp_constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
+constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
     std::vector<Tp> factors;
     for (Tp p : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97}) {
         if (p * p > n) break;

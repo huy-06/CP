@@ -4,12 +4,13 @@
 
 #ifndef CP_DS_TREE_DSU
 #define CP_DS_TREE_DSU
+
 namespace cp {
 namespace ds {
 
 class dsu {
 public:
-    dsu(int n = 0) : n(n), comps(n), f(n, -1) {}
+    explicit dsu(int n = 0) : n(n), comps(n), f(n, -1) {}
 
     bool merge(int a, int b) {
         assert(0 <= a && a < n);
@@ -24,28 +25,32 @@ public:
         return true;
     }
 
-    bool same(int a, int b) {
+    [[nodiscard]] bool same(int a, int b) {
         assert(0 <= a && a < n);
         assert(0 <= b && b < n);
         return leader(a) == leader(b);
     }
 
-    int find(int a) {
+    [[nodiscard]] int find(int a) {
         assert(0 <= a && a < n);
         return leader(a);
     }
 
-    int operator[](int a) {
+    [[nodiscard]] int operator[](int a) {
         return find(a);
     }
 
-    int size(int a) {
+    [[nodiscard]] int size(int a) {
         assert(0 <= a && a < n);
         return -f[leader(a)];
     }
 
-    int num_comps() const {
+    [[nodiscard]] int num_comps() const noexcept {
         return comps;
+    }
+
+    [[nodiscard]] int size() const noexcept {
+        return n;
     }
 
     std::vector<std::vector<int>> groups() {
@@ -73,16 +78,18 @@ public:
         return res;
     }
 
-private:
-    int n, comps;
-    std::vector<int> f;
-
-    int leader(int a) {
+    [[nodiscard]] int leader(int a) {
         if (f[a] < 0) return a;
         return f[a] = leader(f[a]);
     }
+
+private:
+    int n = 0;
+    int comps = 0;
+    std::vector<int> f;
 };
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_TREE_DSU

@@ -1,5 +1,5 @@
 #include <string>
-#include "../mat/matrix.hpp"
+#include "../../../ds/num/alge/matrix.hpp"
 
 #ifndef CP_ALG_GET_FIBONACCI
 #define CP_ALG_GET_FIBONACCI
@@ -8,20 +8,20 @@ namespace alg {
 
 template <typename Tp>
 Tp get_fibonacci(const std::string& n) {
-    std::vector<std::vector<Tp>> res = cp::alg::identity<Tp>(2);
+    ds::matrix<Tp> res = ds::matrix<Tp>::identity(2);
 
-    std::vector<std::vector<Tp>> base = {
+    ds::matrix<Tp> base = {
         {Tp(1), Tp(1)},
         {Tp(1), Tp(0)}
     };
 
     for (char c : n) {
         int digit = c - '0';
-        res = cp::alg::pow(res, 10);
-        res = cp::alg::multiply(res, cp::alg::pow(base, digit));
+        res = res.pow(10);
+        res *= base.pow(digit);
     }
 
-    return res[0][1];
+    return res[0, 1];
 }
 
 template <typename Tp>

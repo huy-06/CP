@@ -1,51 +1,28 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
-#include <filesystem>
+#include <iostream>
+#include <span>
 #include "../edge/edge.hpp"
 
 #ifndef CP_DS_GRAPH
 #define CP_DS_GRAPH
+
 namespace cp {
 namespace ds {
 
 template <typename Edge>
 class graph {
 public:
-    template <typename Tp>
-    struct neighbors_base {
-        Tp *b, *e;
+    using edge_type       = Edge;
+    using neighbors       = std::span<edge_type>;
+    using const_neighbors = std::span<const edge_type>;
 
-        Tp* begin() const {
-            return b;
-        }
-
-        Tp* end() const {
-            return e;
-        }
-
-        int size() const {
-            return static_cast<int>(e - b);
-        }
-
-        bool empty() const {
-            return b == e;
-        }
-
-        Tp& operator[](int i) const {
-            return b[i];
-        }
-    };
-
-    using edge_type = Edge;
-    using neighbors = neighbors_base<edge_type>;
-    using const_neighbors = neighbors_base<const edge_type>;
-
-    graph(int n = 0, int m = 0) {
+    explicit graph(int n = 0, int m = 0) {
         init(n, m);
     }
 
-    graph(const std::vector<edge_type>& edges) {
+    explicit graph(const std::vector<edge_type>& edges) {
         init(edges);
     }
 
@@ -61,39 +38,32 @@ public:
     }
 
     void init(const std::vector<edge_type>& edges) {
-        int max_v = 0;
-        for (auto &e : edges) {
+        int max_v = -1;
+        for (const auto& e : edges) {
             max_v = std::max({max_v, e.from, e.to});
         }
-
         init(max_v + 1, static_cast<int>(edges.size()));
-
-        for (auto &e : edges) {
+        for (const auto& e : edges) {
             add_edge(e);
         }
-
         build();
     }
 
-    void init(const std::vector<std::vector<edge_type>>& adj) {
+    void init(const std::vector<std::vector<edge_type>>& adj_list) {
         int m = 0;
-        for (const auto& nbrs : adj) {
+        for (const auto& nbrs : adj_list) {
             m += static_cast<int>(nbrs.size());
         }
-
-        init(static_cast<int>(adj.size()), m);
-
-        for (int u = 0; u < static_cast<int>(adj.size()); ++u) {
-            for (const auto& e : adj[u]) {
+        init(static_cast<int>(adj_list.size()), m);
+        for (int u = 0; u < static_cast<int>(adj_list.size()); ++u) {
+            for (const auto& e : adj_list[u]) {
                 edge_type new_e = e;
                 new_e.from = u;
                 add_edge(std::move(new_e));
             }
         }
-
         build();
     }
-
 
     virtual void build() {
         if (built) return;
@@ -102,6 +72,8 @@ public:
         indeg_cnt.assign(n, 0);
 
         for (const auto& e : edge_list) {
+            assert(0 <= e.from && e.from < n);
+            assert(0 <= e.to && e.to < n);
             ++head[e.from + 1];
             ++indeg_cnt[e.to];
         }
@@ -136,36 +108,38 @@ public:
     }
 
     void read_edges(int m, int off = 1, std::istream& is = std::cin) {
+        edge_list.reserve(edge_list.size() + m);
         for (int i = 0; i < m; ++i) {
             edge_type e;
             is >> e;
             e.from -= off;
             e.to   -= off;
-            add_edge(e);
+            add_edge(std::move(e));
         }
         build();
     }
 
     void read_unedges(int m, int off = 1, std::istream& is = std::cin) {
+        edge_list.reserve(edge_list.size() + 2 * m);
         for (int i = 0; i < m; ++i) {
             edge_type e;
             is >> e;
             e.from -= off;
             e.to   -= off;
-            add_unedge(e);
+            add_unedge(std::move(e));
         }
         build();
     }
 
-    int size() const {
+    [[nodiscard]] constexpr int size() const noexcept {
         return n;
     }
 
-    int num_vertices() const {
+    [[nodiscard]] constexpr int num_vertices() const noexcept {
         return n;
     }
 
-    int num_edges() const {
+    [[nodiscard]] int num_edges() const noexcept {
         return static_cast<int>(edge_list.size());
     }
 
@@ -181,22 +155,20 @@ public:
         return head[u + 1] - head[u];
     }
 
+    int degree(int u) const {
+        return outdeg(u);
+    }
+
     neighbors adj(int u) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
-        return neighbors {
-            edge_list.data() + head[u],
-            edge_list.data() + head[u + 1]
-        };
+        return neighbors(edge_list.data() + head[u], head[u + 1] - head[u]);
     }
 
     const_neighbors adj(int u) const {
         assert(0 <= u && u < num_vertices());
         if (!built) const_cast<graph*>(this)->build();
-        return const_neighbors {
-            edge_list.data() + head[u],
-            edge_list.data() + head[u + 1]
-        };
+        return const_neighbors(edge_list.data() + head[u], head[u + 1] - head[u]);
     }
 
     neighbors operator[](int u) {
@@ -207,37 +179,7 @@ public:
         return adj(u);
     }
 
-    void print() { 
-//<
-        std::stringstream ss;
-        for (auto e : edge_list) {
-            ss << e << '\n';
-        }
-        std::string input_path = "cp/tools/test_input.txt";
-        std::ofstream out(input_path);
-        out << n << ' ' << edge_list.size() << '\n';
-        std::string s;
-        while (std::getline(ss, s)) {
-            for (char c : s) {
-                if (std::isdigit(c)) {
-                    out << c;
-                } else {
-                    out << ' ';
-                }
-            }
-            out << '\n';
-        }
-        out.close();
-        int ret = system("python cp/tools/draw_graph.py");
-        std::filesystem::remove(input_path); 
-        if (ret != 0) {
-            std::cerr << "Failed to run draw_graph.py (return code " << ret << ")\n";
-            return;
-        }
-//>
-    }
-
-    virtual std::vector<edge_type> get_edges() const {
+    [[nodiscard]] virtual std::vector<edge_type> get_edges() const {
         return edge_list;
     }
 
@@ -245,7 +187,7 @@ public:
         assert(0 <= u && u < num_vertices());
         if (!built) build();
         std::sort(edge_list.begin() + head[u], edge_list.begin() + head[u + 1],
-            [&](const edge_type& a, const edge_type& b) {
+            [](const edge_type& a, const edge_type& b) {
                 return a.to < b.to;
             }
         );
@@ -273,9 +215,120 @@ public:
         return &edge_list[i];
     }
 
+    /// @brief Duyệt BFS từ đỉnh src
+    std::vector<int> bfs_order(int src = 0) const {
+        assert(0 <= src && src < num_vertices());
+        if (!built) const_cast<graph*>(this)->build();
+
+        std::vector<int> ord;
+        ord.reserve(n);
+        std::vector<bool> vis(n, false);
+
+        vis[src] = true;
+        ord.push_back(src);
+
+        int head_idx = 0;
+        while (head_idx < static_cast<int>(ord.size())) {
+            int u = ord[head_idx++];
+            for (const auto& e : adj(u)) {
+                int v = e.to;
+                if (!vis[v]) {
+                    vis[v] = true;
+                    ord.push_back(v);
+                }
+            }
+        }
+        return ord;
+    }
+
+    /// @brief Duyệt DFS từ đỉnh src 
+    std::vector<int> dfs_order(int src = 0) const {
+        assert(0 <= src && src < num_vertices());
+        if (!built) const_cast<graph*>(this)->build();
+
+        std::vector<int> ord;
+        ord.reserve(n);
+        std::vector<bool> vis(n, false);
+        std::vector<int> stk;
+        stk.reserve(n);
+
+        stk.push_back(src);
+        vis[src] = true;
+
+        while (!stk.empty()) {
+            int u = stk.back();
+            stk.pop_back();
+            ord.push_back(u);
+
+            const_neighbors nbrs = adj(u);
+            for (int i = static_cast<int>(nbrs.size()) - 1; i >= 0; --i) {
+                int v = nbrs[i].to;
+                if (!vis[v]) {
+                    vis[v] = true;
+                    stk.push_back(v);
+                }
+            }
+        }
+        return ord;
+    }
+
+    std::vector<int> bfs_order_all() const {
+        if (!built) const_cast<graph*>(this)->build();
+        std::vector<int> ord;
+        ord.reserve(n);
+        std::vector<bool> vis(n, false);
+
+        for (int i = 0; i < n; ++i) {
+            if (vis[i]) continue;
+            vis[i] = true;
+            ord.push_back(i);
+            int head_idx = static_cast<int>(ord.size()) - 1;
+            while (head_idx < static_cast<int>(ord.size())) {
+                int u = ord[head_idx++];
+                for (const auto& e : adj(u)) {
+                    int v = e.to;
+                    if (!vis[v]) {
+                        vis[v] = true;
+                        ord.push_back(v);
+                    }
+                }
+            }
+        }
+        return ord;
+    }
+
+    std::vector<int> dfs_order_all() const {
+        if (!built) const_cast<graph*>(this)->build();
+        std::vector<int> ord;
+        ord.reserve(n);
+        std::vector<bool> vis(n, false);
+        std::vector<int> stk;
+        stk.reserve(n);
+
+        for (int i = 0; i < n; ++i) {
+            if (vis[i]) continue;
+            stk.push_back(i);
+            vis[i] = true;
+            while (!stk.empty()) {
+                int u = stk.back();
+                stk.pop_back();
+                ord.push_back(u);
+                const_neighbors nbrs = adj(u);
+                for (int j = static_cast<int>(nbrs.size()) - 1; j >= 0; --j) {
+                    int v = nbrs[j].to;
+                    if (!vis[v]) {
+                        vis[v] = true;
+                        stk.push_back(v);
+                    }
+                }
+            }
+        }
+        return ord;
+    }
+
 protected:
-    int n;
-    bool built;
+    int n = 0;
+    bool built = false;
     std::vector<int> head;
     std::vector<int> indeg_cnt;
     std::vector<edge_type> edge_list;
@@ -283,4 +336,5 @@ protected:
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_GRAPH

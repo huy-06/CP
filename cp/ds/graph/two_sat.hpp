@@ -1,54 +1,70 @@
-#include <functional>
 #include "scc.hpp"
 
 #ifndef CP_DS_GRAPH_TWO_SAT
 #define CP_DS_GRAPH_TWO_SAT
+
 namespace cp {
 namespace ds {
 
-template <typename Edge>
+template <typename Edge = edge>
 class two_sat {
 public:
     using edge_type = Edge;
 
-    two_sat(int n = 0) {
+    explicit two_sat(int n = 0) {
         init(n);
     }
 
     void init(int n = 0) {
         this->n = n;
-        scc.init(n << 1);
+        scc.init(2 * n);
         assignment.assign(n, false);
     }
 
+    /// @brief Thêm mệnh đề: (u == f) OR (v == g)
     void add_clause(int u, bool f, int v, bool g) {
         assert(0 <= u && u < n);
         assert(0 <= v && v < n);
-        scc.add_edge(edge_type(u << 1 | f, v << 1 | !g));
-        scc.add_edge(edge_type(v << 1 | g, u << 1 | !f));
+        scc.add_edge(edge_type(2 * u + (f ? 0 : 1), 2 * v + (g ? 1 : 0)));
+        scc.add_edge(edge_type(2 * v + (g ? 0 : 1), 2 * u + (f ? 1 : 0)));
     }
 
-    bool satisfiable() {
-        auto comp = scc.scc().second;
+    /// @brief Ép biến u phải nhận giá trị val
+    void set_value(int u, bool val) {
+        add_clause(u, val, u, val);
+    }
+
+    [[nodiscard]] bool satisfiable() {
+        auto [num_comp, comp] = scc.scc();
         for (int i = 0; i < n; ++i) {
-            if (comp[i << 1] == comp[i << 1 | 1]) {
+            if (comp[2 * i] == comp[2 * i + 1]) {
                 return false;
             }
-            assignment[i] = comp[i << 1] > comp[i << 1 | 1];
+            assignment[i] = (comp[2 * i] < comp[2 * i + 1]);
         }
         return true;
     }
 
-    bool operator[](int i) const {
+    [[nodiscard]] const std::vector<bool>& answer() const {
+        return assignment;
+    }
+
+    [[nodiscard]] bool operator[](int i) const {
+        assert(0 <= i && i < n);
         return assignment[i];
     }
 
+    [[nodiscard]] int size() const noexcept {
+        return n;
+    }
+
 private:
-    int n;
+    int n = 0;
     scc_graph<edge_type> scc;
     std::vector<bool> assignment;
 };
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_GRAPH_TWO_SAT

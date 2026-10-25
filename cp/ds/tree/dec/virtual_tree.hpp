@@ -1,7 +1,8 @@
-#include "hld.hpp" // Đảm bảo đã include HLD
+#include "hld.hpp"
 
 #ifndef CP_DS_TREE_VIRTUAL_TREE
 #define CP_DS_TREE_VIRTUAL_TREE
+
 namespace cp {
 namespace ds {
 
@@ -15,7 +16,7 @@ public:
 
     virtual_tree() : hld_ptr(nullptr) {}
 
-    virtual_tree(hld<edge_type>& tree_ref) {
+    explicit virtual_tree(hld<edge_type>& tree_ref) {
         init(tree_ref);
     }
 
@@ -30,23 +31,28 @@ public:
     }
 
     void build(std::vector<int> nodes) {
+        build(std::span<const int>(nodes.data(), nodes.size()));
+    }
+
+    void build(std::span<const int> nodes_span) {
         assert(hld_ptr != nullptr);
-        
-        if (nodes.empty()) {
+
+        if (nodes_span.empty()) {
             graph<edge_type>::init(0, 0);
             ord.clear();
             built = true;
             return;
         }
 
-        auto cmp = [&](int u, int v) { 
+        std::vector<int> nodes(nodes_span.begin(), nodes_span.end());
+
+        auto cmp = [&](int u, int v) {
             return hld_ptr->input(u) < hld_ptr->input(v);
         };
-        
-        std::sort(nodes.begin(), nodes.end(), cmp);
 
-        int siz = static_cast<int>(nodes.size());
-        for (int i = 0; i < siz - 1; ++i) {
+        std::sort(nodes.begin(), nodes.end(), cmp);
+        int initial_sz = static_cast<int>(nodes.size());
+        for (int i = 0; i < initial_sz - 1; ++i) {
             nodes.push_back(hld_ptr->lca(nodes[i], nodes[i + 1]));
         }
 
@@ -54,7 +60,6 @@ public:
         nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
         int m = static_cast<int>(nodes.size());
-        
         graph<edge_type>::init(m, m - 1);
 
         for (int i = 0; i < m; ++i) {
@@ -72,39 +77,38 @@ public:
             while (stk.size() >= 2 && hld_ptr->depth(stk[stk.size() - 2]) >= hld_ptr->depth(l)) {
                 int p = stk[stk.size() - 2];
                 int c = stk.back();
-                
+
                 edge_type new_e;
                 new_e.from = pos_map[p];
                 new_e.to   = pos_map[c];
                 add_edge(std::move(new_e));
-                
+
                 stk.pop_back();
             }
 
             if (stk.back() != l) {
                 int c = stk.back();
-                
                 edge_type new_e;
                 new_e.from = pos_map[l];
                 new_e.to   = pos_map[c];
                 add_edge(std::move(new_e));
-                
+
                 stk.pop_back();
                 stk.push_back(l);
             }
-            
+
             stk.push_back(u);
         }
 
         while (stk.size() >= 2) {
             int p = stk[stk.size() - 2];
             int c = stk.back();
-            
+
             edge_type new_e;
             new_e.from = pos_map[p];
             new_e.to   = pos_map[c];
             add_edge(std::move(new_e));
-            
+
             stk.pop_back();
         }
 
@@ -113,28 +117,27 @@ public:
         for (int u : nodes) {
             pos_map[u] = -1;
         }
-        
+
         ord = std::move(nodes);
         built = true;
     }
 
-    // Lấy lại đỉnh gốc từ ID nén
-    int original(int u) const {
+    [[nodiscard]] int original(int u) const {
         assert(0 <= u && u < num_vertices());
         return ord[u];
     }
 
-    // Danh sách các đỉnh gốc trên cây ảo
-    const std::vector<int>& tour() const {
+    [[nodiscard]] const std::vector<int>& tour() const {
         return ord;
     }
 
 private:
-    hld<edge_type>*  hld_ptr;
+    hld<edge_type>*  hld_ptr = nullptr;
     std::vector<int> pos_map;
     std::vector<int> ord;
 };
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_TREE_VIRTUAL_TREE

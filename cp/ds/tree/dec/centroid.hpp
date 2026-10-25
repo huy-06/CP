@@ -2,6 +2,7 @@
 
 #ifndef CP_DS_TREE_CENTROID
 #define CP_DS_TREE_CENTROID
+
 namespace cp {
 namespace ds {
 
@@ -10,16 +11,17 @@ class centroid : public tree<Edge> {
 public:
     using edge_type = Edge;
     using tree<edge_type>::num_vertices;
+    using tree<edge_type>::adj;
 
-    centroid(int n = 0) {
+    explicit centroid(int n = 0) {
         init(n);
     }
 
-    centroid(const graph<edge_type>& g) {
+    explicit centroid(const graph<edge_type>& g) {
         init(g);
     }
 
-    centroid(const tree<edge_type>& t) {
+    explicit centroid(const tree<edge_type>& t) {
         init(t);
     }
 
@@ -31,7 +33,7 @@ public:
 
     void init(const graph<edge_type>& g, int root = 0) {
         assert(0 <= root && root < g.num_vertices());
-        init(g.num_vertices());
+        init(g.num_vertices(), root);
         for (const auto& e : g.get_edges()) {
             if (e.from < e.to) {
                 this->add_edge(e);
@@ -42,7 +44,7 @@ public:
 
     void init(const tree<edge_type>& t, int root = 0) {
         assert(0 <= root && root < t.num_vertices());
-        init(t.num_vertices());
+        init(t.num_vertices(), root);
         for (const auto& e : t.get_edges()) {
             if (e.from < e.to) {
                 this->add_edge(e);
@@ -60,14 +62,16 @@ public:
         assert(0 <= start_node && start_node < num_vertices());
         if (built) return;
 
-        graph<edge_type>::build(); 
+        graph<edge_type>::build();
 
         par.assign(this->n, -1);
         dep.assign(this->n, 0);
         siz.assign(this->n, 0);
         removed.assign(this->n, false);
 
-        this->root = build_centroid_tree(start_node, -1, 0);
+        if (this->n > 0) {
+            this->root = build_centroid_tree(start_node, -1, 0);
+        }
         built = true;
     }
 
@@ -84,7 +88,7 @@ public:
         }
     }
 
-    bool is_removed(int u) {
+    [[nodiscard]] bool is_removed(int u) {
         if (!built) build();
         return removed[u];
     }
@@ -97,37 +101,60 @@ private:
     using tree<edge_type>::built;
 
     std::vector<bool> removed;
+    std::vector<int> q;
+    std::vector<int> p_arr;
 
-    void get_size(int u, int p) {
-        siz[u] = 1;
-        for (auto& e : (*this)[u]) {
-            int v = e.to;
-            if (v != p && !removed[v]) {
-                get_size(v, u);
-                siz[u] += siz[v];
+    void compute_sizes_flat(int start) {
+        q.clear();
+        q.push_back(start);
+        p_arr.assign(n, -1);
+
+        for (size_t i = 0; i < q.size(); ++i) {
+            int u = q[i];
+            siz[u] = 1;
+            for (const auto& e : adj(u)) {
+                int v = e.to;
+                if (v != p_arr[u] && !removed[v]) {
+                    p_arr[v] = u;
+                    q.push_back(v);
+                }
             }
+        }
+
+        for (int i = static_cast<int>(q.size()) - 1; i > 0; --i) {
+            int u = q[i];
+            siz[p_arr[u]] += siz[u];
         }
     }
 
-    int get_centroid(int u, int p, int total) {
-        for (auto& e : (*this)[u]) {
-            int v = e.to;
-            if (v != p && !removed[v] && siz[v] > total / 2) {
-                return get_centroid(v, u, total);
+    int get_centroid(int u, int total) {
+        int p = -1;
+        while (true) {
+            int next_node = -1;
+            for (const auto& e : adj(u)) {
+                int v = e.to;
+                if (v != p && !removed[v] && siz[v] > total / 2) {
+                    next_node = v;
+                    break;
+                }
             }
+            if (next_node == -1) {
+                return u;
+            }
+            p = u;
+            u = next_node;
         }
-        return u;
     }
 
     int build_centroid_tree(int u, int p, int d) {
-        get_size(u, -1);
-        int c = get_centroid(u, -1, siz[u]);
+        compute_sizes_flat(u);
+        int c = get_centroid(u, siz[u]);
 
         removed[c] = true;
         par[c] = p;
         dep[c] = d;
 
-        for (auto& e : (*this)[c]) {
+        for (const auto& e : adj(c)) {
             int v = e.to;
             if (!removed[v]) {
                 build_centroid_tree(v, c, d + 1);
@@ -138,14 +165,13 @@ private:
 
     template <class F>
     void solve_dnc(int u, F&& f) {
-        get_size(u, -1);
-        int c = get_centroid(u, -1, siz[u]);
+        compute_sizes_flat(u);
+        int c = get_centroid(u, siz[u]);
 
         removed[c] = true;
-        
         f(c);
 
-        for (auto& e : (*this)[c]) {
+        for (const auto& e : adj(c)) {
             int v = e.to;
             if (!removed[v]) {
                 solve_dnc(v, f);
@@ -156,4 +182,5 @@ private:
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_TREE_CENTROID

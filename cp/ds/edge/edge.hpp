@@ -1,32 +1,30 @@
 #include <iostream>
+#include <compare>
 
 #ifndef CP_DS_GRAPH_EDGE_BASE
 #define CP_DS_GRAPH_EDGE_BASE
+
 namespace cp {
 namespace ds {
 
 struct edge {
     int from;
     int to;
- 
-    edge(int from = 0, int to = 0) : from(from), to(to) {}
 
-    bool operator<(const edge& e) const {
-        if (from != e.from) return from < e.from;
-        return to < e.to;        
-    }
- 
+    constexpr edge(int from = 0, int to = 0) noexcept : from(from), to(to) {}
+
+    constexpr auto operator<=>(const edge& other) const noexcept = default;
+
     friend std::istream& operator>>(std::istream& is, edge& e) {
-        is >> e.from >> e.to;
-        return is;
+        return is >> e.from >> e.to;
     }
- 
+
     friend std::ostream& operator<<(std::ostream& os, const edge& e) {
-        os << "(" << e.from << ", " << e.to << ")";
-        return os;
+        return os << "(" << e.from << ", " << e.to << ")";
     }
 };
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_GRAPH_EDGE_BASE
