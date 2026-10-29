@@ -66,7 +66,7 @@ public:
                     }
                     frames.pop_back();
                     if (!frames.empty()) {
-                        int p = frames.back().u;
+                        int p = frames.back().first;
                         low[p] = std::min(low[p], low[u]);
                     }
                 }

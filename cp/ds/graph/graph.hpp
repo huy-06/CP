@@ -222,14 +222,14 @@ public:
 
         std::vector<int> ord;
         ord.reserve(n);
-        std::vector<bool> vis(n, false);
-
-        vis[src] = true;
         ord.push_back(src);
 
-        int head_idx = 0;
-        while (head_idx < static_cast<int>(ord.size())) {
-            int u = ord[head_idx++];
+        std::vector<bool> vis(n, false);
+        vis[src] = true;
+
+        int i = 0;
+        while (i < static_cast<int>(ord.size())) {
+            int u = ord[i++];
             for (const auto& e : adj(u)) {
                 int v = e.to;
                 if (!vis[v]) {
@@ -248,12 +248,13 @@ public:
 
         std::vector<int> ord;
         ord.reserve(n);
+
         std::vector<bool> vis(n, false);
+        vis[src] = true;
+
         std::vector<int> stk;
         stk.reserve(n);
-
         stk.push_back(src);
-        vis[src] = true;
 
         while (!stk.empty()) {
             int u = stk.back();
@@ -274,17 +275,19 @@ public:
 
     std::vector<int> bfs_order_all() const {
         if (!built) const_cast<graph*>(this)->build();
+
         std::vector<int> ord;
         ord.reserve(n);
-        std::vector<bool> vis(n, false);
 
-        for (int i = 0; i < n; ++i) {
-            if (vis[i]) continue;
-            vis[i] = true;
-            ord.push_back(i);
-            int head_idx = static_cast<int>(ord.size()) - 1;
-            while (head_idx < static_cast<int>(ord.size())) {
-                int u = ord[head_idx++];
+        std::vector<bool> vis(n, false);
+        for (int src = 0; src < n; ++src) {
+            if (vis[src]) continue;
+            vis[src] = true;
+            ord.push_back(src);
+
+            int i = static_cast<int>(ord.size()) - 1;
+            while (i < static_cast<int>(ord.size())) {
+                int u = ord[i++];
                 for (const auto& e : adj(u)) {
                     int v = e.to;
                     if (!vis[v]) {
@@ -299,23 +302,27 @@ public:
 
     std::vector<int> dfs_order_all() const {
         if (!built) const_cast<graph*>(this)->build();
+
         std::vector<int> ord;
         ord.reserve(n);
+
         std::vector<bool> vis(n, false);
         std::vector<int> stk;
         stk.reserve(n);
 
-        for (int i = 0; i < n; ++i) {
-            if (vis[i]) continue;
-            stk.push_back(i);
-            vis[i] = true;
+        for (int src = 0; src < n; ++src) {
+            if (vis[src]) continue;
+            stk.push_back(src);
+            vis[src] = true;
+
             while (!stk.empty()) {
                 int u = stk.back();
                 stk.pop_back();
                 ord.push_back(u);
+                
                 const_neighbors nbrs = adj(u);
-                for (int j = static_cast<int>(nbrs.size()) - 1; j >= 0; --j) {
-                    int v = nbrs[j].to;
+                for (int i = static_cast<int>(nbrs.size()) - 1; i >= 0; --i) {
+                    int v = nbrs[i].to;
                     if (!vis[v]) {
                         vis[v] = true;
                         stk.push_back(v);
