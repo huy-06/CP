@@ -11,11 +11,13 @@ constexpr unsigned int bit_ceil(unsigned int n, int shift) {
 } // namespace internal
 
 namespace alg {
+namespace bit {
 
 constexpr unsigned int bit_ceil(unsigned int n) {
     return n <= 1 ? 1 : internal::bit_ceil(n - 1, 1);
 }
 
+} // namespace bit
 } // namespace alg
 } // namespace cp
 #endif

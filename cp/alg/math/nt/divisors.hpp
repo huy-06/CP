@@ -1,3 +1,5 @@
+#include "../../../init/constexpr.hpp"
+#include <functional>
 #include <vector>
 #include "factorize.hpp"
 
@@ -5,6 +7,7 @@
 #define CP_ALG_DIVISORS
 namespace cp {
 namespace alg {
+namespace math {
 
 template <typename Tp>
 cp_constexpr std::vector<Tp> divisors(Tp n) {
@@ -30,6 +33,7 @@ cp_constexpr std::vector<Tp> divisors(Tp n) {
     return divisors;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

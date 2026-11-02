@@ -5,6 +5,7 @@
 #define CP_ALG_GET_PALINDROME_KTH
 namespace cp {
 namespace alg {
+namespace math {
 
 std::string get_padlindrome_kth(const std::string& k) {
     auto subtract = [&](std::string s, int exp) -> std::string {
@@ -88,6 +89,7 @@ std::string get_padlindrome_kth(long long k) {
     return get_padlindrome_kth(std::to_string(k));
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

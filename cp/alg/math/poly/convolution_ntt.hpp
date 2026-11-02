@@ -3,6 +3,8 @@
 #include <bit> // Needed for std::countr_zero
 #include "../../bit/bit_ceil.hpp"
 #include "../mod/primitive_root.hpp"
+#include "../mod/inverse.hpp"
+#include "../mod/safe_mod.hpp"
 #include "../../../ds/num/mod/static.hpp"
 
 #ifndef CP_ALG_MATH_POLYNOMIAL_CONVOLUTION_NTT
@@ -11,7 +13,7 @@ namespace cp {
 
 namespace internal {
 
-template <typename mint, int g = alg::mod::primitive_root(mint::mod())>
+template <typename mint, int g = alg::math::primitive_root(mint::mod())>
 class fft_info {
 public:
     static constexpr int rank2 = std::countr_zero(static_cast<unsigned int>(mint::mod() - 1));
@@ -179,7 +181,7 @@ template <typename mint>
 constexpr std::vector<mint> convolution_fft(std::vector<mint> a, std::vector<mint> b) {
     int n = static_cast<int>(a.size());
     int m = static_cast<int>(b.size());
-    int z = static_cast<int>(alg::bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(alg::bit::bit_ceil(static_cast<unsigned int>(n + m - 1)));
     a.resize(z);
     butterfly(a);
     b.resize(z);
@@ -201,6 +203,7 @@ constexpr bool is_ntt_friendly(unsigned long long mod) {
 } // namespace internal
 
 namespace alg {
+namespace math {
 
 template <typename mint, typename std::enable_if<!std::is_integral<mint>::value && internal::is_ntt_friendly(mint::mod()), int>::type = 0>
 constexpr std::vector<mint> convolution(std::vector<mint>&& a, std::vector<mint>&& b) {
@@ -208,7 +211,7 @@ constexpr std::vector<mint> convolution(std::vector<mint>&& a, std::vector<mint>
     int m = static_cast<int>(b.size());
     if (!n || !m) return {};
 
-    int z = static_cast<int>(bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(alg::bit::bit_ceil(static_cast<unsigned int>(n + m - 1)));
     assert((mint::mod() - 1) % z == 0);
 
     if (std::min(n, m) <= 60) {
@@ -223,7 +226,7 @@ constexpr std::vector<mint> convolution(const std::vector<mint>& a, const std::v
     int m = static_cast<int>(b.size());
     if (!n || !m) return {};
 
-    int z = static_cast<int>(bit_ceil(static_cast<unsigned int>(n + m - 1)));
+    int z = static_cast<int>(alg::bit::bit_ceil(static_cast<unsigned int>(n + m - 1)));
     assert((mint::mod() - 1) % z == 0);
 
     if (std::min(n, m) <= 60) {
@@ -269,8 +272,8 @@ constexpr std::vector<mint> convolution(const std::vector<mint>& a, const std::v
     auto c2 = convolution<MOD2>(a_ll, b_ll);
     auto c3 = convolution<MOD3>(a_ll, b_ll);
 
-    static constexpr unsigned long long inv1_2 = mod::inverse(MOD1, MOD2).second;
-    static constexpr unsigned long long inv12_3 = mod::inverse(MOD1 * MOD2, MOD3).second;
+    static constexpr unsigned long long inv1_2 = inverse(MOD1, MOD2).second;
+    static constexpr unsigned long long inv12_3 = inverse(MOD1 * MOD2, MOD3).second;
 
     int siz = n + m - 1;
     std::vector<mint> res(siz);
@@ -310,9 +313,9 @@ constexpr std::vector<long long> convolution(const std::vector<long long>& a, co
     static constexpr unsigned long long M1M2 = MOD1 * MOD2;
     static constexpr unsigned long long M1M2M3 = MOD1 * MOD2 * MOD3;
 
-    static constexpr unsigned long long i1 = mod::inverse(MOD2 * MOD3, MOD1).second;
-    static constexpr unsigned long long i2 = mod::inverse(MOD1 * MOD3, MOD2).second;
-    static constexpr unsigned long long i3 = mod::inverse(MOD1 * MOD2, MOD3).second;
+    static constexpr unsigned long long i1 = inverse(MOD2 * MOD3, MOD1).second;
+    static constexpr unsigned long long i2 = inverse(MOD1 * MOD3, MOD2).second;
+    static constexpr unsigned long long i3 = inverse(MOD1 * MOD2, MOD3).second;
         
     auto c1 = convolution<MOD1>(a, b);
     auto c2 = convolution<MOD2>(a, b);
@@ -325,7 +328,7 @@ constexpr std::vector<long long> convolution(const std::vector<long long>& a, co
         x += (c2[i] * i2) % MOD2 * M1M3;
         x += (c3[i] * i3) % MOD3 * M1M2;
         
-        long long diff = c1[i] - mod::safe_mod(static_cast<long long>(x), static_cast<long long>(MOD1));
+        long long diff = c1[i] - safe_mod(static_cast<long long>(x), static_cast<long long>(MOD1));
         if (diff < 0) diff += MOD1;
         static constexpr unsigned long long offset[5] = {0, 0, M1M2M3, 2 * M1M2M3, 3 * M1M2M3};
         x -= offset[diff % 5];
@@ -339,6 +342,7 @@ constexpr std::vector<int> convolution(const std::vector<int>& a, const std::vec
     return std::vector<int>(ans.begin(), ans.end());
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

@@ -489,7 +489,7 @@ private:
         mint irate2[30], irate3[30], iroot2;
 
         ntt_info() {
-            mint rt = mint(alg::mod::primitive_root(mint::mod()));
+            mint rt = mint(alg::math::primitive_root(mint::mod()));
             int rank = __builtin_ctz(mint::mod() - 1);
 
             std::vector<mint> es(rank + 1), ies(rank + 1);

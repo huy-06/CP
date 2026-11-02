@@ -5,6 +5,7 @@
 #define CP_ALG_NUMERIC
 namespace cp {
 namespace alg {
+namespace math {
 
 template <typename Tp>
 cp_constexpr Tp gcd(Tp a, Tp b) {
@@ -26,6 +27,7 @@ cp_constexpr Tp lcm(Tp a, Tp b) {
     return res < 0 ? -res : res;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

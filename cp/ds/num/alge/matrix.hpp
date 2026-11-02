@@ -130,7 +130,7 @@ public:
                 }
             } else {
                 for (int r = i + 1; r < n; ++r) {
-                    if (alg::abs(mat[r, i]) > alg::abs(mat[pivot, i])) {
+                    if (alg::math::abs(mat[r, i]) > alg::math::abs(mat[pivot, i])) {
                         pivot = r;
                     }
                 }
@@ -175,7 +175,7 @@ public:
                 }
             } else {
                 for (int i = r + 1; i < n; ++i) {
-                    if (alg::abs(mat[i, c]) > alg::abs(mat[pivot, c])) {
+                    if (alg::math::abs(mat[i, c]) > alg::math::abs(mat[pivot, c])) {
                         pivot = i;
                     }
                 }
@@ -218,7 +218,7 @@ public:
                 }
             } else {
                 for (int r = i + 1; r < n; ++r) {
-                    if (alg::abs(mat[r, i]) > alg::abs(mat[pivot, i])) {
+                    if (alg::math::abs(mat[r, i]) > alg::math::abs(mat[pivot, i])) {
                         pivot = r;
                     }
                 }
@@ -335,7 +335,7 @@ public:
                 }
             } else {
                 for (int r = row + 1; r < n; ++r) {
-                    if (alg::abs(aug[r, col]) > alg::abs(aug[pivot, col])) {
+                    if (alg::math::abs(aug[r, col]) > alg::math::abs(aug[pivot, col])) {
                         pivot = r;
                     }
                 }

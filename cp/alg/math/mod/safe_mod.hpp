@@ -5,7 +5,7 @@
 #define CP_ALG_MOD_SAFE_MOD
 namespace cp {
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp1, typename Tp2>
 constexpr Tp2 safe_mod(Tp1 a, Tp2 mod) {
@@ -26,7 +26,7 @@ constexpr Tp2 safe_mod(Tp1 a, Tp2 mod) {
     return static_cast<Tp2>(static_cast<uint_t>(a) % umod);
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

@@ -6,7 +6,7 @@
 namespace cp {
 
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp>
 constexpr std::pair<Tp, Tp> inverse(Tp a, Tp b) {
@@ -27,7 +27,7 @@ constexpr std::pair<Tp, Tp> inverse(Tp a, Tp b) {
     return { static_cast<Tp>(r0), static_cast<Tp>(x0) };
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

@@ -6,6 +6,7 @@
 #define CP_ALG_COUNTR_ZERO
 namespace cp {
 namespace alg {
+namespace bit {
 
 template <typename Tp>
 requires std::is_integral_v<Tp> && (sizeof(Tp) <= 8)
@@ -23,6 +24,7 @@ cp_constexpr int countr_zero(Tp x) {
     return 64 + std::countr_zero(static_cast<unsigned long long>(x.val() >> 64));
 }
 
+} // namespace bit
 } // namespace alg
 } // namespace cp
 #endif

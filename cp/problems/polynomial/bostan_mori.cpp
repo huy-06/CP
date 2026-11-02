@@ -14,8 +14,8 @@ mint bostan_mori(std::vector<mint> P, std::vector<mint> Q, long long n) {
             Q_neg[i] = -Q_neg[i];
         }
 
-        std::vector<mint> U = cp::alg::convolution(P, Q_neg);
-        std::vector<mint> V = cp::alg::convolution(Q, Q_neg);
+        std::vector<mint> U = cp::alg::math::convolution(P, Q_neg);
+        std::vector<mint> V = cp::alg::math::convolution(Q, Q_neg);
 
         P.clear();
         for (int i = (n & 1); i < U.size(); i += 2) {
@@ -63,7 +63,7 @@ signed main() {
         Q[i] = -a[i - 1];
     }
 
-    std::vector<mint> P = cp::alg::convolution(h, Q);
+    std::vector<mint> P = cp::alg::math::convolution(h, Q);
     P.resize(k);
 
     std::cout << bostan_mori(P, Q, n - 1) << '\n';

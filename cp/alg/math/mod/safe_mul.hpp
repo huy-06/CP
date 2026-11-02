@@ -4,7 +4,7 @@
 #define CP_ALG_MOD_SAFE_MUL
 namespace cp {
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp1, typename Tp2, typename Mod>
 constexpr Mod safe_mul(Tp1 a, Tp2 b, Mod mod) {
@@ -29,7 +29,7 @@ constexpr Mod safe_mul(Tp1 a, Tp2 b, Mod mod) {
     }
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

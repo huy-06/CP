@@ -1,38 +1,46 @@
-#include "segments.hpp"
+#include "lines.hpp"
 #include "../../ds/geo/ray.hpp"
 
-#ifndef CP_ALG_GEOMETRY_RAYS
-#define CP_ALG_GEOMETRY_RAYS
+#ifndef CP_ALG_GEO_RAYS
+#define CP_ALG_GEO_RAYS
+
 namespace cp {
 namespace alg {
+namespace geo {
 
+/**
+ * @brief Kiểm tra điểm `p` có nằm trên tia `r` không.
+ */
 template <class Tp>
-bool is_on(const ds::point<Tp>& p, const ds::ray<Tp>& r) {
-    ds::vector<Tp> vec_p(p - r.p);
-    if (cross(r.v, vec_p) != 0) return false;
-    return dot(r.v, vec_p) >= 0;
+constexpr bool is_on(const ds::point<Tp>& p, const ds::ray<Tp>& r) {
+    auto u = p - r.p;
+    if (cross(r.v, u) != 0) return false;
+    return dot(r.v, u) >= Tp(0);
 }
 
+/**
+ * @brief Kiểm tra hai tia r1 và r2 có song song không.
+ */
 template <class Tp>
-bool is_on(const ds::ray<Tp>& r, const ds::point<Tp>& p) {
-    return is_on(p, r);
-}
-
-template <class Tp>
-bool is_parallel(const ds::ray<Tp>& r1, const ds::ray<Tp>& r2) {
+constexpr bool is_parallel(const ds::ray<Tp>& r1, const ds::ray<Tp>& r2) {
     return cross(r1.v, r2.v) == 0;
 }
 
+/**
+ * @brief Hình chiếu vuông góc của điểm `p` lên tia `r` (giới hạn tham số t >= 0).
+ */
 template <class Tp>
-bool is_parallel(const ds::ray<Tp>& r, const ds::segment<Tp>& s) {
-    return cross(r.v, ds::vector<Tp>(s.b - s.a)) == 0;
+auto project(const ds::point<Tp>& p, const ds::ray<Tp>& r) {
+    auto len_sq = r.v.square();
+    if (len_sq == 0) return r.p;
+
+    auto t = dot(p - r.p, r.v) / len_sq;
+    if (t < Tp(0)) t = Tp(0);
+    return r.p + r.v * t;
 }
 
-template <class Tp>
-bool is_parallel(const ds::segment<Tp>& s, const ds::ray<Tp>& r) {
-    return is_parallel(r, s);
-}
-
+} // namespace geo
 } // namespace alg
 } // namespace cp
-#endif
+
+#endif // CP_ALG_GEO_RAYS

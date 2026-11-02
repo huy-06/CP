@@ -1,3 +1,4 @@
+#include <bit>
 #include "../mod/pow_mod.hpp"
 // #include "../../../cst/primes.hpp"
 
@@ -5,6 +6,7 @@
 #define CP_ALG_IS_PRIME
 namespace cp {
 namespace alg {
+namespace math {
 
 template <typename Tp>
 constexpr bool is_prime(Tp n) {
@@ -36,10 +38,10 @@ constexpr bool is_prime(Tp n) {
 
     auto test_miller_rabin = [&](uint_t a) constexpr -> bool {
         if (a >= un) return true; 
-        uint_t x = mod::pow_mod(a, d, un);
+        uint_t x = pow_mod(a, d, un);
         if (x == 1 || x == un - 1) return true;
         for (int r = 1; r < s; ++r) {
-            x = mod::safe_mul(x, x, un);
+            x = safe_mul(x, x, un);
             if (x == un - 1) return true;
         }
         return false;
@@ -62,6 +64,7 @@ constexpr bool is_prime(Tp n) {
     return true;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

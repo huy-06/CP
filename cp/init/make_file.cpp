@@ -1,4 +1,4 @@
-// cd /home/huynguyen/mnt/cpp/cp/init/ && g++ -std=c++23 -O2 make_file.cpp -o make_file
+// cd "e:\Code\CP\Tasks\CPP\cp\init\" ; if ($?) { g++ -std=c++23 -O2 make_file.cpp -o make_file } ; if ($?) { .\make_file }
 
 #include <iostream>
 #include <fstream>
@@ -26,32 +26,27 @@ struct string_hash {
 
 class cpp_bundler {
 public:
-    cpp_bundler(const std::string& output_path) : out_path(output_path) {
-        fs::path p(output_path);
-        std::error_code ec;
-        if (p.has_parent_path()) {
-            fs::create_directories(p.parent_path(), ec);
+    cpp_bundler(const std::string& output_path) : fout(output_path, std::ios::trunc) {
+        if (!fout) {
+            std::cerr << "Can not open output file: " << output_path << '\n';
+            valid = false;
         }
+        std::ios_base::sync_with_stdio(false);
+        std::cin.tie(nullptr);
     }
 
-    bool init_output() {
-        fout.open(out_path, std::ios::trunc);
-        if (!fout) {
-            std::cerr << "Can not open output file: " << out_path << '\n';
-            return false;
-        }
-        return true;
-    }
+    bool is_valid() const { return valid; }
 
     void process(const fs::path& root_path) {
         process_file(root_path);
     }
 
 private:
-    std::string out_path;
     std::ofstream fout;
+    
     std::unordered_set<std::string, string_hash, std::equal_to<>> seen;
     
+    bool valid = true;
     bool is_first_line = true; 
     bool last_line_was_empty = true;
 
@@ -82,6 +77,7 @@ private:
         while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) ++start;
         size_t end = s.size();
         while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) --end;
+        
         if (start >= end) return {};
         return s.substr(start, end - start);
     }
@@ -104,13 +100,13 @@ private:
         if (line.empty()) return;
 
         bool possible = false;
-        for (const auto& pat : remove_call_patterns) {
-            if (line.find(pat) != std::string::npos) {
+        for(const auto& pat : remove_call_patterns) {
+            if(line.find(pat) != std::string::npos) {
                 possible = true;
                 break;
             }
         }
-        if (!possible) return;
+        if(!possible) return;
 
         std::string result;
         result.reserve(line.size()); 
@@ -148,6 +144,7 @@ private:
                         } else {
                             i = j; 
                         }
+                        
                         matched = true;
                         modified = true;
                         break; 
@@ -309,42 +306,23 @@ private:
     }
 };
 
-int main(int argc, char* argv[]) {
-    std::ios_base::sync_with_stdio(false);
-    std::cin.tie(nullptr);
-
+int main() {
     std::string root_path_str;
-    
-    if (argc > 1) {
-        root_path_str = argv[1];
-    } else {
-        if (!std::getline(std::cin, root_path_str) || root_path_str.empty()) {
-            std::cerr << "No input file provided\n";
-            return 1;
-        }
+    if (!std::getline(std::cin, root_path_str) || root_path_str.empty()) {
+        std::cerr << "No input file provided\n";
+        return 1;
     }
     
-    while (!root_path_str.empty() && (root_path_str.back() == '\r' || root_path_str.back() == ' ')) {
-        root_path_str.pop_back();
-    }
-    while (!root_path_str.empty() && root_path_str.front() == ' ') {
-        root_path_str.erase(root_path_str.begin());
-    }
     if (root_path_str.size() >= 2 && root_path_str.front() == '"' && root_path_str.back() == '"') {
         root_path_str = root_path_str.substr(1, root_path_str.size() - 2);
     }
 
-    fs::path input_path(root_path_str);
-    if (!fs::exists(input_path)) {
-        std::cerr << "Error: Source file not found at: " << fs::absolute(input_path) << '\n';
-        return 1;
-    }
-
-    std::string submit_path = "/home/huynguyen/mnt/cpp/submit/submit.cpp";
+    std::string submit_path = "E:\\Code\\CP\\Tasks\\CPP\\submit\\submit.cpp";
+    
     cpp_bundler bundler(submit_path);
-    if (bundler.init_output()) {
-        bundler.process(input_path);
-        // std::cout << "Done! Đã tạo xong file submit.cpp\n";
+    if (bundler.is_valid()) {
+        bundler.process(root_path_str);
+        // std::cerr << "Saved!\n";
     }
 
     return 0;

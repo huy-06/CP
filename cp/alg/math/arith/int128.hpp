@@ -1,10 +1,11 @@
 #include <string>
 #include <algorithm>
 
-#ifndef CP_ALG_INT128
-#define CP_ALG_INT128
+#ifndef CP_ALG_MATH_INT128
+#define CP_ALG_MATH_INT128
 namespace cp {
 namespace alg {
+namespace math {
 
 __int128 stoi128(const std::string& str) {
     size_t pos = 0;
@@ -51,6 +52,7 @@ std::string to_string(__int128 value) {
     return str;
 }    
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

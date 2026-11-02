@@ -6,6 +6,7 @@
 #define CP_ALG_MATH_POLYNOMIAL_ALGEBRA
 namespace cp {
 namespace alg {
+namespace math {
 
 // Đạo hàm: P(x) -> P'(x)
 template <typename Tp>
@@ -164,7 +165,7 @@ std::vector<Tp> pow(std::vector<Tp> p, long long k, int n) {
     for (auto& x : p) x *= Tp(k);
     p = exp(p, m);
 
-    Tp ck = alg::pow(c, k);
+    Tp ck = pow(c, k);
     for (auto& x : p) x *= ck;
 
     std::vector<Tp> res(n, Tp(0));
@@ -199,7 +200,7 @@ std::vector<Tp> sqrt(std::vector<Tp> p, int n) {
     p.erase(p.begin(), p.begin() + zeros);
     int m = n - zeros / 2;
 
-    Tp c = alg::sqrt(p[0]);
+    Tp c = sqrt(p[0]);
     Tp inv_2 = Tp(1) / Tp(2);
 
     std::vector<Tp> res = {c};
@@ -294,6 +295,7 @@ T1 lagrange(const std::vector<T1>& y, T2 k) {
 }
 
 
+} // namespace math
 } // namespace alg
 
 namespace internal {
@@ -323,14 +325,14 @@ std::pair<std::vector<Tp>,
     std::vector<Tp> B_trunc = B;
     B_trunc.resize(n - m + 1);
 
-    std::vector<Tp> inv_B = alg::inverse(B_trunc, n - m + 1);
+    std::vector<Tp> inv_B = alg::math::inverse(B_trunc, n - m + 1);
 
 
-    std::vector<Tp> Q = alg::convolution(A, inv_B);
+    std::vector<Tp> Q = alg::math::convolution(A, inv_B);
     Q.resize(n - m + 1);
     std::reverse(Q.begin(), Q.end());
 
-    std::vector<Tp> prod = alg::convolution(b, Q);
+    std::vector<Tp> prod = alg::math::convolution(b, Q);
     std::vector<Tp> R(m);
     for (int i = 0; i < m; ++i) {
         Tp val_prod = (i < int(prod.size())) ? prod[i] : Tp(0);
@@ -348,6 +350,7 @@ std::pair<std::vector<Tp>,
 } // namespace internal
 
 namespace alg {
+namespace math {
 
 template <typename Tp>
 std::vector<Tp> multipoint_evaluation(const std::vector<Tp>& poly, const std::vector<Tp>& pts) {
@@ -445,6 +448,7 @@ std::vector<Tp> interpolation(const std::vector<Tp>& x, const std::vector<Tp>& y
 
     return interp(1, 0, n - 1);
 }
+} // namespace math
 } // namespace alg
 
 } // namespace cp

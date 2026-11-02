@@ -4,6 +4,7 @@
 #define CP_ALG_MATH_SIEVE_PRIMES
 namespace cp {
 namespace alg {
+namespace math {
 
 // minp[i] == i -> is prime
 std::pair<std::vector<int>,
@@ -26,6 +27,7 @@ std::pair<std::vector<int>,
     return { minp, primes };
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

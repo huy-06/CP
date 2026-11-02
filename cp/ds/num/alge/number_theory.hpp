@@ -28,7 +28,7 @@ public:
             return false;
         if (x <= n) 
             return spf[x] == x;
-        return alg::is_prime(x);
+        return alg::math::is_prime(x);
     }
 
     template <typename Tp>
@@ -47,7 +47,7 @@ public:
             return factors;
         } 
         
-        return alg::factorize(x);
+        return alg::math::factorize(x);
     }
 
     template <typename Tp>

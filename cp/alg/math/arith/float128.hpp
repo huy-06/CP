@@ -1,10 +1,11 @@
 #include <string>
 #include <algorithm>
 
-#ifndef CP_ALG_INT128
-#define CP_ALG_INT128
+#ifndef CP_ALG_MATH_FLOAT128
+#define CP_ALG_MATH_FLOAT128
 namespace cp {
 namespace alg {
+namespace math {
 
 __float128 stof128(const std::string& str) {
     size_t pos = 0;
@@ -111,6 +112,7 @@ std::string to_string(__float128 value, int precision = 5) {
     return result;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

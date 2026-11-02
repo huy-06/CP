@@ -21,7 +21,7 @@ public:
     constexpr static_mod_int() noexcept : value(0) {}
 
     template <typename Tp>
-    constexpr static_mod_int(Tp x) noexcept : value(alg::mod::safe_mod(x, mod())) {}
+    constexpr static_mod_int(Tp x) noexcept : value(alg::math::safe_mod(x, mod())) {}
 
     static constexpr value_type mod() noexcept {
         return static_cast<value_type>(MOD);
@@ -37,12 +37,12 @@ public:
 
     template <typename Int>
     constexpr static_mod_int pow(Int k) const noexcept {
-        return alg::mod::pow_mod(value, k, mod());
+        return alg::math::pow_mod(value, k, mod());
     }
 
     constexpr static_mod_int inv() const noexcept {
-        return alg::is_prime(MOD) ? pow(MOD - 2) : 
-               static_mod_int(alg::mod::inverse(value, mod()).second);
+        return alg::math::is_prime(MOD) ? pow(MOD - 2) : 
+               static_mod_int(alg::math::inverse(value, mod()).second);
     }
 
     constexpr static_mod_int operator+() const noexcept {
@@ -65,7 +65,7 @@ public:
     }
     
     cp_constexpr static_mod_int& operator*=(const static_mod_int& rhs) noexcept {
-        value = alg::mod::safe_mul(value, rhs.val(), mod());
+        value = alg::math::safe_mul(value, rhs.val(), mod());
         return *this;
     }
     

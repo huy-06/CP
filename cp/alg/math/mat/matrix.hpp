@@ -17,6 +17,7 @@ struct needs_pivoting<T, std::void_t<decltype(T::eps())>> : std::true_type {};
 } // namespace internal
 
 namespace alg {
+namespace math {
 
 template <typename Tp>
 std::vector<std::vector<Tp>> identity(int n) {
@@ -331,7 +332,8 @@ auto solve_linear_system(std::vector<std::vector<Tp>> A, const std::vector<Tp>& 
     return {x, kernel};
 }
 
-} // namesapce alg
+} // namespace math
+} // namespace alg
 
 } // namespace cp
 #endif

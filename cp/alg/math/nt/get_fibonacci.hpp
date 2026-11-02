@@ -5,6 +5,7 @@
 #define CP_ALG_GET_FIBONACCI
 namespace cp {
 namespace alg {
+namespace math {
 
 template <typename Tp>
 Tp get_fibonacci(const std::string& n) {
@@ -29,6 +30,7 @@ Tp get_fibonacci(long long n) {
     return get_fibonacci<Tp>(std::to_string(n));
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

@@ -1,3 +1,4 @@
+#include "../mod/safe_mul.hpp"
 #include <vector>
 #include <algorithm>
 #include <random>
@@ -13,7 +14,7 @@ namespace internal {
 template <typename Tp>
 constexpr Tp prho_f(Tp x, Tp c, Tp n) {
     using unsigned_type = typename std::make_unsigned<Tp>::type;
-    Tp res = static_cast<Tp>(alg::mod::safe_mul(
+    Tp res = static_cast<Tp>(safe_mul(
         static_cast<unsigned_type>(x), 
         static_cast<unsigned_type>(x), 
         static_cast<unsigned_type>(n)
@@ -28,7 +29,7 @@ constexpr unsigned long long lcg_next(unsigned long long state) {
 template <typename Tp>
 constexpr Tp pollard_rho(Tp n) {
     if (n % 2 == 0) return 2;
-    if (alg::is_prime(n)) return n;
+    if (is_prime(n)) return n;
 
     Tp x = 2, y = 2, d = 1, c = 1;
     Tp power = 1, lam = 1;
@@ -60,7 +61,7 @@ constexpr Tp pollard_rho(Tp n) {
 template <typename Tp>
 constexpr void recursive_factorize(Tp n, std::vector<Tp>& factors) {
     if (n <= 1) return;
-    if (alg::is_prime(n)) {
+    if (is_prime(n)) {
         factors.push_back(n);
         return;
     }
@@ -72,6 +73,7 @@ constexpr void recursive_factorize(Tp n, std::vector<Tp>& factors) {
 } // namespace internal
 
 namespace alg {
+namespace math {
 
 template <typename Tp>
 constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
@@ -98,6 +100,7 @@ constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
     return ans;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

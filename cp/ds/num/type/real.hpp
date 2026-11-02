@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include "../../../init/constexpr.hpp"
 #include "../../../alg/math/arith/arithmetic.hpp"
 
 #ifndef CP_DS_REAL
@@ -64,11 +63,11 @@ public:
 
     template <typename Tp>
     constexpr auto pow(const Tp& exp) const noexcept -> typename std::enable_if<std::is_arithmetic<Tp>::value, real>::type {
-        return real(alg::pow(value, exp));
+        return real(alg::math::pow(value, exp));
     }
 
     constexpr real pow(const real& exp) const noexcept {
-        return real(alg::pow(value, exp.value));
+        return real(alg::math::pow(value, exp.value));
     }
 
     constexpr real operator+() const noexcept { 

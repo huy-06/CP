@@ -4,6 +4,7 @@
 #define CP_ALG_MATH_SIEVE_PHI
 namespace cp {
 namespace alg {
+namespace math {
 
 std::vector<int> sieve_phi(int n = 1000000) {
     const std::vector<int>& minp = sieve_prime(n).first;
@@ -23,6 +24,7 @@ std::vector<int> sieve_phi(int n = 1000000) {
     return phi;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

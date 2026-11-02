@@ -4,6 +4,7 @@
 #define CP_ALG_LAGRANGE
 namespace cp {
 namespace alg {
+namespace math {
 
 // 1. Nội suy Lagrange cho tập x và y bất kỳ. Độ phức tạp: O(N^2)
 template <typename Tp>
@@ -57,6 +58,7 @@ Tp lagrange(const std::vector<Tp>& y, const Tp& val) {
     return ans;
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 

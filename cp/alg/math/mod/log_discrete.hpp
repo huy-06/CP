@@ -1,3 +1,5 @@
+#include <numeric>
+#include <cmath>
 #include "pow_mod.hpp"
 #include "../../../ds/hash/hash_map.hpp" 
 
@@ -5,7 +7,7 @@
 #define CP_ALG_MOD_LOG
 namespace cp {
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp>
 Tp log_discrete(Tp a, Tp b, Tp mod) {
@@ -37,7 +39,7 @@ Tp log_discrete(Tp a, Tp b, Tp mod) {
     return -1;
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

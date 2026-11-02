@@ -20,7 +20,7 @@ public:
     constexpr montgomery_mod_int() noexcept : value(0) {}
 
     template <std::integral Tp>
-    constexpr montgomery_mod_int(Tp x) noexcept : value(reduce(static_cast<double_type>(alg::mod::safe_mod(x, mod())) * r2)) {}
+    constexpr montgomery_mod_int(Tp x) noexcept : value(reduce(static_cast<double_type>(alg::math::safe_mod(x, mod())) * r2)) {}
 
     static constexpr montgomery_mod_int raw(value_type v) noexcept {
         montgomery_mod_int x;

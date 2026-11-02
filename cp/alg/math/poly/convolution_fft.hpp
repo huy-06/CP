@@ -40,6 +40,7 @@ void fft(std::vector<std::complex<double>>& a, bool invert) {
 } // namespace internal
 
 namespace alg {
+namespace math {
 
 // nhân đa thức cho long doublle
 std::vector<long double> convolution(const std::vector<long double>& a, 
@@ -166,6 +167,7 @@ std::vector<ds::static_mod_int<mod>>
 
 #endif
 
+} // namespace math
 } // namespace alg
 
 } // namespace cp

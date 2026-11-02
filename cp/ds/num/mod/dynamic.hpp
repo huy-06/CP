@@ -1,3 +1,5 @@
+#include <iostream>
+#include <tuple>
 #include <cassert>
 #include "is_modint.hpp"
 #include "../../../alg/math/mod/pow_mod.hpp"
@@ -17,7 +19,7 @@ public:
 
     template <typename U>
     dynamic_mod_int(U x) {
-        value = alg::mod::safe_mod(x, mod());
+        value = alg::math::safe_mod(x, mod());
     }
 
     template <typename U>
@@ -40,12 +42,12 @@ public:
 
     template<typename Int>
     dynamic_mod_int pow(Int k) const noexcept {
-        return alg::mod::pow_mod(value, k, mod());
+        return alg::math::pow_mod(value, k, mod());
     }
 
     dynamic_mod_int inv() const noexcept {
         value_type g, inv;
-        std::tie(g, inv) = alg::mod::inverse(value, mod());
+        std::tie(g, inv) = alg::math::inverse(value, mod());
         assert(g == 1);
         return dynamic_mod_int(inv);
     }
@@ -70,7 +72,7 @@ public:
     }
 
     dynamic_mod_int& operator*=(const dynamic_mod_int& rhs) noexcept {
-        value = alg::mod::safe_mul(value, rhs.val(), mod());
+        value = alg::math::safe_mul(value, rhs.val(), mod());
         return *this;
     }
 

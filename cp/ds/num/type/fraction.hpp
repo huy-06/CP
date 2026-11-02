@@ -167,7 +167,7 @@ private:
             x = -x;
             y = -y;
         }
-        value_type g = cp::alg::gcd(x, y);
+        value_type g = cp::alg::math::gcd(x, y);
         if (g != 0) {
             x /= g;
             y /= g;

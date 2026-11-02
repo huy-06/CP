@@ -1,11 +1,21 @@
+#include <vector>
+#include <limits>
+#include <algorithm>
+#include <utility>
 #include "../../alg/geo/distance.hpp"
 
 #ifndef CP_DS_KD_TREE
 #define CP_DS_KD_TREE
+
 namespace cp {
 namespace ds {
 
-template <typename Point, auto dist_func>
+/**
+ * @brief Cấu trúc dữ liệu 2D KD-Tree phục vụ truy vấn điểm láng giềng gần nhất (Nearest Neighbor Search).
+ * @tparam Point Kiểu điểm (ví dụ: ds::point<double>).
+ * @tparam DistFunc Con trỏ hàm hoặc lambda tính khoảng cách giữa hai điểm.
+ */
+template <typename Point, auto DistFunc>
 class kd_tree {
 public:
     using point_type = Point;
@@ -21,6 +31,9 @@ public:
         tree.clear();
     }
 
+    /**
+     * @brief Xây dựng KD-Tree từ tập điểm 2D trong thời gian O(N log N).
+     */
     void build(const std::vector<point_type>& points) {
         clear();
         if (points.empty()) return;
@@ -30,6 +43,12 @@ public:
         build_rec(pts, 0, static_cast<int>(pts.size()) - 1);
     }
 
+    /**
+     * @brief Tìm điểm gần nhất với điểm mục tiêu `target`.
+     * @param target Điểm truy vấn.
+     * @return std::pair<value_type, point_type> Cặp {khoảng cách nhỏ nhất, điểm gần nhất tương ứng}.
+     * @complexity Thời gian trung bình O(log N).
+     */
     std::pair<value_type, point_type> nearest(const point_type& target) const {
         std::pair<value_type, point_type> best;
         best.first = std::numeric_limits<value_type>::has_infinity 
@@ -109,7 +128,7 @@ private:
         if (u == -1) return;
 
         const auto& cur = tree[u];
-        value_type d = dist_func(target, cur.p);
+        value_type d = DistFunc(target, cur.p);
 
         if (d < best.first) {
             best.first = d;
@@ -124,7 +143,7 @@ private:
 
         search_rec(fi, target, best);
 
-        value_type axis_dist = dist_func(target, project_to_axis(target, cur.p, axis));
+        value_type axis_dist = DistFunc(target, project_to_axis(target, cur.p, axis));
         if (axis_dist < best.first) {
             search_rec(se, target, best);
         }
@@ -133,4 +152,5 @@ private:
 
 } // namespace ds
 } // namespace cp
-#endif
+
+#endif // CP_DS_KD_TREE

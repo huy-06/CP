@@ -83,6 +83,10 @@ public:
         return basis[i];
     }
 
+    value_type operator[](int i) const {
+        return basis[i];
+    }
+
     // Chuẩn hóa hệ cơ sở (RREF - Reduced Row Echelon Form)
     void normalize() {
         if (is_normalized) {

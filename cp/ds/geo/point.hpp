@@ -1,90 +1,94 @@
-#include <iostream>
-#include <functional>
+#include "vector.hpp"
 
 #ifndef CP_DS_GEO_POINT
 #define CP_DS_GEO_POINT
+
 namespace cp {
 namespace ds {
 
+/**
+ * @brief Lớp Điểm trong không gian Affine 2D biểu diễn vị trí trên mặt phẳng.
+ * @tparam Tp Kiểu tọa độ số học (long long, double, ds::real,...).
+ */
 template <class Tp>
 class point {
 public:
     using value_type = Tp;
 
-    value_type x;
-    value_type y;
+    Tp x{};
+    Tp y{};
 
-    point(const value_type& x = value_type(), const value_type& y = value_type()) 
-        : x(x), y(y) {}
+    constexpr point() = default;
+    
+    constexpr point(const Tp& x, const Tp& y) : x(x), y(y) {}
+
+    explicit constexpr point(const vector<Tp>& v) : x(v.x), y(v.y) {}
 
     template <class U>
-    operator point<U>() {
-        return point<U>(U(x), U(y));
+    explicit constexpr operator point<U>() const {
+        return point<U>(static_cast<U>(x), static_cast<U>(y));
     }
 
-    point& operator+=(const point& p) & {
-        x += p.x; y += p.y; return *this;
+    /**
+     * @brief Chuyển điểm thành vector vị trí nối từ gốc tọa độ O(0,0) đến điểm này.
+     */
+    constexpr vector<Tp> to_vector() const {
+        return vector<Tp>(x, y);
     }
 
-    point& operator-=(const point& p) & {
-        x -= p.x; y -= p.y; return *this;
+    // Phép toán Affine: Điểm + Vector = Điểm, Điểm - Vector = Điểm
+    constexpr point& operator+=(const vector<Tp>& v) & {
+        x += v.x;
+        y += v.y;
+        return *this;
     }
 
-    point& operator*=(const value_type& v) & {
-        x *= v; y *= v; return *this;
+    constexpr point& operator-=(const vector<Tp>& v) & {
+        x -= v.x;
+        y -= v.y;
+        return *this;
     }
 
-    point& operator/=(const value_type& v) & {
-        x /= v; y /= v; return *this;
+    friend constexpr point operator+(point p, const vector<Tp>& v) {
+        return p += v;
     }
 
-    point operator-() const {
-        return point(-x, -y);
+    friend constexpr point operator+(const vector<Tp>& v, point p) {
+        return p += v;
     }
 
-    friend point operator+(point a, const point& b) {
-        return a += b;
+    friend constexpr point operator-(point p, const vector<Tp>& v) {
+        return p -= v;
     }
 
-    friend point operator-(point a, const point& b) {
-        return a -= b;
+    // Phép toán Affine: Điểm - Điểm = Vector (độ dời từ b đến a)
+    friend constexpr vector<Tp> operator-(const point& a, const point& b) {
+        return vector<Tp>(a.x - b.x, a.y - b.y);
     }
 
-    friend point operator*(point a, const value_type& b) {
-        return a *= b;
-    }
-
-    friend point operator/(point a, const value_type& b) {
-        return a /= b;
-    }
-
-    friend point operator*(const value_type& a, point b) {
-        return b *= a;
-    }
-
-    friend bool operator==(const point& a, const point& b) {
+    friend constexpr bool operator==(const point& a, const point& b) {
         return a.x == b.x && a.y == b.y;
     }
 
-    friend bool operator!=(const point& a, const point& b) {
+    friend constexpr bool operator!=(const point& a, const point& b) {
         return !(a == b);
     }
 
-    friend bool operator<(const point& a, const point& b) {
+    friend constexpr bool operator<(const point& a, const point& b) {
         if (a.x != b.x) return a.x < b.x;
         return a.y < b.y;
     }
 
-    friend bool operator>(const point& a, const point& b) {
+    friend constexpr bool operator>(const point& a, const point& b) {
         return b < a;
     }
 
-    friend bool operator<=(const point& a, const point& b) {
-        return a < b || a == b;
+    friend constexpr bool operator<=(const point& a, const point& b) {
+        return !(b < a);
     }
 
-    friend bool operator>=(const point& a, const point& b) {
-        return a > b || a == b;
+    friend constexpr bool operator>=(const point& a, const point& b) {
+        return !(a < b);
     }
 
     friend std::istream& operator>>(std::istream& is, point& p) {
@@ -92,26 +96,15 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os, const point& p) {
-        return os << "(" << p.x << ", " << p.y << ")";
+        return os << "point(" << p.x << ", " << p.y << ")";
     }
 };
+
+// Khởi tạo vector từ point
+template <class Tp>
+constexpr vector<Tp>::vector(const point<Tp>& p) : x(p.x), y(p.y) {}
 
 } // namespace ds
 } // namespace cp
 
-namespace std {
-
-template <typename Tp>
-struct hash<cp::ds::point<Tp>> {
-    size_t operator()(const cp::ds::point<Tp>& p) const noexcept {
-        std::hash<Tp> hasher;
-        size_t h1 = hasher(p.x);
-        size_t h2 = hasher(p.y);
-        
-        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
-    }
-};
-
-} // namespace std
-
-#endif
+#endif // CP_DS_GEO_POINT

@@ -4,6 +4,7 @@
 #define CP_ALG_MATH_SIEVE_DIVISORS
 namespace cp {
 namespace alg {
+namespace math {
 
 std::pair<std::vector<int>,
           std::vector<int>> sieve_divisor(int n = 1000000) {
@@ -23,6 +24,7 @@ std::pair<std::vector<int>,
     return { cnt, sum };
 }
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

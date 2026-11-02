@@ -1,60 +1,78 @@
+#include <algorithm>
+#include <deque>
 #include <vector>
-#include "lines.hpp"
+#include "intersect.hpp"
+#include "../../ds/geo/half_plane.hpp"
+#include "../../ds/geo/polygon.hpp"
 
 #ifndef CP_ALG_GEO_HALF_PLANE_HPP
 #define CP_ALG_GEO_HALF_PLANE_HPP
 
 namespace cp {
 namespace alg {
+namespace geo {
 
+/**
+ * @brief Giao các nửa mặt phẳng (Half-plane Intersection).
+ * Mỗi nửa mặt phẳng lấy miền điểm nằm bên trái đường thẳng định hướng (p -> p + v).
+ * @tparam Tp Kiểu tọa độ số học.
+ * @param hps Danh sách các nửa mặt phẳng.
+ * @return ds::polygon<Tp> Đa giác lồi giao điểm thu được theo thứ tự CCW.
+ * Trả về rỗng nếu miền giao nhau rỗng.
+ * @complexity O(N log N) thời gian với N là số nửa mặt phẳng.
+ */
 template <class Tp>
-std::vector<ds::point<Tp>> half_plane(std::vector<ds::line<Tp>> lines) {
-    std::sort(lines.begin(), lines.end(), [&](const ds::line<Tp>& l1, const ds::line<Tp>& l2) {
-        auto d1 = l1.b - l1.a;
-        auto d2 = l2.b - l2.a;
-        if (sgn(d1) != sgn(d2))
-            return sgn(d1) == 1;
-        return cross(d1, d2) > 0;
-    });
-    
-    std::deque<ds::line<Tp>>  ls;
-    std::deque<ds::point<Tp>> ps;
-    for (auto l : lines) {
-        if (ls.empty()) {
-            ls.push_back(l);
+ds::polygon<Tp> half_plane_intersection(std::vector<ds::half_plane<Tp>> hps) {
+    std::sort(hps.begin(), hps.end());
+
+    // Loại bỏ các nửa mặt phẳng song song cùng hướng, chỉ giữ lại nửa mặt phẳng chặt chẽ nhất
+    std::vector<ds::half_plane<Tp>> unique_hps;
+    for (size_t i = 0; i < hps.size(); ++i) {
+        if (!unique_hps.empty() && hps[i].angle == unique_hps.back().angle) {
             continue;
         }
-        while (!ps.empty() && !point_on_left_line(ps.back(), l)) {
-            ps.pop_back();
-            ls.pop_back();
-        }
-        while (!ps.empty() && !point_on_left_line(ps.front(), l)) {
-            ps.pop_front();
-            ls.pop_front();
-        }
-        if (cross(l.b - l.a, ls.back().b - ls.back().a) == 0) {
-            if (dot(l.b - l.a, ls.back().b - ls.back().a) > 0) {
-                if (!point_on_left_line(ls.back().a, l)) {
-                    assert(ls.size() == 1);
-                    ls[0] = l;
-                }
-                continue;
-            }
-            return {};
-        }
-        ps.push_back(line_itersection(ls.back(), l));
-        ls.push_back(l);
+        unique_hps.push_back(hps[i]);
     }
-    while (!ps.empty() && !point_on_left_line(ps.back(), ls.front())) {
-        ps.pop_back();
-        ls.pop_back();
+
+    std::deque<ds::half_plane<Tp>> q;
+    std::deque<ds::point<Tp>> pts;
+
+    auto compute_intersection = [&](const ds::half_plane<Tp>& h1, const ds::half_plane<Tp>& h2) -> ds::point<Tp> {
+        auto inter = intersect(ds::line<Tp>(h1.p, h1.v), ds::line<Tp>(h2.p, h2.v));
+        return inter.get_point();
+    };
+
+    for (const auto& hp : unique_hps) {
+        while (!pts.empty() && !hp.contains(pts.back())) {
+            pts.pop_back();
+            q.pop_back();
+        }
+        while (!pts.empty() && !hp.contains(pts.front())) {
+            pts.pop_front();
+            q.pop_front();
+        }
+
+        if (!q.empty()) {
+            pts.push_back(compute_intersection(q.back(), hp));
+        }
+        q.push_back(hp);
     }
-    if (ls.size() <= 2)
+
+    while (!pts.empty() && !q.front().contains(pts.back())) {
+        pts.pop_back();
+        q.pop_back();
+    }
+
+    if (q.size() <= 2) {
         return {};
-    ps.push_back(line_itersection(ls.front(), ls.back()));
-    return std::vector<ds::point<Tp>>(ps.begin(), ps.end());
+    }
+
+    pts.push_back(compute_intersection(q.back(), q.front()));
+    return ds::polygon<Tp>(pts.begin(), pts.end());
 }
 
+} // namespace geo
 } // namespace alg
 } // namespace cp
-#endif
+
+#endif // CP_ALG_GEO_HALF_PLANE_HPP

@@ -4,7 +4,7 @@
 #define CP_ALG_MATH_MOD_PRIME_ROOT
 namespace cp {
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp>
 constexpr Tp primitive_root(Tp m) {
@@ -35,7 +35,7 @@ constexpr Tp primitive_root(Tp m) {
     }
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

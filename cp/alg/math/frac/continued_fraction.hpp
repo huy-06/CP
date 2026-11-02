@@ -6,6 +6,7 @@
 #define CP_ALG_CONTINUED_FRACTION
 namespace cp {
 namespace alg {
+namespace math {
 
 /// @brief Xây dựng liên phân số từ phân số n/d
 template <typename Tp>
@@ -28,7 +29,7 @@ std::vector<Tp> to_continued_fraction_real(long double x, Tp limit_q) {
     Tp q_prev = 1, q_curr = 0;
 
     while (true) {
-        Tp a = static_cast<Tp>(std::floor(x + cst::eps));
+        Tp a = static_cast<Tp>(std::floor(x + 1e-12L));
         Tp q_next = a * q_curr + q_prev;
 
         if (q_next > limit_q) break;
@@ -39,7 +40,7 @@ std::vector<Tp> to_continued_fraction_real(long double x, Tp limit_q) {
         p_prev = p_curr; p_curr = p_next;
         q_prev = q_curr; q_curr = q_next;
 
-        if (std::abs(x - a) < cst::eps) break;
+        if (std::abs(x - a) < 1e-12L) break;
         x = 1.0l / (x - a);
     }
     
@@ -86,6 +87,7 @@ std::pair<Tp, Tp> get_nth_convergent(const std::vector<Tp>& coeffs, int k) {
 }
 
 
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

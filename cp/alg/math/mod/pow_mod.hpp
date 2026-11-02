@@ -1,10 +1,11 @@
+#include <concepts>
 #include "safe_mul.hpp"
 
 #ifndef CP_ALG_MOD_POW_MOD
 #define CP_ALG_MOD_POW_MOD
 namespace cp {
 namespace alg {
-namespace mod {
+namespace math {
 
 template <typename Tp, std::integral Int, typename Mod>
 constexpr Mod pow_mod(Tp base, Int exp, Mod mod) {
@@ -20,7 +21,7 @@ constexpr Mod pow_mod(Tp base, Int exp, Mod mod) {
     return res;
 }
 
-} // namespace mod
+} // namespace math
 } // namespace alg
 } // namespace cp
 #endif

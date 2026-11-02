@@ -28,7 +28,7 @@ signed main() {
             b[i] = (r[m - 1 - i] == c);
         }
 
-        auto res = cp::alg::convolution(a, b);
+        auto res = cp::alg::math::convolution(a, b);
         for (int i = 0; i < int(res.size()); ++i) {
             if (i < int(total_matches.size())) {
                 total_matches[i] += res[i];
