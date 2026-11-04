@@ -1,4 +1,3 @@
-#pragma once
 #include "../../cst/real.hpp"
 #include "../math/arith/arithmetic.hpp"
 

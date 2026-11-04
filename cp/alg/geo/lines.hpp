@@ -1,4 +1,3 @@
-#pragma once
 #include <utility>
 #include "vectors.hpp"
 #include "../../ds/geo/line.hpp"
