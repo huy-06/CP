@@ -294,16 +294,16 @@ private:
 
     void rehash(size_type ncap) {
         size_type old_cap = cap;
-        auto old_t = std::move(a);
+        auto old_a = std::move(a);
         build(ncap);
 
         siz = 0;
         for (size_type i = 0; i < old_cap; ++i) {
-            if (old_t[i].occ) {
-                size_type j = h(old_t[i].kv.first) & msk;
+            if (old_a[i].occ) {
+                size_type j = h(old_a[i].kv.first) & msk;
                 while (a[j].occ) j = (j + 1) & msk;
 
-                a[j].kv = std::move(old_t[i].kv);
+                a[j].kv = std::move(old_a[i].kv);
                 a[j].occ = true;
                 ++siz;
             }
