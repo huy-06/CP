@@ -51,6 +51,26 @@ public:
     [[nodiscard]] constexpr decltype(auto) get() const && noexcept {
         return std::get<T>(std::move(*this));
     }
+
+    [[nodiscard]] constexpr decltype(auto) x(this auto&& self) noexcept 
+        requires (sizeof...(Ts) > 0) {
+        return std::get<0>(std::forward<decltype(self)>(self));
+    }
+
+    [[nodiscard]] constexpr decltype(auto) y(this auto&& self) noexcept 
+        requires (sizeof...(Ts) > 1) {
+        return std::get<1>(std::forward<decltype(self)>(self));
+    }
+
+    [[nodiscard]] constexpr decltype(auto) z(this auto&& self) noexcept 
+        requires (sizeof...(Ts) > 2) {
+        return std::get<2>(std::forward<decltype(self)>(self));
+    }
+
+    [[nodiscard]] constexpr decltype(auto) w(this auto&& self) noexcept 
+        requires (sizeof...(Ts) > 3) {
+        return std::get<3>(std::forward<decltype(self)>(self));
+    }
 };
 
 template <typename... Ts>

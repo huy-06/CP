@@ -182,7 +182,6 @@ private:
         if (qr <= mid) return range_query(nodes[u].l, l, mid, ql, qr);
         if (ql >= mid) return range_query(nodes[u].r, mid, r, ql, qr);
         
-        // Kết hợp kết quả từ cây con trái và phải bằng hàm op
         return op(range_query(nodes[u].l, l, mid, ql, qr), 
                   range_query(nodes[u].r, mid, r, ql, qr));
     }

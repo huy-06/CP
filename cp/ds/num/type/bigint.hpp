@@ -5,33 +5,33 @@
 namespace cp {
 namespace ds {
 
-class big_int {
+class bigint {
 public:
     using value_type = int;
 
-    constexpr big_int() noexcept : m_sign(1), m_digit() {}
+    constexpr bigint() noexcept : m_sign(1), m_digit() {}
 
     template <std::integral Tp>
-    constexpr big_int(Tp x) {
+    constexpr bigint(Tp x) {
         *this = x;
     }
 
-    big_int(std::string_view s) {
+    bigint(std::string_view s) {
         read(s);
     }
 
-    big_int(const std::string& s) : big_int(std::string_view(s)) {}
+    bigint(const std::string& s) : bigint(std::string_view(s)) {}
 
-    big_int(const big_int& rhs) = default;
+    bigint(const bigint& rhs) = default;
 
-    big_int(big_int&& rhs) noexcept = default;
+    bigint(bigint&& rhs) noexcept = default;
 
-    big_int& operator=(const big_int& rhs) = default;
+    bigint& operator=(const bigint& rhs) = default;
 
-    big_int& operator=(big_int&& rhs) noexcept = default;
+    bigint& operator=(bigint&& rhs) noexcept = default;
 
     template <std::integral Tp>
-    big_int& operator=(Tp x) {
+    bigint& operator=(Tp x) {
         m_digit.clear();
         m_sign = 1;
         if (x == 0) return *this;
@@ -51,15 +51,15 @@ public:
         return *this;
     }
 
-    static big_int wrap(int sign, std::vector<int> digits) noexcept {
-        big_int res;
+    static bigint wrap(int sign, std::vector<int> digits) noexcept {
+        bigint res;
         res.m_sign = sign;
         res.m_digit = std::move(digits);
         return res;
     }
 
-    static big_int raw(int sign, std::vector<int> digits) {
-        big_int res = wrap(sign, std::move(digits));
+    static bigint raw(int sign, std::vector<int> digits) {
+        bigint res = wrap(sign, std::move(digits));
         res.trim();
         return res;
     }
@@ -80,7 +80,7 @@ public:
         return m_digit; 
     }
 
-    big_int abs() const noexcept {
+    bigint abs() const noexcept {
         return wrap(1, m_digit);
     }
 
@@ -116,18 +116,18 @@ public:
         return s;
     }
 
-    big_int operator+() const noexcept {
+    bigint operator+() const noexcept {
         return *this;
     }
 
-    big_int operator-() const noexcept {
+    bigint operator-() const noexcept {
         if (is_zero()) {
             return *this;
         }
         return wrap(-m_sign, m_digit);
     }
 
-    big_int& operator+=(const big_int& rhs) {
+    bigint& operator+=(const bigint& rhs) {
         if (m_sign == rhs.m_sign) {
             int carry = 0;
             for (size_t i = 0; i < std::max(m_digit.size(), rhs.m_digit.size()) || carry; ++i) {
@@ -154,7 +154,7 @@ public:
                 }
                 trim();
             } else {
-                big_int tmp = rhs;
+                bigint tmp = rhs;
                 int carry = 0;
 
                 for (size_t i = 0; i < m_digit.size() || carry; ++i) {
@@ -173,7 +173,7 @@ public:
         return *this;
     }
 
-    big_int& operator-=(const big_int& rhs) {
+    bigint& operator-=(const bigint& rhs) {
         m_sign = -m_sign;
         *this += rhs;
 
@@ -185,7 +185,7 @@ public:
         return *this;
     }
 
-    big_int& operator*=(const big_int& rhs) {
+    bigint& operator*=(const bigint& rhs) {
         if (is_zero() || rhs.is_zero()) {
             return *this = 0;
         }
@@ -247,7 +247,7 @@ public:
     }
 
     template <std::integral Tp>
-    big_int& operator*=(Tp rhs) {
+    bigint& operator*=(Tp rhs) {
         if (rhs == 0 || is_zero()) {
             return *this = 0;
         }
@@ -269,12 +269,12 @@ public:
         return *this;
     }
 
-    big_int& operator/=(const big_int& rhs) {
+    bigint& operator/=(const bigint& rhs) {
         return *this = div_mod(*this, rhs).first;
     }
 
     template <std::integral Tp>
-    big_int& operator/=(Tp rhs) {
+    bigint& operator/=(Tp rhs) {
         if (rhs == 0) {
             throw std::runtime_error("Division by zero");
         }
@@ -299,42 +299,42 @@ public:
         return *this;
     }
 
-    big_int& operator%=(const big_int& rhs) {
+    bigint& operator%=(const bigint& rhs) {
         return *this = div_mod(*this, rhs).second;
     }
 
-    big_int& operator++() {
+    bigint& operator++() {
         return *this += 1;
     }
 
-    big_int& operator--() {
+    bigint& operator--() {
         return *this -= 1;
     }
 
-    big_int operator++(int) {
-        big_int res = *this;
+    bigint operator++(int) {
+        bigint res = *this;
         ++*this;
         return res;
     }
 
-    big_int operator--(int) {
-        big_int res = *this;
+    bigint operator--(int) {
+        bigint res = *this;
         --*this;
         return res;
     }
 
     template <typename Int>
-    big_int pow(Int k) const {
-        big_int res = 1, a = *this;
+    bigint pow(Int k) const {
+        bigint res = 1, a = *this;
         for (; k; k /= 2, a *= a) {
             if (k % 2 == 1) res *= a;
         }
         return res;
     }
 
-    big_int sqrt() const {
+    bigint sqrt() const {
         if (is_zero()) {
-            return big_int(0);
+            return bigint(0);
         }
 
         if (m_sign == -1) {
@@ -342,7 +342,7 @@ public:
         }
 
         unsigned long long bitlen = 0;
-        big_int n = *this, t = n, zero(0), two(2);
+        bigint n = *this, t = n, zero(0), two(2);
 
         while (t > zero) {
             t /= two;
@@ -350,7 +350,7 @@ public:
         }
 
         unsigned long long e = (bitlen + 1) / 2;
-        big_int x(1), bs = two;
+        bigint x(1), bs = two;
 
         while (e > 0) {
             if (e % 2 == 1) x *= bs;
@@ -358,7 +358,7 @@ public:
             e /= 2;
         }
 
-        big_int y = (x + n / x) / two;
+        bigint y = (x + n / x) / two;
         while (y < x) {
             x = y;
             y = (x + n / x) / two;
@@ -367,20 +367,20 @@ public:
         return x;
     }
 
-    static std::pair<big_int, big_int> div_mod(const big_int& a, const big_int& b) {
+    static std::pair<bigint, bigint> div_mod(const bigint& a, const bigint& b) {
         if (b.is_zero()) {
             throw std::runtime_error("Division by zero");
         }
 
         if (a.is_zero()) {
-            return { big_int(0), big_int(0) };
+            return { bigint(0), bigint(0) };
         }
         
-        big_int abs_a = a.abs();
-        big_int abs_b = b.abs();
+        bigint abs_a = a.abs();
+        bigint abs_b = b.abs();
         
         if (abs_a < abs_b) {
-            return { big_int(0), a };
+            return { bigint(0), a };
         }
         
         if (abs_b.m_digit.size() <= 64) {
@@ -392,17 +392,17 @@ public:
         abs_b *= norm;
         
         int k = abs_b.m_digit.size();
-        big_int inv = abs_b.invert(k);
-        big_int q(0);
+        bigint inv = abs_b.invert(k);
+        bigint q(0);
         
         while (abs_a >= abs_b) {
             int n = abs_a.m_digit.size();
 
             if (n <= 2 * k) {
-                big_int q_add = (abs_a * inv);
+                bigint q_add = (abs_a * inv);
                 q_add.shift_right(2 * k);
 
-                big_int prod = q_add * abs_b;
+                bigint prod = q_add * abs_b;
                 while (abs_a >= prod + abs_b) {
                     q_add++;
                     prod += abs_b;
@@ -415,19 +415,19 @@ public:
             } else {
                 int shift = n - 2 * k;
 
-                big_int a_top;
+                bigint a_top;
                 a_top.m_digit = std::vector<int>(abs_a.m_digit.begin() + shift, abs_a.m_digit.end());
                 
-                big_int q_add = (a_top * inv);
+                bigint q_add = (a_top * inv);
                 q_add.shift_right(2 * k);
 
                 if (q_add.is_zero()) {
                     q_add = 1;
                 }
                 
-                big_int prod = q_add * abs_b;
+                bigint prod = q_add * abs_b;
                 
-                big_int b_shifted = abs_b;
+                bigint b_shifted = abs_b;
                 b_shifted.shift_left(shift);
                 
                 q_add.shift_left(shift);
@@ -446,7 +446,7 @@ public:
         q.m_sign = a.m_sign * b.m_sign;
         q.trim();
         
-        big_int r = abs_a / norm;
+        bigint r = abs_a / norm;
         r.m_sign = a.m_sign;
 
         if (r.is_zero()) {
@@ -456,12 +456,12 @@ public:
         return { q, r };
     }
 
-    friend big_int gcd(big_int a, big_int b) {
+    friend bigint gcd(bigint a, bigint b) {
         a = a.abs();
         b = b.abs();
 
         while (!b.is_zero()) {
-            big_int c = a % b;
+            bigint c = a % b;
             a = b;
             b = c;
         }
@@ -469,50 +469,50 @@ public:
         return a;
     }
 
-    friend big_int lcm(big_int a, big_int b) {
+    friend bigint lcm(bigint a, bigint b) {
         if (a.is_zero() || b.is_zero()) {
-            return big_int(0);
+            return bigint(0);
         }
         return (a * b).abs() / gcd(a, b);
     }
 
-    friend big_int operator+(big_int lhs, const big_int& rhs) { 
+    friend bigint operator+(bigint lhs, const bigint& rhs) { 
         return lhs += rhs;
     }
 
-    friend big_int operator-(big_int lhs, const big_int& rhs) {
+    friend bigint operator-(bigint lhs, const bigint& rhs) {
         return lhs -= rhs;
     }
 
-    friend big_int operator*(big_int lhs, const big_int& rhs) {
+    friend bigint operator*(bigint lhs, const bigint& rhs) {
         return lhs *= rhs;
     }
 
-    friend big_int operator/(big_int lhs, const big_int& rhs) {
+    friend bigint operator/(bigint lhs, const bigint& rhs) {
         return lhs /= rhs;
     }
 
-    friend big_int operator%(big_int lhs, const big_int& rhs) { 
+    friend bigint operator%(bigint lhs, const bigint& rhs) { 
         return lhs %= rhs; 
     }
 
     template <std::integral Tp>
-    friend big_int operator*(big_int lhs, Tp rhs) {
+    friend bigint operator*(bigint lhs, Tp rhs) {
         return lhs *= rhs;
     }
 
     template <std::integral Tp>
-    friend big_int operator*(Tp lhs, const big_int& rhs) {
+    friend bigint operator*(Tp lhs, const bigint& rhs) {
         return rhs * lhs;
     }
 
     template <std::integral Tp>
-    friend big_int operator/(big_int lhs, Tp rhs) {
+    friend bigint operator/(bigint lhs, Tp rhs) {
         return lhs /= rhs;
     }
 
     template <std::integral Tp>
-    friend Tp operator%(const big_int& lhs, Tp rhs) {
+    friend Tp operator%(const bigint& lhs, Tp rhs) {
         if (rhs == 0) {
             throw std::runtime_error("Modulo by zero");
         }
@@ -528,7 +528,7 @@ public:
         return static_cast<Tp>(m * lhs.m_sign);
     }
 
-    friend bool operator==(const big_int& lhs, const big_int& rhs) {
+    friend bool operator==(const bigint& lhs, const bigint& rhs) {
         if (lhs.is_zero() && rhs.is_zero()) {
             return true;
         }
@@ -536,11 +536,11 @@ public:
         return lhs.m_sign == rhs.m_sign && lhs.m_digit == rhs.m_digit;
     }
 
-    friend bool operator!=(const big_int& lhs, const big_int& rhs) {
+    friend bool operator!=(const bigint& lhs, const bigint& rhs) {
         return !(lhs == rhs);
     }
 
-    friend bool operator<(const big_int& lhs, const big_int& rhs) {
+    friend bool operator<(const bigint& lhs, const bigint& rhs) {
         if (lhs.m_sign != rhs.m_sign) {
             return lhs.m_sign < rhs.m_sign;
         }
@@ -553,19 +553,19 @@ public:
         return lhs.m_sign > 0 ? cmp < 0 : cmp > 0;
     }
 
-    friend bool operator>(const big_int& lhs, const big_int& rhs) {
+    friend bool operator>(const bigint& lhs, const bigint& rhs) {
         return rhs < lhs;
     }
 
-    friend bool operator<=(const big_int& lhs, const big_int& rhs) {
+    friend bool operator<=(const bigint& lhs, const bigint& rhs) {
         return !(rhs < lhs);
     }
 
-    friend bool operator>=(const big_int& lhs, const big_int& rhs) {
+    friend bool operator>=(const bigint& lhs, const bigint& rhs) {
         return !(lhs < rhs);
     }
 
-    friend std::istream& operator>>(std::istream& is, big_int& x) {
+    friend std::istream& operator>>(std::istream& is, bigint& x) {
         std::string s;
         if (is >> s) {
             x.read(s);
@@ -574,7 +574,7 @@ public:
         return is;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const big_int& x) {
+    friend std::ostream& operator<<(std::ostream& os, const bigint& x) {
         return os << x.to_string();
     }
 
@@ -594,7 +594,7 @@ private:
         }
     }
 
-    int cmp_abs(const big_int& rhs) const {
+    int cmp_abs(const bigint& rhs) const {
         if (m_digit.size() != rhs.m_digit.size()) {
             return m_digit.size() < rhs.m_digit.size() ? -1 : 1;
         }
@@ -648,21 +648,21 @@ private:
         trim();
     }
 
-    big_int invert(int k) const {
+    bigint invert(int k) const {
         if (k <= 64) {
-            big_int p;
+            bigint p;
             p.m_digit.assign(2 * k + 1, 0);
             p.m_digit.back() = 1;
             return slow_div_mod(p, *this).first;
         }
         
         int m = (k + 1) / 2;
-        big_int b_top = *this;
+        bigint b_top = *this;
         b_top.shift_right(k - m);
         
-        big_int x = b_top.invert(m);
+        bigint x = b_top.invert(m);
         
-        big_int term1 = x;
+        bigint term1 = x;
         long long carry = 0;
         
         for (int& d : term1.m_digit) {
@@ -675,17 +675,17 @@ private:
         }
         term1.shift_left(k + m);
         
-        big_int term2 = (x * (*this)) * x;
-        big_int x_new = term1 - term2;
+        bigint term2 = (x * (*this)) * x;
+        bigint x_new = term1 - term2;
         x_new.shift_right(2 * m);
         
-        big_int p;
+        bigint p;
         p.m_digit.assign(2 * k + 1, 0);
         p.m_digit.back() = 1;
         
-        big_int prod = x_new * (*this);
+        bigint prod = x_new * (*this);
         if (prod > p) {
-            big_int diff = prod - p;
+            bigint diff = prod - p;
             while (!diff.is_zero() && diff >= *this) {
                 diff -= *this;
                 --x_new;
@@ -694,7 +694,7 @@ private:
                 --x_new;
             }
         } else {
-            big_int diff = p - prod;
+            bigint diff = p - prod;
             while (diff >= *this) {
                 diff -= *this;
                 ++x_new;
@@ -703,12 +703,12 @@ private:
         return x_new;
     }
 
-    static std::pair<big_int, big_int> slow_div_mod(const big_int& a, const big_int& b) {
-        big_int abs_a = a.abs();
-        big_int abs_b = b.abs();
+    static std::pair<bigint, bigint> slow_div_mod(const bigint& a, const bigint& b) {
+        bigint abs_a = a.abs();
+        bigint abs_b = b.abs();
         
         if (abs_a < abs_b) {
-            return { big_int(0), a };
+            return { bigint(0), a };
         }
         
         long long norm = base / (abs_b.m_digit.back() + 1);
@@ -717,7 +717,7 @@ private:
         
         int n = abs_a.m_digit.size();
         int m = abs_b.m_digit.size();
-        big_int q(0);
+        bigint q(0);
         q.m_digit.assign(n - m + 1, 0);
         
         abs_a.m_digit.push_back(0); 
@@ -763,7 +763,7 @@ private:
         q.trim();
         
         abs_a.trim();
-        big_int r = abs_a / norm;
+        bigint r = abs_a / norm;
         r.m_sign = a.m_sign;
         if (r.is_zero()) r.m_sign = 1;
         
@@ -777,7 +777,7 @@ private:
 namespace std {
 
 template <>
-class numeric_limits<cp::ds::big_int> {
+class numeric_limits<cp::ds::bigint> {
 public:
     static constexpr bool is_specialized = true;
     static constexpr bool is_signed = true;
@@ -803,40 +803,40 @@ public:
     static constexpr bool traps = false;
     static constexpr bool tinyness_before = false;
 
-    static cp::ds::big_int min() noexcept { 
-        return cp::ds::big_int(0);
+    static cp::ds::bigint min() noexcept { 
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int lowest() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint lowest() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int max() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint max() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int epsilon() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint epsilon() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int round_error() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint round_error() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int infinity() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint infinity() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int quiet_NaN() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint quiet_NaN() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int signaling_NaN() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint signaling_NaN() noexcept {
+        return cp::ds::bigint(0);
     }
 
-    static cp::ds::big_int denorm_min() noexcept {
-        return cp::ds::big_int(0);
+    static cp::ds::bigint denorm_min() noexcept {
+        return cp::ds::bigint(0);
     }
 };
 

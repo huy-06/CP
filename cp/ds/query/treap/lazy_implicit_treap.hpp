@@ -21,7 +21,8 @@ template <
     Tp (*e)(),
     class Tg, 
     Tp (*mapping)(Tg, Tp), 
-    Tg (*composition)(Tg, Tg), Tg (*id)()
+    Tg (*composition)(Tg, Tg), 
+    Tg (*id)()
 >
 class lazy_implicit_treap {
 public:
@@ -313,7 +314,7 @@ private:
         if (!u) return;
         if (nodes[u].rev) {
             std::swap(nodes[u].l, nodes[u].r);
-            if (nodes[u].l) nodes[u].l[nodes.data()].rev ^= true;
+            if (nodes[u].l) nodes[nodes[u].l].rev ^= true;
             if (nodes[u].r) nodes[nodes[u].r].rev ^= true;
             nodes[u].rev = false;
         }
