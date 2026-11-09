@@ -29,60 +29,62 @@ public:
         using pointer = PairType*;
         using reference = PairType&;
 
-        iterator_base() : i(0), mp(nullptr) {}
+        iterator_base() : i(0), f(nullptr) {}
 
-        iterator_base(size_type _i, MapPtr _mp) : i(_i), mp(_mp) {}
+        iterator_base(size_type _i, MapPtr _f) : i(_i), f(_f) {}
 
-        template <typename OPair, typename OMapPtr>
-            requires std::convertible_to<OMapPtr, MapPtr>
-        iterator_base(const iterator_base<OPair, OMapPtr>& o) : i(o.i), mp(o.mp) {}
+        template <typename _Pair, typename _MapPtr>
+            requires std::convertible_to<_MapPtr, MapPtr>
+        iterator_base(const iterator_base<_Pair, _MapPtr>& rhs) : i(rhs.i), f(rhs.f) {}
 
         reference operator*() const {
-            return mp->a[i].kv;
+            return f->a[i].kv;
         }
 
         pointer operator->() const {
-            return &(mp->a[i].kv);
+            return &(f->a[i].kv);
         }
 
         iterator_base& operator++() {
             ++i;
-            while (i < mp->cap && !mp->a[i].occ) ++i;
+            while (i < f->cap && !f->a[i].occ) ++i;
             return *this;
         }
 
         iterator_base operator++(int) {
-            auto tmp = *this;
+            auto t = *this;
             ++(*this);
-            return tmp;
+            return t;
         }
 
         iterator_base& operator--() {
             --i;
-            while (i < mp->cap && !mp->a[i].occ) --i;
+            while (i < f->cap && !f->a[i].occ) --i;
             return *this;
         }
 
         iterator_base operator--(int) {
-            auto tmp = *this;
+            auto t = *this;
             --(*this);
-            return tmp;
+            return t;
         }
 
-        template <typename OPair, typename OMapPtr>
-        bool operator==(const iterator_base<OPair, OMapPtr>& o) const {
-            return i == o.i;
+        template <typename _Pair, typename _MapPtr>
+        bool operator==(const iterator_base<_Pair, _MapPtr>& rhs) const {
+            return i == rhs.i;
         }
 
-        template <typename OPair, typename OMapPtr>
-        bool operator!=(const iterator_base<OPair, OMapPtr>& o) const {
-            return i != o.i;
+        template <typename _Pair, typename _MapPtr>
+        bool operator!=(const iterator_base<_Pair, _MapPtr>& rhs) const {
+            return i != rhs.i;
         }
 
     private:
         size_type i;
-        MapPtr mp;
-        template <typename, typename> friend class iterator_base;
+        MapPtr    f;
+
+        template <typename, typename> 
+        friend class iterator_base;
     };
 
     using iterator = iterator_base<std::pair<Key, Val>, hash_map*>;
@@ -91,35 +93,36 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    hash_map(size_type n = 0) : siz(0), cap(0), msk(0) {
+    hash_map(size_type n = 0) 
+        : siz(0), cap(0), msk(0) {
         size_type k = 8;
         while (k < (n << 1)) k <<= 1;
         build(k);
     }
 
-    hash_map(const hash_map& o) 
-        : siz(o.siz), cap(o.cap), msk(o.msk) {
+    hash_map(const hash_map& rhs) 
+        : siz(rhs.siz), cap(rhs.cap), msk(rhs.msk) {
         if (cap > 0) {
             a = std::make_unique<node[]>(cap);
-            for (size_type i = 0; i < cap; ++i) a[i] = o.a[i];
+            for (size_type i = 0; i < cap; ++i) a[i] = rhs.a[i];
         }
     }
 
-    hash_map(hash_map&& o) noexcept
-        : siz(o.siz), cap(o.cap), msk(o.msk), a(std::move(o.a)), h(o.h) {
-        o.siz = o.cap = o.msk = 0;
+    hash_map(hash_map&& rhs) noexcept
+        : siz(rhs.siz), cap(rhs.cap), msk(rhs.msk), a(std::move(rhs.a)), h(rhs.h) {
+        rhs.siz = rhs.cap = rhs.msk = 0;
     }
 
-    hash_map& operator=(const hash_map& o) {
-        if (this != &o) {
-            siz = o.siz;
-            cap = o.cap;
-            msk = o.msk;
+    hash_map& operator=(const hash_map& rhs) {
+        if (this != &rhs) {
+            siz = rhs.siz;
+            cap = rhs.cap;
+            msk = rhs.msk;
 
             if (cap > 0) {
                 a = std::make_unique<node[]>(cap);
                 for (size_type i = 0; i < cap; ++i) 
-                    a[i] = o.a[i];
+                    a[i] = rhs.a[i];
             } else {
                 a.reset();
             }
@@ -127,13 +130,13 @@ public:
         return *this;
     }
 
-    hash_map& operator=(hash_map&& o) noexcept {
-        if (this != &o) {
-            siz = o.siz;
-            cap = o.cap;
-            msk = o.msk;
-            a = std::move(o.a); h = o.h;
-            o.siz = o.cap = o.msk = 0;
+    hash_map& operator=(hash_map&& rhs) noexcept {
+        if (this != &rhs) {
+            siz = rhs.siz;
+            cap = rhs.cap;
+            msk = rhs.msk;
+            a = std::move(rhs.a); h = rhs.h;
+            rhs.siz = rhs.cap = rhs.msk = 0;
         }
         return *this;
     }

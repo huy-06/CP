@@ -21,7 +21,36 @@ public:
         assignment.assign(n, false);
     }
 
-    /// @brief Thêm mệnh đề: (u == f) OR (v == g)
+    /**
+     * @brief Thêm mệnh đề tuyển: (u == f) hoặc (v == g)
+     * 
+     * @param u Chỉ số biến thứ nhất (0 <= u < n)
+     * @param f Trạng thái của u (true: u, false: NOT u)
+     * @param v Chỉ số biến thứ hai (0 <= v < n)
+     * @param g Trạng thái của v (true: v, false: NOT v)
+     * 
+     * @note
+     * Cơ chế suy diễn: NOT(u == f) => (v == g) và NOT(v == g) => (u == f)
+     * 
+     * ```text
+     * BẢNG TRA CỨU CÁCH DÙNG (CHEAT SHEET):
+     * -----------------------------------------------------------
+     * u HOẶC v:           add_clause(u,  true, v,  true);
+     * u SUY RA v:         add_clause(u, false, v,  true);
+     * KHÔNG CHỌN CẢ HAI:  add_clause(u, false, v, false);
+     * BẮT BUỘC u = true:  add_clause(u,  true, u,  true);
+     * BẮT BUỘC u = false: add_clause(u, false, u, false);
+     * 
+     * u == v (tương đương):
+     *     add_clause(u, false, v,  true);
+     *     add_clause(v, false, u,  true);
+     * 
+     * u != v (XOR / chọn đúng 1 trong 2):
+     *     add_clause(u,  true, v,  true);
+     *     add_clause(u, false, v, false);
+     * -----------------------------------------------------------
+     * ```
+     */
     void add_clause(int u, bool f, int v, bool g) {
         assert(0 <= u && u < n);
         assert(0 <= v && v < n);

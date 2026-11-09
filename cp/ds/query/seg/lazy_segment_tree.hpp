@@ -7,65 +7,66 @@ namespace cp {
 namespace ds {
 
 /**
- * @brief Cấu trúc dữ liệu Lazy Segment Tree.
+ * @brief Cấu trúc dữ liệu Lazy Segment Tree (Cây phân đoạn lười).
  * 
- * @tparam Tp Kiểu dữ liệu của các phần tử trong Segment Tree.
- * @tparam op Con trỏ hàm định nghĩa phép toán kết hợp 2 phần tử (ví dụ: cộng, max, min).
- *            Hàm này phải thỏa mãn tính kết hợp: op(a, op(b, c)) == op(op(a, b), c).
- * @tparam e Con trỏ hàm trả về phần tử đơn vị (Identity element) của phép toán `op`.
- *           Phần tử e phải thỏa mãn: op(a, e()) == op(e(), a) == a với mọi a.
- * @tparam Tg Kiểu dữ liệu của Lazy Tag.
- * @tparam mapping Hàm áp dụng tag Tg lên node Tp: Tp mapping(Tg f, Tp x)
- * @tparam composition Hàm gộp 2 tag Tg (tag mới f áp dụng lên tag cũ g): Tg composition(Tg f, Tg g)
- * @tparam id Hàm trả về tag rỗng (Identity Tag).
+ * Cho phép cập nhật đoạn (Range Apply) và truy vấn đoạn (Range Query) với độ phức tạp O(log N).
  * 
- * @par Ví dụ sử dụng (Bài toán Cộng đoạn - Truy vấn Tổng đoạn):
- * @code
- * // 1. Khai báo Node (Tp) và Lazy Tag (Tg)
+ * @tparam Tp Kiểu dữ liệu của nút trên cây (Node / Info).
+ * @tparam op Hàm gộp 2 nút con: `Tp op(Tp a, Tp b)` (phải có tính kết hợp).
+ * @tparam e Hàm trả về phần tử đơn vị của op: `op(x, e()) == op(e(), x) == x`.
+ * @tparam Tg Kiểu dữ liệu của thẻ lười (Lazy Tag).
+ * @tparam mapping Hàm áp tag f lên nút x: `Tp mapping(Tg f, Tp x)`.
+ * @tparam composition Hàm gộp tag mới f vào tag cũ g: `Tg composition(Tg f, Tg g)`.
+ * @tparam id Hàm trả về tag rỗng (Identity tag): `mapping(id(), x) == x`.
+ * 
+ * @note **Lưu ý thứ tự gộp tag:** `composition(f, g)` tương đương toán học với f(g(x)), 
+ *       trong đó `f` là tag mới đến sau, `g` là tag cũ đã tồn tại trước đó.
+ * 
+ * ### Ví dụ mẫu: Cộng đoạn - Truy vấn Tổng đoạn (Range Add - Range Sum)
+ * 
+ * ```cpp
+ * // 1. Định nghĩa Node (Tp) và Lazy Tag (Tg)
  * struct Tp {
  *     long long sum;
- *     int len; // Lưu chiều dài đoạn để không cần truyền l, r
+ *     int len; // Lưu độ dài đoạn để tính: sum += add * len
  * };
  * 
  * struct Tg {
  *     long long add;
  * };
  * 
- * // 2. Định nghĩa các thao tác cho Tp (Info)
+ * // 2. Định nghĩa các hàm thao tác
  * Tp op(Tp a, Tp b) {
  *     return {a.sum + b.sum, a.len + b.len};
  * }
  * 
  * Tp e() {
- *     return {0, 0}; // Node đơn vị
+ *     return {0, 0}; // Node rỗng
  * }
  * 
- * // 3. Định nghĩa các thao tác cho Tg (Tag/Lazy)
  * Tp mapping(Tg f, Tp x) {
- *     // Giá trị mới = giá trị cũ + (lượng cộng thêm * độ dài đoạn)
  *     return {x.sum + f.add * x.len, x.len}; 
  * }
  * 
  * Tg composition(Tg f, Tg g) {
- *     // f là tag đến sau, g là tag có sẵn
- *     return {f.add + g.add};
+ *     return {f.add + g.add}; // f là tag mới, g là tag cũ
  * }
  * 
  * Tg id() {
- *     return {0}; // Tag rỗng
+ *     return {0}; // Tag không làm thay đổi giá trị
  * }
  * 
- * // 4. Khởi tạo và sử dụng
- * // void solve() {
- * //     int n = 5;
- * //     std::vector<Tp> a(n, {0, 1}); // Khởi tạo n phần tử, mỗi lá có len = 1
- * //     
- * //     cp::ds::lazy_segment_tree<Tp, op, e, Tg, mapping, composition, id> seg(a);
- * //     
- * //     seg.range_apply(1, 4, {5});          // Cộng 5 vào đoạn[1, 4)
- * //     long long ans = seg.range_query(1, 4).sum; // Trả về tổng đoạn[1, 4)
- * // }
- * @endcode
+ * // 3. Cách khởi tạo và sử dụng
+ * void solve() {
+ *     int n = 5;
+ *     std::vector<Tp> a(n, {0, 1}); // Ban đầu các phần tử = 0, mỗi lá có len = 1
+ *     
+ *     lazy_segment_tree<Tp, op, e, Tg, mapping, composition, id> seg(a);
+ *     
+ *     seg.range_apply(1, 4, {5});                 // Cộng 5 vào đoạn [1, 4)
+ *     long long total = seg.range_query(1, 4).sum; // Lấy tổng đoạn [1, 4)
+ * }
+ * ```
  */
 template <
     class Tp, 

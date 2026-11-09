@@ -45,6 +45,12 @@ namespace config {
     // Tự động gộp mã nguồn thành file nộp bài (submit.cpp)
     inline bool enable_auto_bundle = true;
 
+    // Tự động xóa Emoji trong file nộp
+    inline bool remove_emojis = true;
+
+    // Chỉ giữ lại ký tự ASCII thuần túy
+    inline bool strict_ascii_only = false;
+
     // Đường dẫn lưu file submit.cpp
     // Để trống sẽ tự tìm/tạo thư mục submit
     inline std::string custom_submit_path = "";
@@ -402,6 +408,12 @@ private:
                 replace_all(line, kv.first, kv.second);
             }
 
+            if (config::strict_ascii_only) {
+                strip_non_ascii(line);
+            } else if (config::remove_emojis) {
+                strip_emojis(line);
+            }
+
             rtrim(line);
 
             std::string_view current_trim = trim_view(line);
@@ -416,6 +428,80 @@ private:
                 }
             }
         }
+    }
+
+    bool is_emoji_codepoint(uint32_t cp) {
+        return (cp >= 0x1F600 && cp <= 0x1F64F) ||
+               (cp >= 0x1F300 && cp <= 0x1F5FF) ||
+               (cp >= 0x1F680 && cp <= 0x1F6FF) ||
+               (cp >= 0x1F700 && cp <= 0x1F77F) ||
+               (cp >= 0x1F780 && cp <= 0x1F7FF) ||
+               (cp >= 0x1F800 && cp <= 0x1F8FF) ||
+               (cp >= 0x1F900 && cp <= 0x1F9FF) ||
+               (cp >= 0x1FA00 && cp <= 0x1FA6F) ||
+               (cp >= 0x1FA70 && cp <= 0x1FAFF) ||
+               (cp >= 0x2600  && cp <= 0x26FF)  ||
+               (cp >= 0x2700  && cp <= 0x27BF)  ||
+               (cp >= 0xFE00  && cp <= 0xFE0F)  ||
+               (cp == 0x200D);
+    }
+
+    void strip_emojis(std::string& line) {
+        std::string result;
+        result.reserve(line.size());
+
+        for (size_t i = 0; i < line.size(); ) {
+            unsigned char c = static_cast<unsigned char>(line[i]);
+            size_t seq_len = 0;
+            uint32_t cp = 0;
+
+            if (c <= 0x7F) {
+                result += line[i++];
+                continue;
+            } else if ((c & 0xE0) == 0xC0) {
+                seq_len = 2;
+                cp = c & 0x1F;
+            } else if ((c & 0xF0) == 0xE0) {
+                seq_len = 3;
+                cp = c & 0x0F;
+            } else if ((c & 0xF8) == 0xF0) {
+                seq_len = 4;
+                cp = c & 0x07;
+            } else {
+                i++;
+                continue;
+            }
+
+            if (i + seq_len > line.size()) break;
+
+            bool valid = true;
+            for (size_t k = 1; k < seq_len; ++k) {
+                unsigned char next_byte = static_cast<unsigned char>(line[i + k]);
+                if ((next_byte & 0xC0) != 0x80) { valid = false; break; }
+                cp = (cp << 6) | (next_byte & 0x3F);
+            }
+
+            if (valid && is_emoji_codepoint(cp)) {
+                i += seq_len;
+            } else {
+                result.append(line, i, seq_len);
+                i += seq_len;
+            }
+        }
+        line = std::move(result);
+    }
+
+    void strip_non_ascii(std::string& line) {
+        std::string result;
+        result.reserve(line.size());
+        for (unsigned char c : line) {
+            if (c >= 32 && c <= 126) {
+                result += c;
+            } else if (c == '\t' || c == '\r') {
+                result += c;
+            }
+        }
+        line = std::move(result);
     }
 };
 
@@ -470,7 +556,6 @@ std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-// Chuẩn hóa đường dẫn tương thích đa nền tảng
 std::filesystem::path normalize_path(std::string path_str) {
     path_str = trim(path_str);
     if (!path_str.empty() && (path_str.front() == '"' || path_str.front() == '\'')) path_str.erase(0, 1);
@@ -478,7 +563,6 @@ std::filesystem::path normalize_path(std::string path_str) {
     path_str = trim(path_str);
 
 #ifndef _WIN32
-    // Nếu đang chạy trên Linux/WSL nhưng nhận đường dẫn có ổ đĩa Windows (vd: C:\ hoặc C:/)
     if (path_str.length() >= 2 && path_str[1] == ':') {
         char drive = std::tolower(path_str[0]);
         std::string rest = path_str.substr(2);
@@ -1070,6 +1154,13 @@ int main(int argc, char* argv[]) {
     bool has_manual_tag = (src_content.find("[MANUAL]") != std::string::npos);
     bool has_run_only_tag = (src_content.find("[RUN ONLY]") != std::string::npos);
     bool has_evaluate_tag = (src_content.find("[EVALUATE]") != std::string::npos);
+    
+    if (src_content.find("[NO EMOJI]") != std::string::npos) {
+        config::remove_emojis = true;
+    }
+    if (src_content.find("[ASCII ONLY]") != std::string::npos) {
+        config::strict_ascii_only = true;
+    }
 
     int tag_count = (has_manual_tag ? 1 : 0) + (has_run_only_tag ? 1 : 0) + (has_evaluate_tag ? 1 : 0);
     if (tag_count > 1) {
