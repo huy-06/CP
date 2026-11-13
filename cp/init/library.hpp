@@ -27,6 +27,7 @@
 #include <limits>
 #include <random>
 #include <print>
+#include <stdfloat>
 
 #include "color.hpp"
 // #include "../debug/debug.h"

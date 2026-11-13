@@ -1,7 +1,6 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
-#include <iostream>
 #include <span>
 #include "../edge/edge.hpp"
 

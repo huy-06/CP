@@ -6,6 +6,11 @@
 namespace cp {
 namespace ds {
 
+/**
+ * @brief Phân rã thành phần liên thông 2-cạnh (Two-Edge-Connected Components - 2-ECC) và tìm cầu (Bridges).
+ * 
+ * @tparam Edge Kiểu cạnh của đồ thị (yêu cầu có các trường `from`, `to`).
+ */
 template <typename Edge>
 class tecc : public graph<Edge> {
 public:
@@ -17,6 +22,10 @@ public:
     using graph<edge_type>::graph;
     using graph<edge_type>::init;
 
+    /**
+     * @brief Chạy thuật toán Tarjan (khử đệ quy) tìm cầu và phân rã các 2-ECC.
+     * @note Độ phức tạp O(V + E). Các hàm truy vấn bên dưới sẽ tự động gọi hàm này nếu chưa build.
+     */
     void build() override {
         if (built) return;
         graph<edge_type>::build();
@@ -94,31 +103,59 @@ public:
         built = true;
     }
 
+    /**
+     * @brief Kiểm tra cạnh theo chỉ số trong `edge_list` có phải là cầu hay không.
+     * @return const std::vector<bool>& Mảng đánh dấu: `mark()[i] == true` nếu cạnh thứ i là cầu.
+     */
     const std::vector<bool>& mark() {
         if (!built) build();
         return mrk;
     }
 
+    /**
+     * @brief Lấy danh sách toàn bộ các cạnh cầu của đồ thị.
+     * @return const std::vector<edge_type>& Danh sách các cạnh cầu (đã chuẩn hóa `from < to`).
+     */
     const std::vector<edge_type>& bridges() {
         if (!built) build();
         return brs;
     }
 
+    /**
+     * @brief Lấy số lượng và mảng id thành phần liên thông 2-cạnh của tất cả đỉnh.
+     * @return std::pair<int, const std::vector<int>&> Cặp {số_lượng_TPLT, mảng_cid}.
+     */
     std::pair<int, const std::vector<int>&> comp() {
         if (!built) build();
         return { cnt, cid };
     }
 
+    /**
+     * @brief Lấy tổng số lượng thành phần liên thông 2-cạnh (2-ECC).
+     * @return int Số lượng thành phần (các ID được đánh số từ `0` đến `cnt - 1`).
+     */
     [[nodiscard]] int num_components() {
         if (!built) build();
         return cnt;
     }
 
+    /**
+     * @brief Truy vấn nhanh ID thành phần liên thông 2-cạnh chứa đỉnh `u`.
+     * @param u Đỉnh cần tra cứu (0 <= u < n).
+     * @return int ID của thành phần 2-ECC chứa `u`.
+     * @example int component_u = g[u];
+     */
     [[nodiscard]] int operator[](int u) {
         if (!built) build();
         return cid[u];
     }
 
+    /**
+     * @brief Co (compress) các 2-ECC thành các siêu đỉnh để tạo thành Cây cầu (Bridge-Block Tree/Forest).
+     * @return graph<edge_type> Đồ thị mới dạng Cây/Rừng, trong đó:
+     *         - Mỗi đỉnh mới đại diện cho một 2-ECC.
+     *         - Mỗi cạnh mới tương ứng với một cầu nối giữa 2 thành phần.
+     */
     graph<edge_type> compress() {
         if (!built) build();
 

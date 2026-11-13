@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <utility>
-#include <vector>
 #include "distance.hpp"
 #include "../../ds/geo/polygon.hpp"
 

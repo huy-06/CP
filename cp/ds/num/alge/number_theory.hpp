@@ -23,7 +23,7 @@ public:
     }
 
     template <typename Tp>
-    bool is_prime(Tp x) {
+    bool is_prime(Tp x) const {
         if (x <= 1) 
             return false;
         if (x <= n) 
@@ -32,9 +32,9 @@ public:
     }
 
     template <typename Tp>
-    std::vector<std::pair<Tp, int>> factorize(Tp x) {
+    std::vector<std::pair<Tp, int>> factorize(Tp x) const {
         if (x <= n) {
-            std::vector<std::pair<Tp, int>> factors;
+            std::vector<std::pair<Tp, int>> fact;
             while (x > 1) {
                 int p = spf[x];
                 int cnt = 0;
@@ -42,70 +42,65 @@ public:
                     ++cnt;
                     x /= p;
                 }
-                factors.push_back({static_cast<Tp>(p), cnt});
+                fact.push_back({static_cast<Tp>(p), cnt});
             }
-            return factors;
+            return fact;
         } 
-        
         return alg::math::factorize(x);
     }
 
     template <typename Tp>
-    Tp phi(Tp x) {
-        auto factors = factorize(x);
+    Tp phi(Tp x) const {
+        auto fact = factorize(x);
         Tp res = x;
-        for (auto& f : factors) {
-            res -= res / f.first;
+        for (auto [p, cnt] : fact) {
+            res -= res / p;
         }
         return res;
     }
 
     template <typename Tp>
-    Tp count_divisors(Tp x) {
-        auto factors = factorize(x);
+    Tp count_divisors(Tp x) const {
+        auto fact = factorize(x);
         Tp cnt = 1;
-        for (auto& f : factors) {
-            cnt *= (f.second + 1);
+        for (auto [p, e] : fact) {
+            cnt *= (e + 1);
         }
         return cnt;
     }
 
-    template <typename Tp>
-    Tp sum_divisors(Tp x) {
-        auto factors = factorize(x);
-        Tp sum_total = 1;
-        for (auto& f : factors) {
-            Tp p = f.first;
-            Tp sum = 1;
-            Tp p_pow = 1;
-            for (int i = 1; i <= f.second; ++i) {
-                p_pow *= p;
-                sum += p_pow;
+    template <typename Res = void, typename Tp>
+    auto sum_divisors(Tp x) const {
+        using ret = std::conditional_t<std::is_void_v<Res>, Tp, Res>;
+        auto fact = factorize(x);
+        ret tot = 1;
+        for (auto [p, cnt] : fact) {
+            ret base = p, e = 1, sum = 1;
+            for (int i = 1; i <= cnt; ++i) {
+                e *= p;
+                sum += e;
             }
-            sum_total *= sum;
+            tot *= sum;
         }
-        return sum_total;
+        return tot;
     }
 
     template <typename Tp>
-    std::vector<Tp> get_divisors(Tp x) {
-        auto factors = factorize(x);
-        std::vector<Tp> divisors = {1};
-        
-        for (const auto& f : factors) {
-            int sz = divisors.size();
-            Tp p = f.first;
-            Tp p_pow = 1;
-            for (int i = 1; i <= f.second; ++i) {
-                p_pow *= p;
-                for (int j = 0; j < sz; ++j) {
-                    divisors.push_back(divisors[j] * p_pow);
+    std::vector<Tp> get_divisors(Tp x) const {
+        auto fact = factorize(x);
+        std::vector<Tp> divs = {1};
+        for (auto [p, cnt] : fact) {
+            int siz = divs.size();
+            Tp e = 1;
+            for (int i = 1; i <= cnt; ++i) {
+                e *= p;
+                for (int j = 0; j < siz; ++j) {
+                    divs.push_back(divs[j] * e);
                 }
             }
         }
-    
-        std::sort(divisors.begin(), divisors.end());
-        return divisors;
+        std::sort(divs.begin(), divs.end());
+        return divs;
     }
     
     const std::vector<int>& get_primes() const {
