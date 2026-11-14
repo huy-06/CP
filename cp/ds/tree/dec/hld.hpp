@@ -212,6 +212,87 @@ public:
         return lca(a, b) ^ lca(b, c) ^ lca(c, a);
     }
 
+    // Tạo mảng theo thứ tự Euler tour (inp) từ mảng giá trị đỉnh a[0..n-1]
+    template <typename Tp>
+    [[nodiscard]] std::vector<Tp> vertex_data(const std::vector<Tp>& a) {
+        assert(static_cast<int>(a.size()) == num_vertices());
+        if (!built) build();
+        std::vector<Tp> res(n);
+        for (int i = 0; i < n; ++i) {
+            res[i] = a[ord[i]];
+        }
+        return res;
+    }
+
+    // Tạo mảng giá trị đỉnh bằng hàm ánh xạ f(u)
+    template <typename F>
+    requires std::invocable<F&, int>
+    [[nodiscard]] auto vertex_data(F&& f) {
+        if (!built) build();
+        using Tp = std::invoke_result_t<F&, int>;
+        std::vector<Tp> res(n);
+        for (int i = 0; i < n; ++i) {
+            res[i] = f(ord[i]);
+        }
+        return res;
+    }
+
+    // Tạo mảng theo thứ tự Euler tour từ trọng số cạnh của cây (e.weight)
+    template <typename Tp>
+    [[nodiscard]] std::vector<Tp> edge_data(const Tp& root_val = Tp{}) {
+        if (!built) build();
+        std::vector<Tp> res(n, root_val);
+        for (int u = 0; u < n; ++u) {
+            for (const auto& e : adj(u)) {
+                if (e.to != par[u]) {
+                    res[inp[e.to]] = static_cast<Tp>(e.weight);
+                }
+            }
+        }
+        return res;
+    }
+
+    // Tạo mảng giá trị cạnh bằng hàm ánh xạ f(edge) 
+    template <typename Tp, typename F>
+    requires std::invocable<F&, const edge_type&>
+    [[nodiscard]] std::vector<Tp> edge_data(const Tp& root_val, F&& f) {
+        if (!built) build();
+        std::vector<Tp> res(n, root_val);
+        for (int u = 0; u < n; ++u) {
+            for (const auto& e : adj(u)) {
+                if (e.to != par[u]) {
+                    res[inp[e.to]] = f(e);
+                }
+            }
+        }
+        return res;
+    }
+
+    // 3. Khởi tạo thẳng vào SegTree (không cần lo gán lại root_val hay vị trí inp)
+    template <typename SegTree, typename Tp>
+    void init_vertices(SegTree& seg, const std::vector<Tp>& a) {
+        seg.init(vertex_data(a));
+    }
+
+    template <typename SegTree, typename F>
+    requires std::invocable<F&, int>
+    void init_vertices(SegTree& seg, F&& f) {
+        seg.init(vertex_data(std::forward<F>(f)));
+    }
+
+    template <typename SegTree>
+    void init_edges(SegTree& seg) {
+        using Tp = typename SegTree::value_type;
+        seg.init(edge_data<Tp>(seg.e()));
+    }
+
+    template <typename SegTree, typename F>
+    requires std::invocable<F&, const edge_type&>
+    void init_edges(SegTree& seg, F&& f) {
+        using Tp = typename SegTree::value_type;
+        seg.init(edge_data<Tp>(seg.e(), std::forward<F>(f)));
+    }
+
     template <typename SegTree, typename Tag>
     void range_apply(SegTree& d, int u, int v, const Tag& t, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
