@@ -75,7 +75,7 @@ public:
         auto fact = factorize(x);
         ret tot = 1;
         for (auto [p, cnt] : fact) {
-            ret base = p, e = 1, sum = 1;
+            ret e = 1, sum = 1;
             for (int i = 1; i <= cnt; ++i) {
                 e *= p;
                 sum += e;

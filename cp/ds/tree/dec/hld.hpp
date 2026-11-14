@@ -212,8 +212,8 @@ public:
         return lca(a, b) ^ lca(b, c) ^ lca(c, a);
     }
 
-    template <typename Data, typename Tag>
-    void range_apply(Data& d, int u, int v, const Tag& t, bool is_edge = false) {
+    template <typename SegTree, typename Tag>
+    void range_apply(SegTree& d, int u, int v, const Tag& t, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
         assert(0 <= v && v < num_vertices());
         if (!built) build();
@@ -233,20 +233,20 @@ public:
         }
     }
 
-    template <typename Data>
-    auto range_query(Data& d, int u, int v, bool is_edge = false) {
+    template <typename SegTree>
+    auto range_query(SegTree& seg, int u, int v, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
         assert(0 <= v && v < num_vertices());
         if (!built) build();
 
-        using value_type = decltype(d.range_query(0, 1));
+        using value_type = decltype(seg.range_query(0, 1));
         value_type res{};
 
         while (lead[u] != lead[v]) {
             if (dep[lead[u]] < dep[lead[v]]) {
                 std::swap(u, v);
             }
-            value_type tmp = d.range_query(inp[lead[u]], inp[u] + 1);
+            value_type tmp = seg.range_query(inp[lead[u]], inp[u] + 1);
             res = res + tmp;
             u = par[lead[u]];
         }
@@ -254,30 +254,30 @@ public:
             std::swap(u, v);
         }
         if (inp[u] + (is_edge ? 1 : 0) <= inp[v]) {
-            value_type tmp = d.range_query(inp[u] + (is_edge ? 1 : 0), inp[v] + 1);
+            value_type tmp = seg.range_query(inp[u] + (is_edge ? 1 : 0), inp[v] + 1);
             res = res + tmp;
         }
         return res;
     }
 
-    template <typename Data, typename Tag>
-    void subtree_apply(Data& d, int u, const Tag& t, bool is_edge = false) {
+    template <typename SegTree, typename Tag>
+    void subtree_apply(SegTree& seg, int u, const Tag& t, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
         int l = inp[u] + (is_edge ? 1 : 0);
         int r = out[u];
         if (l < r) {
-            d.range_apply(l, r, t);
+            seg.range_apply(l, r, t);
         }
     }
 
-    template <typename Data>
-    auto subtree_query(Data& d, int u, bool is_edge = false) {
+    template <typename SegTree>
+    auto subtree_query(SegTree& seg, int u, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
         if (!built) build();
         int l = inp[u] + (is_edge ? 1 : 0);
         int r = out[u];
-        return (l < r) ? d.range_query(l, r) : decltype(d.range_query(0, 1)){};
+        return (l < r) ? seg.range_query(l, r) : decltype(seg.range_query(0, 1)){};
     }
 
 private:

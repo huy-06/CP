@@ -1,4 +1,3 @@
-#include "../mod/safe_mul.hpp"
 #include <vector>
 #include <algorithm>
 #include <random>
@@ -13,13 +12,13 @@ namespace internal {
 
 template <typename Tp>
 constexpr Tp prho_f(Tp x, Tp c, Tp n) {
-    using unsigned_type = typename std::make_unsigned<Tp>::type;
-    Tp res = static_cast<Tp>(safe_mul(
-        static_cast<unsigned_type>(x), 
-        static_cast<unsigned_type>(x), 
-        static_cast<unsigned_type>(n)
-    )) + c;
-    return res >= n ? res - n : res;
+    using uint_t = ds::make_unsigned_t<Tp>;
+    uint_t un = static_cast<uint_t>(n);
+    uint_t ux = static_cast<uint_t>(x);
+    uint_t uc = static_cast<uint_t>(c);
+    uint_t sq = alg::math::safe_mul(ux, ux, un);
+    uint_t res = (sq >= un - uc) ? (sq - (un - uc)) : (sq + uc);
+    return static_cast<Tp>(res);
 }
 
 constexpr unsigned long long lcg_next(unsigned long long state) {
@@ -28,8 +27,9 @@ constexpr unsigned long long lcg_next(unsigned long long state) {
 
 template <typename Tp>
 constexpr Tp pollard_rho(Tp n) {
+    if (n <= 1) return n;
     if (n % 2 == 0) return 2;
-    if (is_prime(n)) return n;
+    if (alg::math::is_prime(n)) return n;
 
     Tp x = 2, y = 2, d = 1, c = 1;
     Tp p = 1, l = 1;
@@ -42,16 +42,16 @@ constexpr Tp pollard_rho(Tp n) {
             l = 0;
         }
         y = prho_f(y, c, n);
-        l++;
-        
+        ++l;
+
         Tp diff = x > y ? x - y : y - x;
         d = std::gcd(diff, n);
 
         if (d == n) {
             state = lcg_next(state);
-            x = y = static_cast<Tp>((state % (n - 2)) + 2);
+            x = y = static_cast<Tp>((state % static_cast<unsigned long long>(n - 2)) + 2);
             state = lcg_next(state);
-            c = static_cast<Tp>((state % (n - 1)) + 1);
+            c = static_cast<Tp>((state % static_cast<unsigned long long>(n - 1)) + 1);
             p = 1; l = 1; d = 1;
         }
     }
@@ -61,7 +61,7 @@ constexpr Tp pollard_rho(Tp n) {
 template <typename Tp>
 constexpr void recursive_factorize(Tp n, std::vector<Tp>& fact) {
     if (n <= 1) return;
-    if (is_prime(n)) {
+    if (alg::math::is_prime(n)) {
         fact.push_back(n);
         return;
     }
@@ -94,7 +94,7 @@ constexpr std::vector<std::pair<Tp, int>> factorize(Tp n) {
     for (auto it = fact.begin(); it != fact.end();) {
         Tp val = *it;
         auto next = std::upper_bound(it, fact.end(), val);
-        ans.emplace_back(val, next - it);
+        ans.emplace_back(val, static_cast<int>(next - it));
         it = next;
     }
     return ans;
