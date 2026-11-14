@@ -233,29 +233,58 @@ public:
         }
     }
 
-    template <typename SegTree>
-    auto range_query(SegTree& seg, int u, int v, bool is_edge = false) {
+    template <typename F>
+    void for_each_path(int u, int v, F&& f, bool is_edge = false) {
         assert(0 <= u && u < num_vertices());
         assert(0 <= v && v < num_vertices());
         if (!built) build();
-
-        using value_type = decltype(seg.range_query(0, 1));
-        value_type res{};
 
         while (lead[u] != lead[v]) {
             if (dep[lead[u]] < dep[lead[v]]) {
                 std::swap(u, v);
             }
-            value_type tmp = seg.range_query(inp[lead[u]], inp[u] + 1);
-            res = res + tmp;
+            f(inp[lead[u]], inp[u] + 1);
             u = par[lead[u]];
         }
         if (dep[u] > dep[v]) {
             std::swap(u, v);
         }
         if (inp[u] + (is_edge ? 1 : 0) <= inp[v]) {
-            value_type tmp = seg.range_query(inp[u] + (is_edge ? 1 : 0), inp[v] + 1);
-            res = res + tmp;
+            f(inp[u] + (is_edge ? 1 : 0), inp[v] + 1);
+        }
+    }
+
+    template <typename F>
+    void for_each_subtree(int u, F&& f, bool is_edge = false) {
+        assert(0 <= u && u < num_vertices());
+        if (!built) build();
+        int l = inp[u] + (is_edge ? 1 : 0);
+        int r = out[u];
+        if (l < r) {
+            f(l, r);
+        }
+    }
+
+    template <typename SegTree>
+    auto range_query(SegTree& seg, int u, int v, bool is_edge = false) {
+        assert(0 <= u && u < num_vertices());
+        assert(0 <= v && v < num_vertices());
+        if (!built) build();
+
+        auto res = seg.e();
+
+        while (lead[u] != lead[v]) {
+            if (dep[lead[u]] < dep[lead[v]]) {
+                std::swap(u, v);
+            }
+            res = seg.op(res, seg.range_query(inp[lead[u]], inp[u] + 1));
+            u = par[lead[u]];
+        }
+        if (dep[u] > dep[v]) {
+            std::swap(u, v);
+        }
+        if (inp[u] + (is_edge ? 1 : 0) <= inp[v]) {
+            res = seg.op(res, seg.range_query(inp[u] + (is_edge ? 1 : 0), inp[v] + 1));
         }
         return res;
     }
@@ -277,7 +306,7 @@ public:
         if (!built) build();
         int l = inp[u] + (is_edge ? 1 : 0);
         int r = out[u];
-        return (l < r) ? seg.range_query(l, r) : decltype(seg.range_query(0, 1)){};
+        return (l < r) ? seg.range_query(l, r) : seg.e();
     }
 
 private:

@@ -32,12 +32,21 @@ namespace ds {
  */
 template <
     class Tp, 
-    Tp (*op)(Tp, Tp), 
-    Tp (*e)()
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)()
 >
 class segment_tree {
 public:
     using value_type = Tp;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
+
     
     /// @brief Khởi tạo cây rỗng
     segment_tree() : n(0), size(0) {}

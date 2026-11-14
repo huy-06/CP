@@ -18,12 +18,21 @@ namespace ds {
  */
 template <
     class Tp, 
-    Tp (*op)(Tp, Tp), 
-    Tp (*e)()
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)()
 >
 class persistent_segment_tree {
 public:
     using value_type = Tp;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
+
 
     struct node {
         int l = -1;

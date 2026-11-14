@@ -21,12 +21,21 @@ namespace ds {
  */
 template <
     class Tp, 
-    Tp (*op)(Tp, Tp), 
-    Tp (*e)()
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)()
 >
 class implicit_treap {
 public:
     using value_type = Tp;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
+
 
     /// @brief Khởi tạo cây rỗng
     implicit_treap() : root(0) {

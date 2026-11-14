@@ -70,17 +70,37 @@ namespace ds {
  */
 template <
     class Tp, 
-    Tp (*op)(Tp, Tp),
-    Tp (*e)(),
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)(),
     class Tg, 
-    Tp (*mapping)(Tg, Tp), 
-    Tg (*composition)(Tg, Tg), 
-    Tg (*id)()
+    Tp (*fmap)(Tg, Tp), 
+    Tg (*fcomp)(Tg, Tg), 
+    Tg (*fid)()
 >
 class lazy_segment_tree {
 public:
     using value_type = Tp;
     using lazy_type  = Tg;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
+
+    static constexpr value_type mapping(lazy_type f, value_type x) {
+        return fmap(f, x);
+    }
+
+    static constexpr lazy_type composition(lazy_type f, lazy_type g) {
+        return fcomp(f, g);
+    }
+
+    static constexpr lazy_type id() {
+        return fid();
+    }
 
     /// @brief Khởi tạo cây rỗng
     lazy_segment_tree() : n(0), size(0), height(0) {}

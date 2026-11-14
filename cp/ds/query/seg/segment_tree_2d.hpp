@@ -15,12 +15,21 @@ namespace ds {
  */
 template <
     class Tp, 
-    Tp (*op)(Tp, Tp), 
-    Tp (*e)()
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)()
 >
 class segment_tree_2d {
 public:
     using value_type = Tp;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
+
 
     segment_tree_2d() : n(0), m(0), size_n(0), size_m(0) {}
 

@@ -27,10 +27,22 @@ namespace ds {
  * cp::ds::disjoint_sparse_table<Tp, op, e> dst(data);
  * @endcode
  */
-template <class Tp, Tp (*op)(Tp, Tp), Tp (*e)()>
+template <
+    class Tp, 
+    Tp (*fop)(Tp, Tp),
+    Tp (*fe)()
+>
 class disjoint_sparse_table {
 public:
     using value_type = Tp;
+
+    static constexpr value_type op(value_type a, value_type b) {
+        return fop(a, b);
+    }
+
+    static constexpr value_type e() {
+        return fe();
+    }
 
     disjoint_sparse_table() : n(0) {}
 
