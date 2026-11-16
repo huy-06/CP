@@ -253,8 +253,8 @@ constexpr auto atan(const Tp& x) -> decltype(x.eps(), Tp()) {
 }
 
 template <typename Tp>
-constexpr auto atan2(const Tp& x) -> typename std::enable_if<std::is_arithmetic<Tp>::value, Tp>::type {
-    return std::atan2(x);
+constexpr auto atan2(const Tp& y, const Tp& x) -> typename std::enable_if<std::is_arithmetic<Tp>::value, Tp>::type {
+    return std::atan2(y, x);
 }
 
 template <typename Tp>

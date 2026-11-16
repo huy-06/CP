@@ -4,8 +4,8 @@
 #include <cstdio>
 #include <cstring> // Thêm thư viện này để dùng std::strlen
 
-#ifndef OUTPUT_COLOR
-#define OUTPUT_COLOR
+#ifndef CP_INIT_OUTPUT_COLOR
+#define CP_INIT_OUTPUT_COLOR
 
 #ifdef _WIN32
     #include <io.h>
@@ -15,7 +15,9 @@
     #define check_tty() isatty(fileno(stdout))
 #endif
 
-namespace std_color {
+namespace cp {
+namespace init {
+namespace color {
 
 const char* color_start = "\x1b[36m";
 const char* color_reset = "\033[0m";
@@ -71,7 +73,9 @@ struct color_guard {
 
 static color_guard monitor;
 
-} // namespace std_color
+} // namespace color
+} // namespace init
+} // namespace cp
 
-#endif
+#endif // CP_INIT_OUTPUT_COLOR
 //>
