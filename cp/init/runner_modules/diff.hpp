@@ -101,12 +101,23 @@ inline std::vector<token_item> tokenize_with_lines(std::string_view s) {
     return items;
 }
 
-inline void print_diff(const std::string& actual, const std::string& expected) {
+inline std::string truncate_token(std::string_view s, size_t max_len = config::preview_max_token_len) {
+    if (s.size() > max_len) {
+        return std::string(s.substr(0, max_len)) + "...";
+    }
+    return std::string(s);
+}
+
+inline void print_diff(const std::string& actual, const std::string& expected, const std::string& expected_name = "") {
     std::vector<token_item> exp_tokens = tokenize_with_lines(expected);
     std::vector<token_item> act_tokens = tokenize_with_lines(actual);
 
     // 1. In expected
-    std::cout << style::color_black << "expected:" << style::reset << "\n";
+    if (expected_name.empty()) {
+        std::cout << style::color_black << "expected:" << style::reset << "\n";
+    } else {
+        std::cout << style::color_black << "expected: " << style::color_cyan << expected_name << style::reset << "\n";
+    }
     if (exp_tokens.empty()) {
         std::cout << style::color_bright_black << "(empty)" << style::reset << "\n";
     } else {
@@ -115,15 +126,16 @@ inline void print_diff(const std::string& actual, const std::string& expected) {
         for (size_t i = 0; i < exp_limit; ++i) {
             bool is_in_actual = (i < act_tokens.size());
             bool match = (is_in_actual && token_equal(act_tokens[i].text, exp_tokens[i].text));
+            std::string exp_str = truncate_token(exp_tokens[i].text);
 
             if (match) {
-                std::cout << exp_tokens[i].text;
+                std::cout << exp_str;
             } else if (is_in_actual) {
                 // Actual có in nhưng sai giá trị -> màu vàng nổi bật
-                std::cout << style::color_yellow << exp_tokens[i].text << style::reset;
+                std::cout << style::color_yellow << exp_str << style::reset;
             } else {
                 // Actual in thiếu (hết output) -> dùng magenta
-                std::cout << style::color_magenta << exp_tokens[i].text << style::reset;
+                std::cout << style::color_magenta << exp_str << style::reset;
             }
 
             if (exp_tokens[i].newlines_after > 0) {
@@ -159,12 +171,13 @@ inline void print_diff(const std::string& actual, const std::string& expected) {
         for (size_t i = 0; i < act_limit; ++i) {
             bool is_in_expected = (i < exp_tokens.size());
             bool match = (is_in_expected && token_equal(act_tokens[i].text, exp_tokens[i].text));
+            std::string act_str = truncate_token(act_tokens[i].text);
 
             if (match) {
-                std::cout << style::color_green << act_tokens[i].text << style::reset;
+                std::cout << style::color_green << act_str << style::reset;
             } else {
                 // Sai giá trị hoặc in thừa token ra ngoài expected -> màu đỏ
-                std::cout << style::color_red << act_tokens[i].text << style::reset;
+                std::cout << style::color_red << act_str << style::reset;
             }
 
             if (act_tokens[i].newlines_after > 0) {
@@ -188,6 +201,49 @@ inline void print_diff(const std::string& actual, const std::string& expected) {
         if (!last_ended_with_nl) {
             std::cout << "\n";
         }
+    }
+}
+
+inline void print_preview(const std::string& text, const char* text_color = nullptr) {
+    if (text.empty()) {
+        std::cout << style::color_bright_black << "(empty)" << style::reset << "\n";
+        return;
+    }
+    std::vector<token_item> tokens = tokenize_with_lines(text);
+    if (tokens.empty()) {
+        std::cout << style::color_bright_black << "(empty)" << style::reset << "\n";
+        return;
+    }
+    size_t limit = std::min(tokens.size(), config::preview_max_tokens);
+    bool last_ended_with_nl = false;
+    for (size_t i = 0; i < limit; ++i) {
+        std::string tok_str = truncate_token(tokens[i].text);
+        if (text_color && *text_color) {
+            std::cout << text_color << tok_str << style::reset;
+        } else {
+            std::cout << tok_str;
+        }
+
+        if (tokens[i].newlines_after > 0) {
+            for (int k = 0; k < tokens[i].newlines_after; ++k) {
+                std::cout << "\n";
+            }
+            last_ended_with_nl = true;
+        } else if (i + 1 < limit || tokens.size() > limit) {
+            std::cout << " ";
+            last_ended_with_nl = false;
+        } else {
+            std::cout << "\n";
+            last_ended_with_nl = true;
+        }
+    }
+
+    if (tokens.size() > limit) {
+        std::cout << style::color_bright_black << "... (" << (tokens.size() - limit) << " more tokens)" << style::reset << "\n";
+        last_ended_with_nl = true;
+    }
+    if (!last_ended_with_nl) {
+        std::cout << "\n";
     }
 }
 

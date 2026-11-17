@@ -92,14 +92,17 @@ inline int run_batch(const fs::path& sol_exe,
 
     for (size_t i = 0; i < tests.size(); ++i) {
         const auto& tc = tests[i];
+        int test_num = static_cast<int>(i + 1);
+
+        std::string test_prefix = "test " + std::string(style::color_blue) + std::to_string(test_num) + style::color_white + ": ";
+
         if (tc.skipped) {
-            std::cout << style::color_white << "test " << style::color_blue << (i + 1) << style::color_white << ": "
+            std::cout << style::color_white << test_prefix
                       << style::color_yellow << "skipped" << style::reset << "\n";
             continue;
         }
 
         total_run++;
-        int test_num = static_cast<int>(i + 1);
 
         run_result sol_res = run_with_timeout(sol_exe.string(), tc.input, config::time_limit);
 
@@ -109,20 +112,24 @@ inline int run_batch(const fs::path& sol_exe,
             // Chế độ run only (chạy và in output toàn bộ các test)
             if (sol_res.is_timeout) {
                 failed++;
-                std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+                std::cout << style::color_white << test_prefix
                           << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << std::fixed << std::setprecision(3) << config::time_limit << "s" << style::color_white << "]" << style::reset << "\n";
             } else if (sol_res.exit_code != 0) {
                 failed++;
-                std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+                std::cout << style::color_white << test_prefix
                           << style::color_red << "rte " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             } else {
                 passed++;
-                std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+                std::cout << style::color_white << test_prefix
                           << style::color_green << "ok" << style::reset << "\n";
             }
 
-            std::cout << style::color_black << "input:" << style::reset << "\n";
-            std::cout << style::color_white << tc.input << style::reset << (tc.input.empty() || tc.input.back() == '\n' ? "" : "\n");
+            if (tc.input_file.empty()) {
+                std::cout << style::color_black << "input:" << style::reset << "\n";
+            } else {
+                std::cout << style::color_black << "input: " << style::color_cyan << tc.input_file << style::reset << "\n";
+            }
+            diff::print_preview(tc.input, style::color_white);
 
             if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
@@ -131,7 +138,7 @@ inline int run_batch(const fs::path& sol_exe,
 
             if (!sol_res.output.empty()) {
                 std::cout << style::color_black << "output:" << style::reset << "\n";
-                std::cout << "\x1b[36m" << sol_res.output << style::reset << (sol_res.output.back() == '\n' ? "" : "\n");
+                diff::print_preview(sol_res.output, "\x1b[36m");
             }
 
             std::cout << style::color_black << "done: " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
@@ -144,10 +151,10 @@ inline int run_batch(const fs::path& sol_exe,
         run_result chk_res;
 
         if (sol_res.is_timeout) {
-            std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+            std::cout << style::color_white << test_prefix
                       << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << std::fixed << std::setprecision(3) << config::time_limit << "s" << style::color_white << "]" << style::reset << "\n";
         } else if (sol_res.exit_code != 0) {
-            std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+            std::cout << style::color_white << test_prefix
                       << style::color_red << "rte " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
         } else if (has_checker) {
             // Chạy checker <in> <out> <ans>
@@ -179,18 +186,22 @@ inline int run_batch(const fs::path& sol_exe,
         }
 
         if (is_ac) {
-            std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+            std::cout << style::color_white << test_prefix
                       << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             passed++;
         } else {
             failed++;
             if (!sol_res.is_timeout && sol_res.exit_code == 0) {
-                std::cout << style::color_white << "test " << style::color_blue << test_num << style::color_white << ": "
+                std::cout << style::color_white << test_prefix
                           << style::color_red << "wa " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             }
 
-            std::cout << style::color_black << "input:" << style::reset << "\n";
-            std::cout << style::color_white << tc.input << style::reset << (tc.input.empty() || tc.input.back() == '\n' ? "" : "\n");
+            if (tc.input_file.empty()) {
+                std::cout << style::color_black << "input:" << style::reset << "\n";
+            } else {
+                std::cout << style::color_black << "input: " << style::color_cyan << tc.input_file << style::reset << "\n";
+            }
+            diff::print_preview(tc.input, style::color_white);
 
             if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << (has_checker ? "sol debug:" : "debug:") << style::reset << "\n";
@@ -218,14 +229,14 @@ inline int run_batch(const fs::path& sol_exe,
             if (sol_res.is_timeout || sol_res.exit_code != 0) {
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    std::cout << sol_res.output << (sol_res.output.back() == '\n' ? "" : "\n");
+                    diff::print_preview(sol_res.output);
                 }
             } else if (!has_checker) {
-                diff::print_diff(sol_res.output, tc.expected);
+                diff::print_diff(sol_res.output, tc.expected, tc.expected_file);
             } else {
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    std::cout << sol_res.output << (sol_res.output.back() == '\n' ? "" : "\n");
+                    diff::print_preview(sol_res.output);
                 }
             }
 

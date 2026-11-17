@@ -41,18 +41,6 @@ inline fs::path normalize_path(const std::string& raw_path) {
     return fs::absolute(s, ec).lexically_normal();
 }
 
-inline fs::path resolve_relative_path(const fs::path& base_dir, const std::string& path_str) {
-    fs::path p(path_str);
-    if (p.is_absolute()) return p;
-    return (base_dir / p).lexically_normal();
-}
-
-inline std::string read_file_content(const fs::path& p) {
-    std::ifstream f(p, std::ios::binary);
-    if (!f) return "";
-    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-}
-
 int main(int argc, char* argv[]) {
     platform::enable_vt_processing();
 
@@ -74,8 +62,16 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Parse comment tags và trích xuất tests inline [IN]/[OUT]
-    parse_output parsed = parse_source(src_content);
+    // Parse comment tags và trích xuất tests inline [IN]/[OUT] hoặc file/thư mục
+    parse_output parsed = parse_source(src_content, src_dir);
+
+    // Báo lỗi nếu có file hoặc thư mục test không tìm thấy
+    if (!parsed.errors.empty()) {
+        for (const auto& err : parsed.errors) {
+            std::cerr << style::color_red << "error: " << err << style::reset << "\n";
+        }
+        return 1;
+    }
 
     // Xử lý chế độ chỉ bundle file (bundle-only)
     if (config::bundle_only) {
@@ -98,20 +94,6 @@ int main(int argc, char* argv[]) {
 
     // Temp session quản lý toàn bộ exe biên dịch ra trong temp OS
     temp_session& tmp = temp_session::instance();
-
-    // Nạp test từ [FILE_IN] / [FILE_OUT] nếu có
-    if (parsed.tags.file_in.found && !parsed.tags.file_in.skipped) {
-        fs::path in_path = resolve_relative_path(src_dir, parsed.tags.file_in.value);
-        std::string fin_data = read_file_content(in_path);
-        test_case tc;
-        tc.input = fin_data;
-        if (parsed.tags.file_out.found && !parsed.tags.file_out.skipped) {
-            fs::path out_path = resolve_relative_path(src_dir, parsed.tags.file_out.value);
-            tc.expected = read_file_content(out_path);
-            tc.has_expected = true;
-        }
-        parsed.tests.push_back(std::move(tc));
-    }
 
     // Kiểm tra các mode đặc biệt
     bool has_itor = parsed.tags.interactive.found && !parsed.tags.interactive.skipped;

@@ -4,6 +4,8 @@
 #include <cctype>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
+#include <fstream>
 
 #include "config.hpp"
 
@@ -14,11 +16,31 @@ namespace cp {
 namespace init {
 namespace runner {
 
+namespace fs = std::filesystem;
+
+inline fs::path resolve_relative_path(const fs::path& base_dir, const std::string& path_str) {
+    fs::path p(path_str);
+    if (p.is_absolute()) return p;
+    if (base_dir.empty()) {
+        std::error_code ec;
+        return fs::absolute(p, ec).lexically_normal();
+    }
+    return (base_dir / p).lexically_normal();
+}
+
+inline std::string read_file_content(const fs::path& p) {
+    std::ifstream f(p, std::ios::binary);
+    if (!f) return "";
+    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+}
+
 struct test_case {
     std::string input;
     std::string expected; // rỗng nếu không có [OUT]
     bool has_expected = false;
     bool skipped = false;
+    std::string input_file;    // tên/đường dẫn file nếu đọc từ file (ví dụ "sub1.in")
+    std::string expected_file; // tên/đường dẫn file nếu đọc từ file (ví dụ "sub1.out")
 };
 
 struct tag_result {
@@ -37,7 +59,8 @@ struct parsed_tags {
 
 struct parse_output {
     parsed_tags            tags;
-    std::vector<test_case> tests; // từ [IN]/[OUT]
+    std::vector<test_case> tests; // từ [IN]/[OUT] hoặc [TESTS_DIR]
+    std::vector<std::string> errors; // lỗi file/thư mục không tìm thấy
 };
 
 namespace detail {
@@ -74,9 +97,199 @@ inline std::string normalize_tag_name(std::string_view name) {
     return norm;
 }
 
+inline bool natural_less(std::string_view a, std::string_view b) {
+    size_t ia = 0, ib = 0;
+    while (ia < a.size() && ib < b.size()) {
+        if (std::isdigit(static_cast<unsigned char>(a[ia])) && std::isdigit(static_cast<unsigned char>(b[ib]))) {
+            size_t ja = ia;
+            while (ja < a.size() && std::isdigit(static_cast<unsigned char>(a[ja]))) ++ja;
+            size_t jb = ib;
+            while (jb < b.size() && std::isdigit(static_cast<unsigned char>(b[jb]))) ++jb;
+
+            size_t sa = ia;
+            while (sa + 1 < ja && a[sa] == '0') ++sa;
+            size_t sb = ib;
+            while (sb + 1 < jb && b[sb] == '0') ++sb;
+
+            size_t len_a = ja - sa;
+            size_t len_b = jb - sb;
+            if (len_a != len_b) return len_a < len_b;
+
+            std::string_view va = a.substr(sa, len_a);
+            std::string_view vb = b.substr(sb, len_b);
+            if (va != vb) return va < vb;
+
+            if ((ja - ia) != (jb - ib)) return (ja - ia) < (jb - ib);
+
+            ia = ja;
+            ib = jb;
+        } else {
+            char ca = static_cast<char>(std::tolower(static_cast<unsigned char>(a[ia])));
+            char cb = static_cast<char>(std::tolower(static_cast<unsigned char>(b[ib])));
+            if (ca != cb) return ca < cb;
+            ++ia;
+            ++ib;
+        }
+    }
+    return a.size() < b.size();
+}
+
+inline void load_tests_from_dir(
+    const std::string& raw_val,
+    const fs::path& base_dir,
+    parse_output& out
+) {
+    std::string dir_str = raw_val;
+    std::string in_pattern = "";
+    std::string out_pattern = "";
+
+    size_t paren_open = dir_str.find('(');
+    size_t paren_close = dir_str.rfind(')');
+    if (paren_open != std::string::npos && paren_close != std::string::npos && paren_close > paren_open) {
+        std::string pat = dir_str.substr(paren_open + 1, paren_close - paren_open - 1);
+        dir_str = trim(dir_str.substr(0, paren_open));
+        size_t comma = pat.find(',');
+        if (comma != std::string::npos) {
+            in_pattern = trim(pat.substr(0, comma));
+            out_pattern = trim(pat.substr(comma + 1));
+        }
+    }
+    dir_str = strip_outer_quotes(dir_str);
+    if (dir_str.empty()) return;
+
+    fs::path dir_path = resolve_relative_path(base_dir, dir_str);
+    std::error_code ec;
+    if (!fs::exists(dir_path, ec) || !fs::is_directory(dir_path, ec)) {
+        out.errors.push_back("tests directory not found: " + dir_str);
+        return;
+    }
+
+    std::vector<fs::path> subdirs;
+    std::vector<fs::path> regular_files;
+
+    for (const auto& entry : fs::directory_iterator(dir_path, ec)) {
+        if (entry.is_directory(ec)) {
+            subdirs.push_back(entry.path());
+        } else if (entry.is_regular_file(ec)) {
+            regular_files.push_back(entry.path());
+        }
+    }
+
+    // 1. Kiểm tra Layout A: Mỗi thư mục con là một test (HSG / Themis)
+    if (!subdirs.empty()) {
+        std::sort(subdirs.begin(), subdirs.end(), [](const fs::path& a, const fs::path& b) {
+            return natural_less(a.filename().string(), b.filename().string());
+        });
+
+        bool found_any_sub_test = false;
+        for (const auto& subdir : subdirs) {
+            fs::path in_file, out_file;
+            for (const auto& f : fs::directory_iterator(subdir, ec)) {
+                if (!f.is_regular_file(ec)) continue;
+                std::string ext = f.path().extension().string();
+                std::string name = f.path().filename().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+                bool is_in = (ext == ".in" || ext == ".inp" || name.find("input") != std::string::npos);
+                bool is_out = (ext == ".out" || ext == ".ans" || ext == ".a" || name.find("output") != std::string::npos || name.find("ans") != std::string::npos);
+
+                if (is_in && !is_out) {
+                    if (in_file.empty() || ext == ".in" || ext == ".inp") in_file = f.path();
+                } else if (is_out && !is_in) {
+                    if (out_file.empty() || ext == ".out" || ext == ".ans" || ext == ".a") out_file = f.path();
+                }
+            }
+
+            if (!in_file.empty()) {
+                found_any_sub_test = true;
+                test_case tc;
+                tc.input = read_file_content(in_file);
+                tc.input_file = (subdir.filename() / in_file.filename()).string();
+                if (!out_file.empty()) {
+                    tc.expected = read_file_content(out_file);
+                    tc.expected_file = (subdir.filename() / out_file.filename()).string();
+                    tc.has_expected = true;
+                }
+                out.tests.push_back(std::move(tc));
+            }
+        }
+        if (found_any_sub_test) return;
+    }
+
+    // 2. Layout B: Tất cả test nằm chung trong thư mục (Flat layout: Codeforces / CSES / Hackerrank)
+    if (!regular_files.empty()) {
+        std::sort(regular_files.begin(), regular_files.end(), [](const fs::path& a, const fs::path& b) {
+            return natural_less(a.filename().string(), b.filename().string());
+        });
+
+        std::vector<fs::path> in_files;
+        std::vector<fs::path> out_files;
+
+        for (const auto& f : regular_files) {
+            std::string ext = f.extension().string();
+            std::string name = f.filename().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+            bool is_in = (ext == ".in" || ext == ".inp" || name.find("input") != std::string::npos);
+            bool is_out = (ext == ".out" || ext == ".ans" || ext == ".a" || name.find("output") != std::string::npos || name.find("ans") != std::string::npos);
+
+            if (is_in && !is_out) {
+                in_files.push_back(f);
+            } else if (is_out && !is_in) {
+                out_files.push_back(f);
+            } else if (is_in && is_out) {
+                out_files.push_back(f);
+            }
+        }
+
+        for (const auto& inf : in_files) {
+            test_case tc;
+            tc.input = read_file_content(inf);
+            tc.input_file = inf.filename().string();
+
+            std::string stem_in = inf.stem().string();
+            fs::path matched_out;
+
+            for (const auto& outf : out_files) {
+                std::string stem_out = outf.stem().string();
+                if (stem_in == stem_out) {
+                    matched_out = outf;
+                    break;
+                }
+                std::string lower_in = stem_in;
+                std::string lower_out = stem_out;
+                std::transform(lower_in.begin(), lower_in.end(), lower_in.begin(), ::tolower);
+                std::transform(lower_out.begin(), lower_out.end(), lower_out.begin(), ::tolower);
+                if (lower_in.starts_with("input") && lower_out.starts_with("output") && lower_in.substr(5) == lower_out.substr(6)) {
+                    matched_out = outf;
+                    break;
+                }
+                if (lower_in.starts_with("in_") && lower_out.starts_with("out_") && lower_in.substr(3) == lower_out.substr(4)) {
+                    matched_out = outf;
+                    break;
+                }
+                if (lower_in.starts_with("in") && lower_out.starts_with("out") && lower_in.substr(2) == lower_out.substr(3)) {
+                    matched_out = outf;
+                    break;
+                }
+            }
+
+            if (!matched_out.empty()) {
+                tc.expected = read_file_content(matched_out);
+                tc.expected_file = matched_out.filename().string();
+                tc.has_expected = true;
+            }
+            out.tests.push_back(std::move(tc));
+        }
+    }
+}
+
 enum class tag_kind {
     TAG_IN,
     TAG_OUT,
+    TAG_TESTS_DIR,
     TAG_OTHER,
     BLOCK_END
 };
@@ -86,11 +299,13 @@ struct tag_event {
     size_t   tag_start; // index of '[' (or '*' for '*/')
     size_t   tag_end;   // index of ']' + 1 (or '/' + 1 for '*/')
     bool     skipped;
+    std::string file_path;
+    std::string raw_val;
 };
 
 } // namespace detail
 
-inline parse_output parse_source(const std::string& src_content) {
+inline parse_output parse_source(const std::string& src_content, const fs::path& base_dir = "") {
     parse_output out;
     std::vector<detail::tag_event> events;
 
@@ -209,39 +424,32 @@ inline parse_output parse_source(const std::string& src_content) {
                     std::string norm = detail::normalize_tag_name(raw_name);
 
                     bool is_tag = true;
-                    if (norm == "IN") {
+                    if (norm == "IN" || norm == "FILE-IN") {
                         events.push_back(detail::tag_event{
                             .kind = detail::tag_kind::TAG_IN,
                             .tag_start = i,
                             .tag_end = close + 1,
-                            .skipped = skipped
+                            .skipped = skipped,
+                            .file_path = detail::strip_outer_quotes(raw_val),
+                            .raw_val = ""
                         });
-                    } else if (norm == "OUT") {
+                    } else if (norm == "OUT" || norm == "FILE-OUT") {
                         events.push_back(detail::tag_event{
                             .kind = detail::tag_kind::TAG_OUT,
                             .tag_start = i,
                             .tag_end = close + 1,
-                            .skipped = skipped
+                            .skipped = skipped,
+                            .file_path = detail::strip_outer_quotes(raw_val),
+                            .raw_val = ""
                         });
-                    } else if (norm == "FILE-IN") {
-                        out.tags.file_in.found = true;
-                        out.tags.file_in.skipped = skipped;
-                        out.tags.file_in.value = detail::strip_outer_quotes(raw_val);
+                    } else if (norm == "TESTS-DIR" || norm == "TEST-DIR" || norm == "DIR" || norm == "TESTS") {
                         events.push_back(detail::tag_event{
-                            .kind = detail::tag_kind::TAG_OTHER,
+                            .kind = detail::tag_kind::TAG_TESTS_DIR,
                             .tag_start = i,
                             .tag_end = close + 1,
-                            .skipped = skipped
-                        });
-                    } else if (norm == "FILE-OUT") {
-                        out.tags.file_out.found = true;
-                        out.tags.file_out.skipped = skipped;
-                        out.tags.file_out.value = detail::strip_outer_quotes(raw_val);
-                        events.push_back(detail::tag_event{
-                            .kind = detail::tag_kind::TAG_OTHER,
-                            .tag_start = i,
-                            .tag_end = close + 1,
-                            .skipped = skipped
+                            .skipped = skipped,
+                            .file_path = "",
+                            .raw_val = detail::trim(raw_val)
                         });
                     } else if (norm == "GEN") {
                         out.tags.gen.found = true;
@@ -513,28 +721,61 @@ inline parse_output parse_source(const std::string& src_content) {
     };
 
     for (size_t k = 0; k < events.size(); ++k) {
+        if (events[k].kind == detail::tag_kind::TAG_TESTS_DIR) {
+            if (!events[k].skipped) {
+                detail::load_tests_from_dir(events[k].raw_val, base_dir, out);
+            }
+            continue;
+        }
+
         if (events[k].kind == detail::tag_kind::TAG_IN) {
             test_case tc;
             tc.skipped = events[k].skipped;
-            size_t in_content_start = events[k].tag_end;
 
-            size_t next_idx = k + 1;
-            if (next_idx < events.size() && events[next_idx].kind == detail::tag_kind::TAG_OUT) {
-                size_t in_content_end = get_clean_delim_start(events[next_idx].tag_start);
+            // 1. Xử lý INPUT
+            if (!events[k].file_path.empty()) {
+                tc.input_file = events[k].file_path;
+                fs::path in_p = resolve_relative_path(base_dir, tc.input_file);
+                std::error_code ec;
+                if (!fs::exists(in_p, ec) || fs::is_directory(in_p, ec)) {
+                    out.errors.push_back("input file not found: " + tc.input_file);
+                } else {
+                    tc.input = read_file_content(in_p);
+                }
+            } else {
+                size_t in_content_start = events[k].tag_end;
+                size_t next_idx = k + 1;
+                size_t in_content_end = (next_idx < events.size())
+                    ? get_clean_delim_start(events[next_idx].tag_start)
+                    : src_content.size();
                 if (in_content_end >= in_content_start) {
                     tc.input = detail::trim(std::string_view(src_content).substr(in_content_start, in_content_end - in_content_start));
                 }
+            }
 
-                size_t out_content_start = events[next_idx].tag_end;
-                size_t after_out_idx = next_idx + 1;
-                size_t out_content_end = (after_out_idx < events.size())
-                    ? get_clean_delim_start(events[after_out_idx].tag_start)
-                    : src_content.size();
-
+            // 2. Xử lý EXPECTED (nếu tag tiếp theo là TAG_OUT)
+            size_t next_idx = k + 1;
+            if (next_idx < events.size() && events[next_idx].kind == detail::tag_kind::TAG_OUT) {
                 if (!events[next_idx].skipped) {
                     tc.has_expected = true;
-                    if (out_content_end >= out_content_start) {
-                        tc.expected = detail::trim(std::string_view(src_content).substr(out_content_start, out_content_end - out_content_start));
+                    if (!events[next_idx].file_path.empty()) {
+                        tc.expected_file = events[next_idx].file_path;
+                        fs::path out_p = resolve_relative_path(base_dir, tc.expected_file);
+                        std::error_code ec;
+                        if (!fs::exists(out_p, ec) || fs::is_directory(out_p, ec)) {
+                            out.errors.push_back("output file not found: " + tc.expected_file);
+                        } else {
+                            tc.expected = read_file_content(out_p);
+                        }
+                    } else {
+                        size_t out_content_start = events[next_idx].tag_end;
+                        size_t after_out_idx = next_idx + 1;
+                        size_t out_content_end = (after_out_idx < events.size())
+                            ? get_clean_delim_start(events[after_out_idx].tag_start)
+                            : src_content.size();
+                        if (out_content_end >= out_content_start) {
+                            tc.expected = detail::trim(std::string_view(src_content).substr(out_content_start, out_content_end - out_content_start));
+                        }
                     }
                 } else {
                     tc.has_expected = false;
@@ -544,16 +785,8 @@ inline parse_output parse_source(const std::string& src_content) {
                 out.tests.push_back(std::move(tc));
                 k = next_idx;
             } else {
-                size_t in_content_end = (next_idx < events.size())
-                    ? get_clean_delim_start(events[next_idx].tag_start)
-                    : src_content.size();
-
-                if (in_content_end >= in_content_start) {
-                    tc.input = detail::trim(std::string_view(src_content).substr(in_content_start, in_content_end - in_content_start));
-                }
                 tc.has_expected = false;
                 tc.expected.clear();
-
                 out.tests.push_back(std::move(tc));
             }
         }

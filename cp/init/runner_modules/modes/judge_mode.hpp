@@ -6,6 +6,7 @@
 #include "../config.hpp"
 #include "../style.hpp"
 #include "../process.hpp"
+#include "../diff.hpp"
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -64,7 +65,7 @@ inline int run_judge(const fs::path& sol_exe,
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << j_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             if (!j_res.output.empty()) {
-                std::cout << j_res.output << (j_res.output.back() == '\n' ? "" : "\n");
+                diff::print_preview(j_res.output);
             }
             passed++;
         } else if (j_res.exit_code == 1) {
@@ -76,7 +77,7 @@ inline int run_judge(const fs::path& sol_exe,
                 std::cout << style::color_yellow << j_res.error_output << style::reset << (j_res.error_output.back() == '\n' ? "" : "\n");
             }
             if (!j_res.output.empty()) {
-                std::cout << j_res.output << (j_res.output.back() == '\n' ? "" : "\n");
+                diff::print_preview(j_res.output);
             }
             return 1;
         } else {
@@ -88,7 +89,7 @@ inline int run_judge(const fs::path& sol_exe,
                 std::cout << style::color_yellow << j_res.error_output << style::reset << (j_res.error_output.back() == '\n' ? "" : "\n");
             }
             if (!j_res.output.empty()) {
-                std::cout << j_res.output << (j_res.output.back() == '\n' ? "" : "\n");
+                diff::print_preview(j_res.output);
             }
             return 1;
         }

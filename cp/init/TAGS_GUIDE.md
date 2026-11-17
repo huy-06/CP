@@ -8,9 +8,10 @@
 
 | Tag | Ý nghĩa / Chức năng | Ví dụ cú pháp |
 | :--- | :--- | :--- |
-| **`[IN]`** | Đánh dấu khối dữ liệu đầu vào (Input) | `// [IN]` hoặc `/* [IN] ... */` |
-| **`[OUT]`** | Đánh dấu khối dữ liệu đầu ra kỳ vọng (Expected Output) | `// [OUT]` |
-| **`[-IN]` / `[-OUT]`** | **Tắt (skip)** test case đó, runner sẽ bỏ qua không chạy | `// [-IN]` |
+| **`[IN]`** / **`[IN: <file>]`** | Khối dữ liệu đầu vào (inline hoặc đọc từ file `.in`) | `// [IN]` hoặc `// [IN: 1.in]` |
+| **`[OUT]`** / **`[OUT: <file>]`** | Khối dữ liệu đầu ra kỳ vọng (inline hoặc đọc từ file `.out`) | `// [OUT]` hoặc `// [OUT: 1.out]` |
+| **`[TESTS_DIR: <dir>]`** | Tự động quét và chạy toàn bộ test trong thư mục (flat hoặc subfolder) | `// [TESTS_DIR: tests]` |
+| **`[-IN]` / `[-OUT]`** | **Tắt (skip)** test case đó, runner sẽ bỏ qua không chạy | `// [-IN]` hoặc `// [-IN: 1.in]` |
 | **`[GEN: <file> [n]]`** | Chỉ định file sinh test ngẫu nhiên (chạy `n` test) | `// [GEN: gen.cpp 100]` |
 | **`[BRUTE: <file>]`** | Chỉ định file giải trâu (chuẩn) để so sánh đáp án | `// [BRUTE: brute.cpp]` |
 | **`[CHECKER: <file>]`** | Chỉ định file checker (cho bài nhiều nghiệm, đồ thị, float) | `// [CHECKER: checker.cpp]` |
@@ -70,6 +71,52 @@ int main() {
     std::cout << sum << "\n";
     return 0;
 }
+```
+
+---
+
+### 1.1. Đọc Test Từ File Rời (`[IN: file]` và `[OUT: file]`)
+
+* Hỗ trợ đọc input / output từ file độc lập và kết hợp tự do (cross-matching):
+  * `[IN: file.in]` kết hợp với `[OUT]` inline (viết trực tiếp trong comment).
+  * `[IN]` inline kết hợp với `[OUT: file.out]`.
+  * `[IN: file.in]` kết hợp với `[OUT: file.out]`.
+* Tự động kiểm tra file tồn tại; nếu file không tồn tại sẽ báo lỗi đỏ trực quan ngay từ đầu.
+* Khi chấm, tên file test được hiển thị rõ ràng trên từng dòng kết quả và phần diff.
+
+```cpp
+/*
+[IN: custom.in]
+[OUT]
+6
+
+[IN]
+4
+1 2 3 4
+[OUT: custom.out]
+
+[IN: 1.in]
+[OUT: 1.out]
+*/
+```
+
+---
+
+### 1.2. Tự Động Quét Toàn Bộ Thư Mục Test (`[TESTS_DIR: folder]`)
+
+* Tự động duyệt và ghép cặp toàn bộ test trong một thư mục chỉ với 1 dòng: `[TESTS_DIR: tests]`.
+* **Hỗ trợ 2 kiểu cấu trúc phổ biến**:
+  1. **Subfolder-per-test (Dạng đề thi HSG, Themis, Dmoj)**:
+     `tests/test01/data.in` và `tests/test01/data.out` (hoặc `.ans`).
+  2. **Flat files (Dạng Codeforces, CSES, HackerRank)**:
+     `tests/1.in` và `tests/1.out` (hoặc `.ans`).
+* **Sắp xếp tự nhiên (Natural Sorting)**: Test được sắp xếp theo đúng thứ tự số thực tế: `1, 2, ..., 9, 10, 11` (không bị đảo thứ tự chuỗi `1, 10, 2`).
+* Có thể tùy biến đuôi file nếu cần: `[TESTS_DIR: tests (*.inp, *.out)]`.
+
+```cpp
+/*
+[TESTS_DIR: tests]
+*/
 ```
 
 ---

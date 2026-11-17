@@ -19,6 +19,7 @@ inline bool save_failed = false;
 inline bool append_failed_to_src = true; 
 inline std::string failed_save_dir = "wa_tests";
 inline std::size_t preview_max_tokens = 40;
+inline std::size_t preview_max_token_len = 100;
 inline std::string submit_path = "";
 inline std::vector<std::string> bundle_dirs = {"init", "alg", "ds", "cst", "dbg", "cppx"};
 inline std::vector<std::string> bundle_skip = {"judge.hpp"};

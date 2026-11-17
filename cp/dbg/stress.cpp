@@ -20,13 +20,13 @@
 // g++ -std=c++23 -O2 stress.cpp -o stress && ./stress
 
 std::ofstream fout;
-auto ran = cp::ds::random;
+using ran = cp::ds::random;
 
 void generate_test_case() {
-    int n = ran.nint(1, 10);
+    int n = ran::nint(1, 10);
     fout << n << '\n';
     for (int i = 0; i < n; ++i) {
-        fout << ran.nint(-1E9, 1E9) << ' ';
+        fout << ran::nint(-1E9, 1E9) << ' ';
     }
     fout << '\n';
 }

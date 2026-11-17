@@ -22,13 +22,18 @@ namespace fs = std::filesystem;
 
 inline void append_failed_to_src_file(const fs::path& src_file, const std::string& input, const std::string& expected) {
     if (!config::append_failed_to_src) return;
+    if (expected.empty()) return;
+
+    std::string trimmed_exp = detail::trim(expected);
+    if (trimmed_exp.empty()) return;
+
+    std::string trimmed_in = detail::trim(input);
+    if (trimmed_in.empty()) return;
+
     std::ifstream fin(src_file, std::ios::binary);
     if (!fin) return;
     std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
     fin.close();
-
-    std::string trimmed_in = detail::trim(input);
-    if (trimmed_in.empty()) return;
 
     // Không chèn nếu test case này đã có trong file
     if (content.find(trimmed_in) != std::string::npos) return;
@@ -44,15 +49,11 @@ inline void append_failed_to_src_file(const fs::path& src_file, const std::strin
             test_block += "\n";
         }
         test_block += "[IN]\n" + trimmed_in + "\n";
-        if (!expected.empty()) {
-            test_block += "[OUT]\n" + detail::trim(expected) + "\n";
-        }
+        test_block += "[OUT]\n" + trimmed_exp + "\n";
         content.insert(insert_pos, test_block);
     } else {
         std::string test_block = "[IN]\n" + trimmed_in + "\n";
-        if (!expected.empty()) {
-            test_block += "[OUT]\n" + detail::trim(expected) + "\n";
-        }
+        test_block += "[OUT]\n" + trimmed_exp + "\n";
         content += "\n/*\n" + test_block + "*/\n";
     }
 
@@ -107,10 +108,17 @@ inline int run_stress(const fs::path& sol_exe,
         if (sol_res.is_timeout) {
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << std::fixed << std::setprecision(3) << config::time_limit << "s" << style::color_white << "]" << style::reset << "\n";
-            save_failed_test(save_dir, current_in, sol_res.output, "", sol_res.error_output);
-            if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, "");
+            std::string brute_out = "";
+            if (has_brute) {
+                run_result brute_res = run_with_timeout(brute_exe.string(), current_in, config::time_limit);
+                if (!brute_res.is_timeout && brute_res.exit_code == 0) {
+                    brute_out = brute_res.output;
+                    if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_out);
+                }
+            }
+            save_failed_test(save_dir, current_in, sol_res.output, brute_out, sol_res.error_output);
             std::cout << style::color_black << "input:" << style::reset << "\n";
-            std::cout << style::color_white << current_in << style::reset << (current_in.empty() || current_in.back() == '\n' ? "" : "\n");
+            diff::print_preview(current_in, style::color_white);
             if (!sol_res.error_output.empty() && config::show_debug) {
                 std::cout << style::color_black << "sol debug:" << style::reset << "\n";
                 std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
@@ -121,10 +129,17 @@ inline int run_stress(const fs::path& sol_exe,
         if (sol_res.exit_code != 0) {
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_red << "rte " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
-            save_failed_test(save_dir, current_in, sol_res.output, "", sol_res.error_output);
-            if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, "");
+            std::string brute_out = "";
+            if (has_brute) {
+                run_result brute_res = run_with_timeout(brute_exe.string(), current_in, config::time_limit);
+                if (!brute_res.is_timeout && brute_res.exit_code == 0) {
+                    brute_out = brute_res.output;
+                    if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_out);
+                }
+            }
+            save_failed_test(save_dir, current_in, sol_res.output, brute_out, sol_res.error_output);
             std::cout << style::color_black << "input:" << style::reset << "\n";
-            std::cout << style::color_white << current_in << style::reset << (current_in.empty() || current_in.back() == '\n' ? "" : "\n");
+            diff::print_preview(current_in, style::color_white);
             if (!sol_res.error_output.empty() && config::show_debug) {
                 std::cout << style::color_black << "sol debug:" << style::reset << "\n";
                 std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
@@ -164,7 +179,7 @@ inline int run_stress(const fs::path& sol_exe,
                     if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_res.output);
 
                     std::cout << style::color_black << "input:" << style::reset << "\n";
-                    std::cout << style::color_white << current_in << style::reset << (current_in.empty() || current_in.back() == '\n' ? "" : "\n");
+                    diff::print_preview(current_in, style::color_white);
 
                     if (config::show_debug && !sol_res.error_output.empty()) {
                         std::cout << style::color_black << "sol debug:" << style::reset << "\n";
@@ -189,11 +204,11 @@ inline int run_stress(const fs::path& sol_exe,
                     }
                     if (!sol_res.output.empty()) {
                         std::cout << style::color_black << "actual:" << style::reset << "\n";
-                        std::cout << sol_res.output << (sol_res.output.back() == '\n' ? "" : "\n");
+                        diff::print_preview(sol_res.output);
                     }
                     if (!brute_res.output.empty()) {
                         std::cout << style::color_black << "expected:" << style::reset << "\n";
-                        std::cout << brute_res.output << (brute_res.output.back() == '\n' ? "" : "\n");
+                        diff::print_preview(brute_res.output);
                     }
                     return 1;
                 } else {
@@ -211,7 +226,7 @@ inline int run_stress(const fs::path& sol_exe,
                     if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_res.output);
 
                     std::cout << style::color_black << "input:" << style::reset << "\n";
-                    std::cout << style::color_white << current_in << style::reset << (current_in.empty() || current_in.back() == '\n' ? "" : "\n");
+                    diff::print_preview(current_in, style::color_white);
 
                     if (config::show_debug && !sol_res.error_output.empty()) {
                         std::cout << style::color_black << "sol debug:" << style::reset << "\n";
@@ -246,10 +261,9 @@ inline int run_stress(const fs::path& sol_exe,
                 std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                           << style::color_red << "wa " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
                 save_failed_test(save_dir, current_in, sol_res.output, "", chk_res.error_output);
-                if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, "");
 
                 std::cout << style::color_black << "input:" << style::reset << "\n";
-                std::cout << style::color_white << current_in << style::reset << (current_in.empty() || current_in.back() == '\n' ? "" : "\n");
+                diff::print_preview(current_in, style::color_white);
 
                 if (config::show_debug && !sol_res.error_output.empty()) {
                     std::cout << style::color_black << "sol debug:" << style::reset << "\n";
@@ -270,7 +284,7 @@ inline int run_stress(const fs::path& sol_exe,
                 }
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    std::cout << sol_res.output << (sol_res.output.back() == '\n' ? "" : "\n");
+                    diff::print_preview(sol_res.output);
                 }
                 return 1;
             } else {
