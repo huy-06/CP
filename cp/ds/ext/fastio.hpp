@@ -2,7 +2,10 @@
 #include <vector>
 #include <type_traits>
 
-namespace cp::ds {
+#ifndef CP_DS_FASTIO
+#define CP_DS_FASTIO
+namespace cp {
+namespace ds {
 
 struct flush_t {} flush;
 
@@ -149,4 +152,6 @@ public:
 inline scanner input;
 inline printer output;
 
-} // namespace cp::ds
+} // namesapce ds
+} // namespace cp
+#endif
