@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-#include "../misc/formatter.hpp"
+#include "../ext/formatter.hpp"
 
 #ifndef CP_DS_VECTOR
 #define CP_DS_VECTOR

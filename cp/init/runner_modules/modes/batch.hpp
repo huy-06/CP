@@ -129,16 +129,16 @@ inline int run_batch(const fs::path& sol_exe,
             } else {
                 std::cout << style::color_black << "input: " << style::color_cyan << tc.input_file << style::reset << "\n";
             }
-            diff::print_preview(tc.input, style::color_white);
+            diff::print_preview(tc.input, style::color_white, config::get_in_tokens());
 
             if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(sol_res.error_output);
             }
 
             if (!sol_res.output.empty()) {
                 std::cout << style::color_black << "output:" << style::reset << "\n";
-                diff::print_preview(sol_res.output, "\x1b[36m");
+                diff::print_preview(sol_res.output, "\x1b[36m", config::get_out_tokens());
             }
 
             std::cout << style::color_black << "done: " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << sol_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
@@ -201,17 +201,17 @@ inline int run_batch(const fs::path& sol_exe,
             } else {
                 std::cout << style::color_black << "input: " << style::color_cyan << tc.input_file << style::reset << "\n";
             }
-            diff::print_preview(tc.input, style::color_white);
+            diff::print_preview(tc.input, style::color_white, config::get_in_tokens());
 
             if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << (has_checker ? "sol debug:" : "debug:") << style::reset << "\n";
-                std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(sol_res.error_output);
             }
 
             if (has_checker) {
                 if (config::show_debug && !chk_res.error_output.empty()) {
                     std::cout << style::color_black << "checker debug:" << style::reset << "\n";
-                    std::cout << style::color_yellow << chk_res.error_output << style::reset << (chk_res.error_output.back() == '\n' ? "" : "\n");
+                    diff::print_debug(chk_res.error_output);
                 }
                 if (!chk_res.output.empty()) {
                     std::cout << style::color_black << "checker message:" << style::reset << "\n";
@@ -229,14 +229,14 @@ inline int run_batch(const fs::path& sol_exe,
             if (sol_res.is_timeout || sol_res.exit_code != 0) {
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    diff::print_preview(sol_res.output);
+                    diff::print_preview(sol_res.output, nullptr, config::get_actual_tokens());
                 }
             } else if (!has_checker) {
                 diff::print_diff(sol_res.output, tc.expected, tc.expected_file);
             } else {
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    diff::print_preview(sol_res.output);
+                    diff::print_preview(sol_res.output, nullptr, config::get_actual_tokens());
                 }
             }
 

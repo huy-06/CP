@@ -54,9 +54,9 @@ inline int run_judge(const fs::path& sol_exe,
         if (j_res.is_timeout || j_res.exit_code == 3) {
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_red << "tle " << style::color_white << "[" << style::color_yellow << "> " << std::fixed << std::setprecision(3) << config::time_limit << "s" << style::color_white << "]" << style::reset << "\n";
-            if (!j_res.error_output.empty()) {
+            if (config::show_debug && !j_res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << j_res.error_output << style::reset << (j_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(j_res.error_output);
             }
             return 1;
         }
@@ -65,31 +65,31 @@ inline int run_judge(const fs::path& sol_exe,
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_green << "ac " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << j_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
             if (!j_res.output.empty()) {
-                diff::print_preview(j_res.output);
+                diff::print_preview(j_res.output, nullptr, config::get_out_tokens());
             }
             passed++;
         } else if (j_res.exit_code == 1) {
             // WA
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_red << "wa " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << j_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
-            if (!j_res.error_output.empty()) {
+            if (config::show_debug && !j_res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << j_res.error_output << style::reset << (j_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(j_res.error_output);
             }
             if (!j_res.output.empty()) {
-                diff::print_preview(j_res.output);
+                diff::print_preview(j_res.output, nullptr, config::get_actual_tokens());
             }
             return 1;
         } else {
             // RTE (code 2 or crash)
             std::cout << style::color_white << "test " << style::color_blue << iter << style::color_white << ": "
                       << style::color_red << "rte " << style::color_white << "[" << style::color_yellow << std::fixed << std::setprecision(3) << j_res.time_taken << "s" << style::color_white << "]" << style::reset << "\n";
-            if (!j_res.error_output.empty()) {
+            if (config::show_debug && !j_res.error_output.empty()) {
                 std::cout << style::color_black << "debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << j_res.error_output << style::reset << (j_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(j_res.error_output);
             }
             if (!j_res.output.empty()) {
-                diff::print_preview(j_res.output);
+                diff::print_preview(j_res.output, nullptr, config::get_actual_tokens());
             }
             return 1;
         }

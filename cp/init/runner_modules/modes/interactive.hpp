@@ -59,22 +59,25 @@ inline int run_interactive_one(const fs::path& sol_exe,
 
     HANDLE sol_err_r = NULL, sol_err_w = NULL;
     HANDLE itor_err_r = NULL, itor_err_w = NULL;
+    HANDLE h_null = NULL;
     if (show_debug) {
         make_pipe(sol_err_r, sol_err_w, false, true);
         make_pipe(itor_err_r, itor_err_w, false, true);
+    } else {
+        h_null = CreateFileA("NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
 
     STARTUPINFOA si_sol;
     ZeroMemory(&si_sol, sizeof(si_sol));
     si_sol.cb = sizeof(si_sol);
     si_sol.dwFlags |= STARTF_USESTDHANDLES;
-    si_sol.hStdError = show_debug ? sol_err_w : GetStdHandle(STD_ERROR_HANDLE);
+    si_sol.hStdError = show_debug ? sol_err_w : h_null;
 
     STARTUPINFOA si_itor;
     ZeroMemory(&si_itor, sizeof(si_itor));
     si_itor.cb = sizeof(si_itor);
     si_itor.dwFlags |= STARTF_USESTDHANDLES;
-    si_itor.hStdError = show_debug ? itor_err_w : GetStdHandle(STD_ERROR_HANDLE);
+    si_itor.hStdError = show_debug ? itor_err_w : h_null;
 
     PROCESS_INFORMATION pi_sol; ZeroMemory(&pi_sol, sizeof(pi_sol));
     PROCESS_INFORMATION pi_itor; ZeroMemory(&pi_itor, sizeof(pi_itor));
@@ -149,6 +152,10 @@ inline int run_interactive_one(const fs::path& sol_exe,
         CloseHandle(i2s_r); CloseHandle(i2s_w);
         if (sol_err_w) CloseHandle(sol_err_w);
         if (itor_err_w) CloseHandle(itor_err_w);
+        if (h_null != NULL && h_null != INVALID_HANDLE_VALUE) {
+            CloseHandle(h_null);
+            h_null = NULL;
+        }
 
         if (!ok_sol || !ok_itor) {
             std::cerr << style::color_red << "error: failed to launch interactive processes." << style::reset << "\n";
@@ -166,6 +173,7 @@ inline int run_interactive_one(const fs::path& sol_exe,
             !make_pipe(itor_in_r, itor_in_w, true, false) ||
             !make_pipe(itor_out_r, itor_out_w, false, true)) {
             std::cerr << style::color_red << "error: failed to create relay pipes." << style::reset << "\n";
+            if (h_null != NULL && h_null != INVALID_HANDLE_VALUE) CloseHandle(h_null);
             return 2;
         }
 
@@ -184,6 +192,10 @@ inline int run_interactive_one(const fs::path& sol_exe,
         CloseHandle(itor_out_w);
         if (sol_err_w) CloseHandle(sol_err_w);
         if (itor_err_w) CloseHandle(itor_err_w);
+        if (h_null != NULL && h_null != INVALID_HANDLE_VALUE) {
+            CloseHandle(h_null);
+            h_null = NULL;
+        }
 
         if (!ok_sol || !ok_itor) {
             std::cerr << style::color_red << "error: failed to launch interactive processes." << style::reset << "\n";
@@ -206,7 +218,33 @@ inline int run_interactive_one(const fs::path& sol_exe,
         auto debug_worker = [&](HANDLE hr, const char* prefix_tag) {
             char buf[1024];
             DWORD read_bytes = 0;
+            std::atomic<size_t> token_count{0};
+            size_t max_tokens = config::get_debug_tokens();
+            bool truncated = false;
+            std::string line_acc;
+
             while (ReadFile(hr, buf, sizeof(buf), &read_bytes, NULL) && read_bytes > 0) {
+                if (max_tokens != std::numeric_limits<std::size_t>::max() && token_count >= max_tokens) {
+                    if (!truncated) {
+                        truncated = true;
+                        std::lock_guard<std::mutex> lock(cout_mtx);
+                        std::cout << style::color_bright_black << "\n... (" << prefix_tag << "truncated: debug token limit reached)" << style::reset << "\n";
+                    }
+                    continue;
+                }
+
+                for (DWORD i = 0; i < read_bytes; ++i) {
+                    char c = buf[i];
+                    if (c == ' ' || c == '\n' || c == '\t' || c == '\r') {
+                        if (!line_acc.empty()) {
+                            token_count++;
+                            line_acc.clear();
+                        }
+                    } else {
+                        line_acc += c;
+                    }
+                }
+
                 std::lock_guard<std::mutex> lock(cout_mtx);
                 std::cout << style::color_black << prefix_tag << style::reset;
                 std::cout.write(buf, read_bytes);
@@ -343,7 +381,15 @@ inline int run_interactive_one(const fs::path& sol_exe,
         if (pid_sol == 0) {
             dup2(i2s[0], STDIN_FILENO);
             dup2(s2i[1], STDOUT_FILENO);
-            if (show_debug) dup2(sol_err[1], STDERR_FILENO);
+            if (show_debug) {
+                dup2(sol_err[1], STDERR_FILENO);
+            } else {
+                int devnull = open("/dev/null", O_WRONLY);
+                if (devnull >= 0) {
+                    dup2(devnull, STDERR_FILENO);
+                    close(devnull);
+                }
+            }
 
             close(s2i[0]); close(s2i[1]);
             close(i2s[0]); close(i2s[1]);
@@ -357,7 +403,15 @@ inline int run_interactive_one(const fs::path& sol_exe,
         if (pid_itor == 0) {
             dup2(s2i[0], STDIN_FILENO);
             dup2(i2s[1], STDOUT_FILENO);
-            if (show_debug) dup2(itor_err[1], STDERR_FILENO);
+            if (show_debug) {
+                dup2(itor_err[1], STDERR_FILENO);
+            } else {
+                int devnull = open("/dev/null", O_WRONLY);
+                if (devnull >= 0) {
+                    dup2(devnull, STDERR_FILENO);
+                    close(devnull);
+                }
+            }
 
             close(s2i[0]); close(s2i[1]);
             close(i2s[0]); close(i2s[1]);
@@ -385,7 +439,15 @@ inline int run_interactive_one(const fs::path& sol_exe,
         if (pid_sol == 0) {
             dup2(sol_in[0], STDIN_FILENO);
             dup2(sol_out[1], STDOUT_FILENO);
-            if (show_debug) dup2(sol_err[1], STDERR_FILENO);
+            if (show_debug) {
+                dup2(sol_err[1], STDERR_FILENO);
+            } else {
+                int devnull = open("/dev/null", O_WRONLY);
+                if (devnull >= 0) {
+                    dup2(devnull, STDERR_FILENO);
+                    close(devnull);
+                }
+            }
 
             close(sol_in[0]); close(sol_in[1]);
             close(sol_out[0]); close(sol_out[1]);
@@ -401,7 +463,15 @@ inline int run_interactive_one(const fs::path& sol_exe,
         if (pid_itor == 0) {
             dup2(itor_in[0], STDIN_FILENO);
             dup2(itor_out[1], STDOUT_FILENO);
-            if (show_debug) dup2(itor_err[1], STDERR_FILENO);
+            if (show_debug) {
+                dup2(itor_err[1], STDERR_FILENO);
+            } else {
+                int devnull = open("/dev/null", O_WRONLY);
+                if (devnull >= 0) {
+                    dup2(devnull, STDERR_FILENO);
+                    close(devnull);
+                }
+            }
 
             close(sol_in[0]); close(sol_in[1]);
             close(sol_out[0]); close(sol_out[1]);
@@ -434,7 +504,33 @@ inline int run_interactive_one(const fs::path& sol_exe,
         auto debug_worker = [&](int fd_r, const char* prefix_tag) {
             char buf[1024];
             ssize_t n = 0;
+            std::atomic<size_t> token_count{0};
+            size_t max_tokens = config::get_debug_tokens();
+            bool truncated = false;
+            std::string line_acc;
+
             while ((n = read(fd_r, buf, sizeof(buf))) > 0) {
+                if (max_tokens != std::numeric_limits<std::size_t>::max() && token_count >= max_tokens) {
+                    if (!truncated) {
+                        truncated = true;
+                        std::lock_guard<std::mutex> lock(cout_mtx);
+                        std::cout << style::color_bright_black << "\n... (" << prefix_tag << "truncated: debug token limit reached)" << style::reset << "\n";
+                    }
+                    continue;
+                }
+
+                for (ssize_t i = 0; i < n; ++i) {
+                    char c = buf[i];
+                    if (c == ' ' || c == '\n' || c == '\t' || c == '\r') {
+                        if (!line_acc.empty()) {
+                            token_count++;
+                            line_acc.clear();
+                        }
+                    } else {
+                        line_acc += c;
+                    }
+                }
+
                 std::lock_guard<std::mutex> lock(cout_mtx);
                 std::cout << style::color_black << prefix_tag << style::reset;
                 std::cout.write(buf, n);

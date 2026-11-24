@@ -1,7 +1,7 @@
 //<
 #include <iostream>
 #include <source_location>
-#include "../ds/misc/formatter.hpp"
+#include "../ds/ext/formatter.hpp"
 
 #ifndef CP_DEBUG
 #define CP_DEBUG

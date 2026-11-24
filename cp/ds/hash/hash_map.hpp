@@ -2,7 +2,7 @@
 #include <iterator>
 #include <concepts>
 #include "custom_hash.hpp"
-#include "../misc/formatter.hpp"
+#include "../ext/formatter.hpp"
 
 #ifndef CP_DS_HASH_HASH_MAP
 #define CP_DS_HASH_HASH_MAP

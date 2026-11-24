@@ -171,8 +171,10 @@ int main(int argc, char* argv[]) {
         std::string itor_file_str;
         int itor_iters = 1;
         bool tag_no_log = false;
-        parse_tag_file_and_iters(parsed.tags.interactive.value, itor_file_str, itor_iters, &tag_no_log);
+        bool tag_no_debug = false;
+        parse_tag_file_and_iters(parsed.tags.interactive.value, itor_file_str, itor_iters, &tag_no_log, &tag_no_debug);
         if (tag_no_log) config::show_log = false;
+        if (tag_no_debug) config::show_debug = false;
 
         fs::path itor_src = resolve_relative_path(src_dir, itor_file_str);
         if (!fs::exists(itor_src)) {
@@ -197,7 +199,11 @@ int main(int argc, char* argv[]) {
     if (has_judge) {
         std::string judge_file_str;
         int judge_iters = 1;
-        parse_tag_file_and_iters(parsed.tags.judge.value, judge_file_str, judge_iters);
+        bool tag_no_log = false;
+        bool tag_no_debug = false;
+        parse_tag_file_and_iters(parsed.tags.judge.value, judge_file_str, judge_iters, &tag_no_log, &tag_no_debug);
+        if (tag_no_log) config::show_log = false;
+        if (tag_no_debug) config::show_debug = false;
 
         fs::path judge_src = resolve_relative_path(src_dir, judge_file_str);
         if (!fs::exists(judge_src)) {

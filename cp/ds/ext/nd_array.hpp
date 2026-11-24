@@ -1,6 +1,6 @@
 #include <vector>
 #include <cassert>
-#include "../misc/formatter.hpp"
+#include "../ext/formatter.hpp"
 
 #ifndef CP_DS_ND_ARRAY
 #define CP_DS_ND_ARRAY

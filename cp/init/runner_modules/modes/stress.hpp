@@ -95,9 +95,9 @@ inline int run_stress(const fs::path& sol_exe,
         run_result gen_res = run_with_timeout(gen_exe.string(), std::to_string(iter) + "\n", config::time_limit);
         if (gen_res.is_timeout || gen_res.exit_code != 0) {
             std::cout << style::color_red << "generator error at test " << iter << style::reset << "\n";
-            if (!gen_res.error_output.empty()) {
+            if (config::show_debug && !gen_res.error_output.empty()) {
                 std::cout << style::color_black << "generator debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << gen_res.error_output << style::reset << (gen_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(gen_res.error_output);
             }
             return 1;
         }
@@ -118,10 +118,10 @@ inline int run_stress(const fs::path& sol_exe,
             }
             save_failed_test(save_dir, current_in, sol_res.output, brute_out, sol_res.error_output);
             std::cout << style::color_black << "input:" << style::reset << "\n";
-            diff::print_preview(current_in, style::color_white);
-            if (!sol_res.error_output.empty() && config::show_debug) {
+            diff::print_preview(current_in, style::color_white, config::get_in_tokens());
+            if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << "sol debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(sol_res.error_output);
             }
             return 1;
         }
@@ -139,10 +139,10 @@ inline int run_stress(const fs::path& sol_exe,
             }
             save_failed_test(save_dir, current_in, sol_res.output, brute_out, sol_res.error_output);
             std::cout << style::color_black << "input:" << style::reset << "\n";
-            diff::print_preview(current_in, style::color_white);
-            if (!sol_res.error_output.empty() && config::show_debug) {
+            diff::print_preview(current_in, style::color_white, config::get_in_tokens());
+            if (config::show_debug && !sol_res.error_output.empty()) {
                 std::cout << style::color_black << "sol debug:" << style::reset << "\n";
-                std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                diff::print_debug(sol_res.error_output);
             }
             return 1;
         }
@@ -151,9 +151,9 @@ inline int run_stress(const fs::path& sol_exe,
             run_result brute_res = run_with_timeout(brute_exe.string(), current_in, config::time_limit);
             if (brute_res.is_timeout || brute_res.exit_code != 0) {
                 std::cout << style::color_red << "brute error at test " << iter << style::reset << "\n";
-                if (!brute_res.error_output.empty()) {
+                if (config::show_debug && !brute_res.error_output.empty()) {
                     std::cout << style::color_black << "brute debug:" << style::reset << "\n";
-                    std::cout << style::color_yellow << brute_res.error_output << style::reset << (brute_res.error_output.back() == '\n' ? "" : "\n");
+                    diff::print_debug(brute_res.error_output);
                 }
                 return 1;
             }
@@ -179,19 +179,19 @@ inline int run_stress(const fs::path& sol_exe,
                     if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_res.output);
 
                     std::cout << style::color_black << "input:" << style::reset << "\n";
-                    diff::print_preview(current_in, style::color_white);
+                    diff::print_preview(current_in, style::color_white, config::get_in_tokens());
 
                     if (config::show_debug && !sol_res.error_output.empty()) {
                         std::cout << style::color_black << "sol debug:" << style::reset << "\n";
-                        std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                        diff::print_debug(sol_res.error_output);
                     }
                     if (config::show_debug && !brute_res.error_output.empty()) {
                         std::cout << style::color_black << "brute debug:" << style::reset << "\n";
-                        std::cout << style::color_yellow << brute_res.error_output << style::reset << (brute_res.error_output.back() == '\n' ? "" : "\n");
+                        diff::print_debug(brute_res.error_output);
                     }
                     if (config::show_debug && !chk_res.error_output.empty()) {
                         std::cout << style::color_black << "checker debug:" << style::reset << "\n";
-                        std::cout << style::color_yellow << chk_res.error_output << style::reset << (chk_res.error_output.back() == '\n' ? "" : "\n");
+                        diff::print_debug(chk_res.error_output);
                     }
                     if (!chk_res.output.empty()) {
                         std::cout << style::color_black << "checker message:" << style::reset << "\n";
@@ -204,11 +204,11 @@ inline int run_stress(const fs::path& sol_exe,
                     }
                     if (!sol_res.output.empty()) {
                         std::cout << style::color_black << "actual:" << style::reset << "\n";
-                        diff::print_preview(sol_res.output);
+                        diff::print_preview(sol_res.output, nullptr, config::get_actual_tokens());
                     }
                     if (!brute_res.output.empty()) {
                         std::cout << style::color_black << "expected:" << style::reset << "\n";
-                        diff::print_preview(brute_res.output);
+                        diff::print_preview(brute_res.output, nullptr, config::get_out_tokens());
                     }
                     return 1;
                 } else {
@@ -226,15 +226,15 @@ inline int run_stress(const fs::path& sol_exe,
                     if (!src_file.empty()) append_failed_to_src_file(src_file, current_in, brute_res.output);
 
                     std::cout << style::color_black << "input:" << style::reset << "\n";
-                    diff::print_preview(current_in, style::color_white);
+                    diff::print_preview(current_in, style::color_white, config::get_in_tokens());
 
                     if (config::show_debug && !sol_res.error_output.empty()) {
                         std::cout << style::color_black << "sol debug:" << style::reset << "\n";
-                        std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                        diff::print_debug(sol_res.error_output);
                     }
                     if (config::show_debug && !brute_res.error_output.empty()) {
                         std::cout << style::color_black << "brute debug:" << style::reset << "\n";
-                        std::cout << style::color_yellow << brute_res.error_output << style::reset << (brute_res.error_output.back() == '\n' ? "" : "\n");
+                        diff::print_debug(brute_res.error_output);
                     }
                     diff::print_diff(sol_res.output, brute_res.output);
                     return 1;
@@ -263,15 +263,15 @@ inline int run_stress(const fs::path& sol_exe,
                 save_failed_test(save_dir, current_in, sol_res.output, "", chk_res.error_output);
 
                 std::cout << style::color_black << "input:" << style::reset << "\n";
-                diff::print_preview(current_in, style::color_white);
+                diff::print_preview(current_in, style::color_white, config::get_in_tokens());
 
                 if (config::show_debug && !sol_res.error_output.empty()) {
                     std::cout << style::color_black << "sol debug:" << style::reset << "\n";
-                    std::cout << style::color_yellow << sol_res.error_output << style::reset << (sol_res.error_output.back() == '\n' ? "" : "\n");
+                    diff::print_debug(sol_res.error_output);
                 }
                 if (config::show_debug && !chk_res.error_output.empty()) {
                     std::cout << style::color_black << "checker debug:" << style::reset << "\n";
-                    std::cout << style::color_yellow << chk_res.error_output << style::reset << (chk_res.error_output.back() == '\n' ? "" : "\n");
+                    diff::print_debug(chk_res.error_output);
                 }
                 if (!chk_res.output.empty()) {
                     std::cout << style::color_black << "checker message:" << style::reset << "\n";
@@ -284,7 +284,7 @@ inline int run_stress(const fs::path& sol_exe,
                 }
                 if (!sol_res.output.empty()) {
                     std::cout << style::color_black << "actual:" << style::reset << "\n";
-                    diff::print_preview(sol_res.output);
+                    diff::print_preview(sol_res.output, nullptr, config::get_actual_tokens());
                 }
                 return 1;
             } else {

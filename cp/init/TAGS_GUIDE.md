@@ -26,8 +26,18 @@
 | **`[NO-SAVE]`** | Tắt tính năng lưu test bị lỗi | `// [NO-SAVE]` |
 | **`[BUNDLE-ONLY]`** | Chỉ gộp file `submit/submit.cpp`, không chạy test | `// [BUNDLE-ONLY]` |
 | **`[NO-BUNDLE]`** | Tắt tính năng tự động tạo bundle | `// [NO-BUNDLE]` |
-| **`[NO-DEBUG]`** | Không hiển thị output từ kênh `std::cerr` / `debug(...)` | `// [NO-DEBUG]` |
+| **`[NO-DEBUG]`** | Không hiển thị output từ kênh `std::cerr` / `debug(...)` (hỗ trợ mọi mode) | `// [NO-DEBUG]` |
 | **`[NO-LOG]`** | Không hiển thị log chi tiết khi test | `// [NO-LOG]` |
+| **`[TOKENS: <n>]`** | Giới hạn số token tối đa khi in preview input/output/expected (mặc định 40) | `// [TOKENS: 50]` |
+| **`[TOKEN-LEN: <len>]`** | Giới hạn độ dài ký tự tối đa của 1 token (mặc định 100) | `// [TOKEN-LEN: 80]` |
+| **`[PREVIEW: <tokens> [len]]`** | Cú pháp gộp cấu hình số lượng token và độ dài token tối đa | `// [PREVIEW: 50 80]` |
+| **`[DEBUG-TOKENS: <n>]`** | Giới hạn số token tối đa khi in debug (mặc định 80) | `// [DEBUG-TOKENS: 100]` |
+| **`[SHOW-IN]` / `[SHOW-IN: <n>]`** | Hiển thị toàn bộ input (không số) hoặc giới hạn đúng `n` tokens | `// [SHOW-IN]` hoặc `// [SHOW-IN: 100]` |
+| **`[SHOW-OUT]` / `[SHOW-OUT: <n>]`** | Hiển thị toàn bộ expected (không số) hoặc giới hạn đúng `n` tokens | `// [SHOW-OUT]` hoặc `// [SHOW-OUT: 100]` |
+| **`[SHOW-ACTUAL]` / `[SHOW-ACTUAL: <n>]`** | Hiển thị toàn bộ actual output (không số) hoặc giới hạn đúng `n` tokens | `// [SHOW-ACTUAL]` hoặc `// [SHOW-ACTUAL: 100]` |
+| **`[SHOW-DEBUG]` / `[SHOW-DEBUG: <n>]`** | Hiển thị toàn bộ debug output (không số) hoặc giới hạn đúng `n` tokens | `// [SHOW-DEBUG]` hoặc `// [SHOW-DEBUG: 200]` |
+| **`[SHOW-DIFF]` / `[SHOW-DIFF: <radius>]`** | Hiển thị thông tin và ngữ cảnh quanh vị trí sai đầu tiên khi WA | `// [SHOW-DIFF]` hoặc `// [SHOW-DIFF: 5]` |
+| **`[NO-DIFF]`** | Tắt tính năng hiển thị ngữ cảnh sai khác chi tiết | `// [NO-DIFF]` |
 | **`[FILE-IN: "<tên>"]`** | Chuyển hướng stdin đọc từ file (freopen) | `// [FILE-IN: "input.txt"]` |
 | **`[FILE-OUT: "<tên>"]`** | Chuyển hướng stdout ghi vào file | `// [FILE-OUT: "output.txt"]` |
 | **`[-TAG]`** | Bất kỳ tag nào có dấu `-` đằng trước đều sẽ bị **vô hiệu hóa** | `// [-GEN: gen.cpp]`, `// [-TL: 1.0]` |
@@ -370,6 +380,44 @@ int main() {
     judge::accept(); // Báo AC (exit 0)
 }
 ```
+
+---
+
+### 6. Tùy Biến Token Hiển Thị & Giới Hạn Debug (`[SHOW-...]`, `[TOKENS]`)
+
+* **Giới hạn mặc định:** Mặc định runner hiển thị tối đa `40` tokens cho input/expected/actual và `80` tokens cho debug output để terminal luôn gọn gàng, không bị tràn màn hình.
+* **Cấu hình chung:**
+  * `// [TOKENS: 50]`: Đổi số lượng token tối đa khi in preview thành 50.
+  * `// [TOKEN-LEN: 80]`: Đổi độ dài ký tự tối đa của một token thành 80 (vượt quá sẽ hiện `...`).
+  * `// [PREVIEW: 60 100]`: Gộp 60 tokens, mỗi token tối đa 100 ký tự.
+  * `// [DEBUG-TOKENS: 120]`: Đổi giới hạn token cho phần debug output thành 120.
+* **In linh hoạt cho từng phần với tiền tố `[SHOW-...]`:**
+  * Nếu không đi kèm số: **in toàn bộ (ALL)** token của phần đó.
+  * Nếu có số đi kèm: **in đúng số token** chỉ định.
+  * `// [SHOW-IN]`: In toàn bộ tokens input (không cắt bớt).
+  * `// [SHOW-IN: 100]`: In tối đa 100 tokens input.
+  * `// [SHOW-OUT]`: In toàn bộ tokens expected output.
+  * `// [SHOW-OUT: 50]`: In tối đa 50 tokens expected.
+  * `// [SHOW-ACTUAL]`: In toàn bộ tokens actual output của bài làm.
+  * `// [SHOW-ACTUAL: 50]`: In tối đa 50 tokens actual.
+  * `// [SHOW-DEBUG]`: In toàn bộ debug output từ `std::cerr` / `debug(...)`.
+  * `// [SHOW-DEBUG: 200]`: In tối đa 200 tokens debug.
+
+---
+
+### 7. So Sánh Sai Khác Thông Minh (`[SHOW-DIFF]`)
+
+* Khi kết quả bị **WA (Wrong Answer)**, Runner tự động định vị vị trí sai đầu tiên (**First Mismatch**), ngay cả khi vị trí sai nằm ngoài phạm vi 40 token preview đầu tiên.
+* Hiển thị thông tin định vị chính xác: số thứ tự token (`#k`), giá trị mong đợi (`expected`) và giá trị thực tế sinh ra (`actual`).
+* Hiển thị một **cửa sổ ngữ cảnh (Context Window)** nhỏ gọn với các token xung quanh vị trí sai, giúp bạn biết ngay sai ở đoạn nào mà terminal không bao giờ bị tràn lan:
+  ```text
+  first mismatch: token #10 [expected: 999, actual: 10]
+    expected: ... 7 8 9 [999] 11 12 13 ...
+    actual:   ... 7 8 9 [10] 11 12 13 ...
+  ```
+* **Tùy chỉnh:**
+  * `// [SHOW-DIFF: 5]`: Hiển thị bán kính 5 token trước và sau vị trí sai (mặc định là 4).
+  * `// [-SHOW-DIFF]` hoặc `// [NO-DIFF]`: Tắt tính năng hiển thị chi tiết mismatch.
 
 ---
 

@@ -322,7 +322,7 @@ inline parse_output parse_source(const std::string& src_content, const fs::path&
                 i += 2;
                 continue;
             }
-            if (src_content[i] == '"') {
+            if (src_content[i] == '"' || src_content[i] == '\n') {
                 in_string = false;
             }
             ++i;
@@ -334,7 +334,7 @@ inline parse_output parse_source(const std::string& src_content, const fs::path&
                 i += 2;
                 continue;
             }
-            if (src_content[i] == '\'') {
+            if (src_content[i] == '\'' || src_content[i] == '\n') {
                 in_char = false;
             }
             ++i;
@@ -370,7 +370,12 @@ inline parse_output parse_source(const std::string& src_content, const fs::path&
                 continue;
             }
             if (src_content[i] == '\'') {
-                in_char = true;
+                // Kiểm tra xem có phải là digit separator trong C++ (ví dụ: 1'000'000'007 hay 0xFF'FF)
+                bool is_digit_sep = (i > 0 && std::isxdigit(static_cast<unsigned char>(src_content[i - 1]))) &&
+                                    (i + 1 < n && std::isxdigit(static_cast<unsigned char>(src_content[i + 1])));
+                if (!is_digit_sep) {
+                    in_char = true;
+                }
                 ++i;
                 continue;
             }
@@ -567,6 +572,153 @@ inline parse_output parse_source(const std::string& src_content, const fs::path&
                     } else if (norm == "NO-DEBUG") {
                         if (!skipped) {
                             config::show_debug = false;
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "TOKENS" || norm == "MAX-TOKENS" || norm == "PREVIEW-TOKENS") {
+                        if (!skipped && !raw_val.empty()) {
+                            try {
+                                config::preview_max_tokens = std::stoull(detail::strip_outer_quotes(raw_val));
+                            } catch (...) {}
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "TOKEN-LEN" || norm == "MAX-TOKEN-LEN" || norm == "PREVIEW-LEN" || norm == "PREVIEW-MAX-TOKEN-LEN") {
+                        if (!skipped && !raw_val.empty()) {
+                            try {
+                                config::preview_max_token_len = std::stoull(detail::strip_outer_quotes(raw_val));
+                            } catch (...) {}
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "PREVIEW") {
+                        if (!skipped && !raw_val.empty()) {
+                            std::istringstream iss(detail::strip_outer_quotes(raw_val));
+                            std::string t1, t2;
+                            if (iss >> t1) {
+                                try { config::preview_max_tokens = std::stoull(t1); } catch (...) {}
+                            }
+                            if (iss >> t2) {
+                                try { config::preview_max_token_len = std::stoull(t2); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "SHOW-IN" || norm == "SHOW-INPUT" || norm == "SHOW-INP" || norm == "PRINT-IN" || norm == "PRINT-INPUT") {
+                        if (skipped) {
+                            config::in_max_tokens = 0;
+                        } else {
+                            std::string val = detail::strip_outer_quotes(raw_val);
+                            if (val.empty() || detail::normalize_tag_name(val) == "ALL") {
+                                config::in_max_tokens = std::numeric_limits<std::size_t>::max();
+                            } else {
+                                try { config::in_max_tokens = std::stoull(val); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "SHOW-OUT" || norm == "SHOW-OUTPUT" || norm == "SHOW-EXP" || norm == "SHOW-EXPECTED" || norm == "PRINT-OUT" || norm == "PRINT-OUTPUT") {
+                        if (skipped) {
+                            config::out_max_tokens = 0;
+                        } else {
+                            std::string val = detail::strip_outer_quotes(raw_val);
+                            if (val.empty() || detail::normalize_tag_name(val) == "ALL") {
+                                config::out_max_tokens = std::numeric_limits<std::size_t>::max();
+                            } else {
+                                try { config::out_max_tokens = std::stoull(val); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "SHOW-ACTUAL" || norm == "SHOW-ACT" || norm == "PRINT-ACTUAL" || norm == "PRINT-ACT") {
+                        if (skipped) {
+                            config::actual_max_tokens = 0;
+                        } else {
+                            std::string val = detail::strip_outer_quotes(raw_val);
+                            if (val.empty() || detail::normalize_tag_name(val) == "ALL") {
+                                config::actual_max_tokens = std::numeric_limits<std::size_t>::max();
+                            } else {
+                                try { config::actual_max_tokens = std::stoull(val); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "SHOW-DEBUG" || norm == "SHOW-DBG" || norm == "DEBUG" || norm == "PRINT-DEBUG" || norm == "PRINT-DBG") {
+                        if (skipped) {
+                            config::show_debug = false;
+                            config::custom_debug_tokens = 0;
+                        } else {
+                            config::show_debug = true;
+                            std::string val = detail::strip_outer_quotes(raw_val);
+                            if (val.empty() || detail::normalize_tag_name(val) == "ALL") {
+                                config::custom_debug_tokens = std::numeric_limits<std::size_t>::max();
+                            } else {
+                                try { config::custom_debug_tokens = std::stoull(val); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "DEBUG-TOKENS" || norm == "MAX-DEBUG-TOKENS") {
+                        if (!skipped && !raw_val.empty()) {
+                            try { config::debug_max_tokens = std::stoull(detail::strip_outer_quotes(raw_val)); } catch (...) {}
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "SHOW-DIFF" || norm == "DIFF-MISMATCH" || norm == "FIRST-DIFF" || norm == "DIFF-CONTEXT") {
+                        if (skipped) {
+                            config::show_diff = false;
+                        } else {
+                            config::show_diff = true;
+                            std::string val = detail::strip_outer_quotes(raw_val);
+                            if (!val.empty()) {
+                                try { config::diff_context_radius = std::stoull(val); } catch (...) {}
+                            }
+                        }
+                        events.push_back(detail::tag_event{
+                            .kind = detail::tag_kind::TAG_OTHER,
+                            .tag_start = i,
+                            .tag_end = close + 1,
+                            .skipped = skipped
+                        });
+                    } else if (norm == "NO-DIFF") {
+                        if (!skipped) {
+                            config::show_diff = false;
                         }
                         events.push_back(detail::tag_event{
                             .kind = detail::tag_kind::TAG_OTHER,
@@ -795,7 +947,7 @@ inline parse_output parse_source(const std::string& src_content, const fs::path&
     return out;
 }
 
-inline void parse_tag_file_and_iters(const std::string& val, std::string& file_out, int& iters_out, bool* no_log_out = nullptr) {
+inline void parse_tag_file_and_iters(const std::string& val, std::string& file_out, int& iters_out, bool* no_log_out = nullptr, bool* no_debug_out = nullptr) {
     std::istringstream iss(val);
     std::string tok;
     iters_out = 1;
@@ -807,6 +959,8 @@ inline void parse_tag_file_and_iters(const std::string& val, std::string& file_o
         std::transform(upper_tok.begin(), upper_tok.end(), upper_tok.begin(), ::toupper);
         if (no_log_out && (upper_tok == "NO_LOG" || upper_tok == "NOLOG" || upper_tok == "NO-LOG" || upper_tok == "NO")) {
             *no_log_out = true;
+        } else if (no_debug_out && (upper_tok == "NO_DEBUG" || upper_tok == "NODEBUG" || upper_tok == "NO-DEBUG")) {
+            *no_debug_out = true;
         } else {
             try {
                 iters_out = std::stoi(tok);
@@ -820,4 +974,3 @@ inline void parse_tag_file_and_iters(const std::string& val, std::string& file_o
 } // namespace cp
 
 #endif // CP_INIT_RUNNER_TAG_PARSER_HPP
-
